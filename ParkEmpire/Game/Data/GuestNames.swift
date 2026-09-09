@@ -1,0 +1,22 @@
+import Foundation
+
+/// Generic given/family name pools used to make guests feel individual.
+enum GuestNames {
+    private static let given = [
+        "Ada", "Bo", "Cleo", "Dev", "Elin", "Fabi", "Gus", "Hana", "Ivo", "Jo",
+        "Kai", "Lena", "Mila", "Nils", "Ola", "Pia", "Quin", "Rafa", "Sami", "Tova",
+        "Uma", "Vik", "Wren", "Xan", "Yara", "Zeke", "Ines", "Otto", "Nora", "Theo"
+    ]
+
+    private static let family = [
+        "Alder", "Brook", "Calder", "Dunn", "Ember", "Frost", "Garrow", "Hollis",
+        "Ingram", "Jessup", "Kerr", "Lowry", "Marsh", "Nyland", "Orrick", "Pike",
+        "Quist", "Rowe", "Sable", "Thorne", "Vance", "Wilde", "Yates", "Zell"
+    ]
+
+    static func random(using generator: inout SeededGenerator) -> String {
+        let first = generator.pick(given) ?? "Guest"
+        let last = generator.pick(family) ?? "Visitor"
+        return "\(first) \(last)"
+    }
+}
