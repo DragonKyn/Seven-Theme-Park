@@ -56,7 +56,9 @@ final class GameState: Codable {
     /// Lenient decoding: every field falls back to a default, so a save written
     /// by an older build loads with the new systems switched on rather than
     /// failing outright. New phases add a line here and nothing else.
-    required init(from decoder: Decoder) throws {
+    /// Not marked `required`: `GameState` is final, so there is nothing to
+    /// inherit the requirement.
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         parkName = container.value(.parkName, or: "Park")
         map = container.value(.map, or: ParkMap(width: Balance.mapWidth, height: Balance.mapHeight))
@@ -186,7 +188,7 @@ final class GameState: Codable {
 
     /// Total wages per park day across every employee.
     var dailyPayroll: Double {
-        staff.reduce(0) { $0 + ($1.definition?.dailyWage ?? 0) }
+        staff.reduce(0.0) { $0 + ($1.definition?.dailyWage ?? 0) }
     }
 
     func staffCount(role: StaffRole) -> Int {

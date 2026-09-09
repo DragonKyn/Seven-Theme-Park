@@ -18,10 +18,10 @@ final class RatingSystem {
         state.nextRatingUpdate = state.clock.simTime + Balance.ratingInterval
 
         let components = evaluate(state: state)
-        let totalWeight = components.reduce(0) { $0 + $1.weight }
+        let totalWeight = components.reduce(0.0) { $0 + $1.weight }
         guard totalWeight > 0 else { return }
 
-        let target = components.reduce(0) { $0 + $1.weight * $1.value } / totalWeight * 100
+        let target = components.reduce(0.0) { $0 + $1.weight * $1.value } / totalWeight * 100
 
         let previousStars = state.starRating
         state.parkRating += (target - state.parkRating) * Balance.ratingSmoothing

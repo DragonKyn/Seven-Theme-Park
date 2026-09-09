@@ -4,8 +4,17 @@ import SwiftUI
 struct BuildMenuView: View {
     @ObservedObject var controller: GameController
 
-    private var items: [BuildableDefinition] {
-        GameContent.buildables(in: controller.build.category, unlockLevel: controller.state.unlockLevel)
+    /// Concrete `Identifiable` wrapper: `ForEach` cannot key off a key path
+    /// rooted in a protocol existential.
+    private struct BuildItem: Identifiable {
+        let id: String
+        let definition: BuildableDefinition
+    }
+
+    private var items: [BuildItem] {
+        GameContent.buildables(in: controller.build.category,
+                               unlockLevel: controller.state.unlockLevel)
+            .map { BuildItem(id: $0.id, definition: $0) }
     }
 
     var body: some View {
@@ -47,13 +56,13 @@ struct BuildMenuView: View {
             if !controller.build.isDemolishing {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(items, id: \.id) { definition in
+                        ForEach(items) { item in
                             BuildItemCard(
-                                definition: definition,
-                                isSelected: controller.build.selectedID == definition.id,
-                                affordable: controller.hud.cash >= definition.purchasePrice
+                                definition: item.definition,
+                                isSelected: controller.build.selectedID == item.id,
+                                affordable: controller.hud.cash >= item.definition.purchasePrice
                             ) {
-                                controller.select(definitionID: definition.id)
+                                controller.select(definitionID: item.id)
                             }
                         }
                     }
