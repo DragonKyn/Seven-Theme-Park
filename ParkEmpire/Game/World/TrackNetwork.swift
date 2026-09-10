@@ -26,8 +26,8 @@ struct TrackNetwork {
 
     // MARK: - Building
 
-    static func build(map: ParkMap) -> TrackNetwork {
-        var remaining = Set(map.coords(ofTerrain: .track))
+    static func build(map: ParkMap, terrains: Set<TerrainType> = [.track]) -> TrackNetwork {
+        var remaining = Set(terrains.flatMap { map.coords(ofTerrain: $0) })
         guard !remaining.isEmpty else { return .empty }
 
         var routes: [Route] = []

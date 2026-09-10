@@ -72,6 +72,13 @@ final class SimulationEngine {
         staffSystem.update(state: state, dt: dt)
         economy.update(state: state, dt: dt)
         rating.update(state: state)
+
+        // Cheap enough to test every tick, and it only does the work when the
+        // player has actually changed the map.
+        if state.trackedRideGeneration != state.map.generation {
+            state.trackedRideGeneration = state.map.generation
+            state.refreshTrackedRides()
+        }
         achievements.update(state: state)
 
         purgeDepartedGuests(state: state)

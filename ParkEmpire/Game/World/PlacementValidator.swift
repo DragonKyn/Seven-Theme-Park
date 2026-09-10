@@ -48,6 +48,10 @@ enum PlacementValidator {
             if definition.requiresWaterAccess && !map.touchesTerrain(.water, around: rect) {
                 return .invalid("Needs to sit against water")
             }
+            if definition.requiresCoasterTrackAccess
+                && !map.touchesTerrain(.coasterTrack, around: rect) {
+                return .invalid("Needs to touch coaster track")
+            }
         }
 
         guard cash >= definition.purchasePrice else {

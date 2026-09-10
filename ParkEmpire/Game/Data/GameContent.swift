@@ -30,6 +30,57 @@ enum GameContent {
         beautyRadius: 2
     )
 
+    static let coasterTrack = TerrainDefinition(
+        id: "terrain.coastertrack",
+        displayName: "Coaster Track",
+        summary: "Lay your own circuit. The longer and the better it runs, the better the ride.",
+        purchasePrice: 120,
+        refundValue: 40,
+        terrain: .coasterTrack,
+        category: .transport,
+        beauty: 0,
+        beautyRadius: 0
+    )
+
+    /// The special pieces. Each is ordinary coaster track with an element
+    /// bolted on: they join anything, cost more, and are what actually makes a
+    /// circuit worth riding.
+    static let coasterElements: [TerrainDefinition] = [
+        TerrainDefinition(
+            id: "terrain.coasterloop",
+            displayName: "Loop",
+            summary: "A vertical loop. The single biggest thing you can do to a circuit.",
+            purchasePrice: 900,
+            refundValue: 300,
+            terrain: .coasterLoop,
+            category: .transport,
+            beauty: 0,
+            beautyRadius: 0
+        ),
+        TerrainDefinition(
+            id: "terrain.coasterhelix",
+            displayName: "Corkscrew",
+            summary: "Two barrel rolls back to back. Cheaper than a loop and nearly as good.",
+            purchasePrice: 700,
+            refundValue: 230,
+            terrain: .coasterHelix,
+            category: .transport,
+            beauty: 0,
+            beautyRadius: 0
+        ),
+        TerrainDefinition(
+            id: "terrain.coasterhill",
+            displayName: "Airtime Hill",
+            summary: "A hump that lifts riders out of their seats. Cheap, and every circuit wants a few.",
+            purchasePrice: 380,
+            refundValue: 120,
+            terrain: .coasterHill,
+            category: .transport,
+            beauty: 0,
+            beautyRadius: 0
+        )
+    ]
+
     /// Terrain in build-menu order. Both are drawn by dragging, so they share
     /// the same handling everywhere the player paints a run of tiles.
     static let track = TerrainDefinition(
@@ -46,7 +97,8 @@ enum GameContent {
 
     /// Terrain in build-menu order. All of it is drawn by dragging, so it
     /// shares the same handling everywhere the player paints a run of tiles.
-    static let terrains: [TerrainDefinition] = [path, water, track]
+    static let terrains: [TerrainDefinition] =
+        [path, water, track, coasterTrack] + coasterElements
 
     // MARK: - Attractions
 
@@ -393,6 +445,24 @@ enum GameContent {
             appearance: BuildingAppearance(.wavePool, .slate, .sand, .cyan),
             group: .water,
             needsWater: true
+        ),
+        AttractionDefinition(
+            id: "coaster.station",
+            displayName: "Wonder Coaster",
+            summary: "Lay a circuit of coaster track and put this on it. A longer ride is a better ride.",
+            purchasePrice: 12_000,
+            capacity: 20,
+            rideDuration: 20,
+            loadDuration: 20,
+            excitement: 45,
+            nausea: 40,
+            maintenanceRate: 0.040,
+            operatingCostPerCycle: 20,
+            footprint: GridSize(4, 2),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.coasterStation, .red, .slate, .amber),
+            kind: .custom,
+            group: .thrill
         ),
         AttractionDefinition(
             id: "transport.station",

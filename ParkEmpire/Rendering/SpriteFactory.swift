@@ -96,10 +96,89 @@ enum SpriteFactory {
     /// with two neighbours at right angles is drawn as a proper curve. Drawing
     /// a corner as two straight stubs meeting in the middle is what made a
     /// bend look like two pieces overlapping.
-    static func trackTileTexture(connections: Int, side: CGFloat) -> SKTexture {
-        texture(key: "track-\(connections)-\(side)",
-                size: CGSize(width: side, height: side)) { _, size in
-            ParkPalette.ballast.setFill()
+    /// A special coaster piece: the plain tile with the element drawn over it.
+    ///
+    /// Elements are drawn on top of ordinary track rather than replacing it,
+    /// so a loop still reads as connected to whatever it is bolted between.
+    static func coasterElementTexture(connections: Int,
+                                      side: CGFloat,
+                                      element: TerrainType) -> SKTexture {
+        let base = trackTileTexture(connections: connections, side: side, coaster: true)
+        return texture(key: "coaster-\(element.rawValue)-\(connections)-\(side)",
+                       size: CGSize(width: side, height: side)) { context, size in
+            base.cgImage().flatMap { image in
+                context.saveGState()
+                // Core Graphics draws images bottom-up; the tile is square and
+                // the track pattern is symmetric, so only the flip matters.
+                context.translateBy(x: 0, y: size.height)
+                context.scaleBy(x: 1, y: -1)
+                context.draw(image, in: CGRect(origin: .zero, size: size))
+                context.restoreGState()
+            }
+
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            ParkPalette.coasterRail.setStroke()
+
+            switch element {
+            case .coasterLoop:
+                // A ring standing on the track, drawn twice so it reads as a
+                // tube rather than as a circle painted on the ground.
+                let radius = size.width * 0.30
+                let ring = UIBezierPath(ovalIn: CGRect(x: centre.x - radius,
+                                                       y: centre.y - radius * 1.05,
+                                                       width: radius * 2, height: radius * 2))
+                ParkPalette.coasterTie.setStroke()
+                ring.lineWidth = max(2, size.width * 0.13)
+                ring.stroke()
+                ParkPalette.coasterRail.setStroke()
+                ring.lineWidth = max(1, size.width * 0.055)
+                ring.stroke()
+
+            case .coasterHill:
+                // A hump with chain marks up its face.
+                let hump = UIBezierPath()
+                hump.move(to: CGPoint(x: size.width * 0.08, y: size.height * 0.74))
+                hump.addQuadCurve(to: CGPoint(x: size.width * 0.92, y: size.height * 0.74),
+                                  controlPoint: CGPoint(x: centre.x, y: -size.height * 0.16))
+                ParkPalette.coasterTie.setStroke()
+                hump.lineWidth = max(2, size.width * 0.13)
+                hump.stroke()
+                ParkPalette.coasterRail.setStroke()
+                hump.lineWidth = max(1, size.width * 0.055)
+                hump.stroke()
+
+            case .coasterHelix:
+                // Two offset rings, which is as close as a flat tile gets to a
+                // corkscrew.
+                let radius = size.width * 0.22
+                for offset in [-size.width * 0.13, size.width * 0.13] {
+                    let ring = UIBezierPath(ovalIn: CGRect(x: centre.x + offset - radius,
+                                                           y: centre.y - radius,
+                                                           width: radius * 2, height: radius * 2))
+                    ParkPalette.coasterTie.setStroke()
+                    ring.lineWidth = max(2, size.width * 0.11)
+                    ring.stroke()
+                    ParkPalette.coasterRail.setStroke()
+                    ring.lineWidth = max(1, size.width * 0.048)
+                    ring.stroke()
+                }
+
+            default:
+                break
+            }
+        }
+    }
+
+    static func trackTileTexture(connections: Int,
+                                 side: CGFloat,
+                                 coaster: Bool = false) -> SKTexture {
+        let bed = coaster ? ParkPalette.coasterBed : ParkPalette.ballast
+        let tie = coaster ? ParkPalette.coasterTie : ParkPalette.sleeper
+        let railColour = coaster ? ParkPalette.coasterRail : ParkPalette.rail
+
+        return texture(key: "track-\(coaster ? "c" : "r")-\(connections)-\(side)",
+                       size: CGSize(width: side, height: side)) { _, size in
+            bed.setFill()
             UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
 
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -126,11 +205,11 @@ enum SpriteFactory {
             func layTrack(_ build: (UIBezierPath, CGFloat) -> Void) {
                 let ties = UIBezierPath()
                 build(ties, 0)
-                ParkPalette.sleeper.setStroke()
+                tie.setStroke()
                 ties.lineWidth = tieWidth
                 ties.stroke()
 
-                ParkPalette.rail.setStroke()
+                railColour.setStroke()
                 for offset in [-gauge / 2, gauge / 2] {
                     let rail = UIBezierPath()
                     build(rail, offset)
@@ -179,6 +258,49 @@ enum SpriteFactory {
                     path.addLine(to: CGPoint(x: end.x + across.x, y: end.y + across.y))
                 }
             }
+        }
+    }
+
+    /// A coaster car, nose to the right. Smaller and lower than a railway
+    /// carriage, with the riders showing over the sides.
+    static func coasterCarTexture(isLeading: Bool, size: CGSize) -> SKTexture {
+        texture(key: "coaster-car-\(isLeading ? "lead" : "follow")-\(Int(size.width))x\(Int(size.height))",
+                size: size) { context, size in
+            let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: size.height * 0.14)
+
+            context.setShadow(offset: CGSize(width: 0, height: size.height * 0.12),
+                              blur: size.height * 0.18,
+                              color: UIColor.black.withAlphaComponent(0.30).cgColor)
+
+            if isLeading {
+                let nose = UIBezierPath()
+                nose.move(to: CGPoint(x: body.minX, y: body.minY))
+                nose.addLine(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.minY))
+                nose.addQuadCurve(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.maxY),
+                                  controlPoint: CGPoint(x: body.maxX + body.width * 0.18,
+                                                        y: body.midY))
+                nose.addLine(to: CGPoint(x: body.minX, y: body.maxY))
+                nose.close()
+                ParkPalette.colour(.red).setFill()
+                nose.fill()
+            } else {
+                ParkPalette.colour(.red).setFill()
+                UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.34).fill()
+            }
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+
+            ParkPalette.colour(.cream).setFill()
+            let head = size.height * 0.40
+            for offset in [CGFloat(0.24), CGFloat(0.54)] {
+                UIBezierPath(ovalIn: CGRect(x: body.minX + body.width * offset,
+                                            y: body.midY - head / 2,
+                                            width: head, height: head)).fill()
+            }
+
+            ParkPalette.coasterTie.setFill()
+            UIBezierPath(rect: CGRect(x: body.minX, y: body.maxY - size.height * 0.10,
+                                      width: body.width * 0.88,
+                                      height: size.height * 0.10)).fill()
         }
     }
 

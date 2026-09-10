@@ -56,6 +56,8 @@ final class GameState: Codable {
     var currentArrivalsPerMinute: Double = 0
     var nextRatingUpdate: Double = 0
     var nextAchievementCheck: Double = 0
+    /// Map generation the tracked rides were last measured against.
+    var trackedRideGeneration: Int = -1
     /// Last computed rating breakdown, for the management dashboard.
     var ratingComponents: [String: Double] = [:]
     var lastAlertTimes: [String: Double] = [:]
@@ -105,6 +107,7 @@ final class GameState: Codable {
         currentArrivalsPerMinute = container.value(.currentArrivalsPerMinute, or: 0)
         nextRatingUpdate = container.value(.nextRatingUpdate, or: 0)
         nextAchievementCheck = container.value(.nextAchievementCheck, or: 0)
+        trackedRideGeneration = container.value(.trackedRideGeneration, or: -1)
         ratingComponents = container.value(.ratingComponents, or: [:])
         lastAlertTimes = container.value(.lastAlertTimes, or: [:])
         // The mode is the authority; the ledger flag follows it, so a save
@@ -117,7 +120,38 @@ final class GameState: Codable {
     /// Built on demand rather than cached: it is wanted when a train unloads
     /// and when the map changes, neither of which is per tick, and a stored
     /// copy would be one more thing that could fall out of step with the map.
-    var trackNetwork: TrackNetwork { TrackNetwork.build(map: map) }
+    var trackNetwork: TrackNetwork { TrackNetwork.build(map: map, terrains: [.track]) }
+
+    /// The coaster circuits the player has laid. Separate from the railway
+    /// because the two never join: a coaster station belongs to its own
+    /// circuit rather than to a network of stations.
+    var coasterNetwork: TrackNetwork {
+        TrackNetwork.build(map: map, terrains: TerrainType.coasterPieces)
+    }
+
+    /// Re-measures how much track each custom ride has to run on.
+    ///
+    /// Called when the map changes rather than every tick. A station with no
+    /// circuit reads as zero, which leaves it as the dull shuttle its base
+    /// numbers describe until somebody lays it some track.
+    func refreshTrackedRides() {
+        guard attractions.contains(where: { $0.baseDefinition?.kind == .custom }) else { return }
+        let network = coasterNetwork
+        for index in attractions.indices where attractions[index].baseDefinition?.kind == .custom {
+            guard let routeIndex = network.routeIndex(touching: attractions[index].rect) else {
+                attractions[index].trackLength = 0
+                attractions[index].trackThrill = 0
+                continue
+            }
+            let tiles = network.routes[routeIndex].tiles
+            attractions[index].trackLength = tiles.count
+            // Special pieces count for far more than the ground they cover,
+            // which is the whole reason to pay for them.
+            attractions[index].trackThrill = tiles.reduce(0) {
+                $0 + (map.tile(at: $1)?.terrain.coasterThrill ?? 0)
+            }
+        }
+    }
 
     /// Where a guest riding this station's train should be set down: another
     /// station on the same railway, chosen at random so a network of three is

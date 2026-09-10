@@ -32,6 +32,12 @@ struct Attraction: Codable, Identifiable {
     /// Purchased upgrade levels, keyed by `RideUpgradeKind.rawValue`. Stored
     /// by raw string so a build that drops an upgrade kind still decodes.
     var upgrades: [String: Int] = [:]
+    /// Tiles of the player's own track this station runs on. Only means
+    /// anything for a custom ride, and kept up to date by the simulation
+    /// whenever the map changes.
+    var trackLength: Int = 0
+    /// What the special pieces on that track are worth.
+    var trackThrill: Double = 0
 
     var phase: RidePhase = .loading
     var phaseTimer: Double = 0
@@ -52,7 +58,9 @@ struct Attraction: Codable, Identifiable {
     var baseDefinition: AttractionDefinition? { GameContent.attraction(definitionID) }
 
     /// The ride as it actually runs, upgrades included.
-    var definition: AttractionDefinition? { baseDefinition?.applying(upgrades) }
+    var definition: AttractionDefinition? {
+        baseDefinition?.applying(upgrades, trackLength: trackLength, trackThrill: trackThrill)
+    }
 
     func upgradeLevel(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
 
@@ -106,6 +114,8 @@ extension Attraction {
         timeSinceInspection = container.value(.timeSinceInspection, or: 0)
         totalBreakdowns = container.value(.totalBreakdowns, or: 0)
         upgrades = container.value(.upgrades, or: [:])
+        trackLength = container.value(.trackLength, or: 0)
+        trackThrill = container.value(.trackThrill, or: 0)
         phase = container.value(.phase, or: .loading)
         phaseTimer = container.value(.phaseTimer, or: 0)
         queue = container.value(.queue, or: [])

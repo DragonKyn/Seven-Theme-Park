@@ -68,6 +68,8 @@ enum BuildingMotif: String, Codable {
     case skyGliders
     /// Squat mirrored box.
     case mirrorMaze
+    /// Boarding platform with the foot of a lift hill behind it.
+    case coasterStation
     /// Booth with a striped awning across the front.
     case stall
     /// Small booth with a domed top.
@@ -119,7 +121,7 @@ enum BuildingMotif: String, Codable {
         // The station itself is still; what moves is the train, and that runs
         // on the player's own track rather than round the building.
         case .trainStation: return .none
-        case .mirrorMaze: return .none
+        case .mirrorMaze, .coasterStation: return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:

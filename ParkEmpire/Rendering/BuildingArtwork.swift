@@ -70,6 +70,7 @@ enum BuildingArtwork {
         case .wavePool: drawWavePoolBase(context, size, primary, secondary, accent)
         case .skyGliders: drawSkyGlidersBase(context, size, primary, secondary, accent)
         case .mirrorMaze: drawMirrorMaze(context, size, primary, secondary, accent)
+        case .coasterStation: drawCoasterStation(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
         case .burgerStall: drawBurgerStall(context, size, primary, secondary, accent)
@@ -1178,6 +1179,52 @@ enum BuildingArtwork {
         let door = CGRect(x: body.minX + body.width * 0.06, y: body.maxY - body.height * 0.24,
                           width: body.width * 0.16, height: body.height * 0.24)
         fill(UIBezierPath(roundedRect: door, cornerRadius: door.width * 0.2), accent)
+    }
+
+    /// A boarding platform with the first few sleepers of a lift hill running
+    /// off the back of it, so it reads as the start of something rather than
+    /// as another shed.
+    private static func drawCoasterStation(_ context: CGContext,
+                                           _ size: CGSize,
+                                           _ primary: UIColor,
+                                           _ secondary: UIColor,
+                                           _ accent: UIColor) {
+        let platform = CGRect(x: size.width * 0.05, y: size.height * 0.44,
+                              width: size.width * 0.90, height: size.height * 0.48)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: platform, cornerRadius: platform.height * 0.16),
+                 secondary)
+        }
+        fill(UIBezierPath(rect: CGRect(x: platform.minX, y: platform.maxY - size.height * 0.07,
+                                       width: platform.width, height: size.height * 0.05)),
+             accent)
+
+        // Canopy over the boarding side.
+        let canopy = CGRect(x: size.width * 0.08, y: size.height * 0.12,
+                            width: size.width * 0.84, height: size.height * 0.26)
+        fill(UIBezierPath(roundedRect: canopy, cornerRadius: canopy.height * 0.30), primary)
+        for x in [size.width * 0.14, size.width * 0.82] {
+            fill(UIBezierPath(rect: CGRect(x: x, y: canopy.maxY,
+                                           width: size.width * 0.035,
+                                           height: size.height * 0.10)),
+                 ParkPalette.colour(.charcoal))
+        }
+
+        // Track running out of the station, with a chain up the middle.
+        let rails = UIBezierPath()
+        for offset in [-size.width * 0.06, size.width * 0.06] {
+            rails.move(to: CGPoint(x: size.width * 0.5 + offset, y: platform.midY))
+            rails.addLine(to: CGPoint(x: size.width * 0.5 + offset, y: size.height))
+        }
+        stroke(rails, ParkPalette.coasterRail, width: max(1, size.width * 0.028))
+
+        let chain = UIBezierPath()
+        for step in 0..<4 {
+            let y = platform.midY + (size.height - platform.midY) * (0.2 + 0.24 * CGFloat(step))
+            chain.move(to: CGPoint(x: size.width * 0.42, y: y))
+            chain.addLine(to: CGPoint(x: size.width * 0.58, y: y))
+        }
+        stroke(chain, ParkPalette.coasterTie, width: max(1, size.height * 0.020))
     }
 
     // MARK: - Log flume

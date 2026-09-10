@@ -23,7 +23,8 @@ enum PathMotion {
                       around points: [CGPoint],
                       duration: TimeInterval,
                       turnFraction: Double = 1.0,
-                      headings: [CGFloat]? = nil) {
+                      headings: [CGFloat]? = nil,
+                      flair: [Bool]? = nil) {
         guard points.count > 1 else { return }
 
         // Legs are timed by how long they are rather than by how many there
@@ -58,7 +59,17 @@ enum PathMotion {
             let turn = SKAction.rotate(toAngle: angle,
                                        duration: max(0.01, legTime * min(1.0, max(0.05, turnFraction))),
                                        shortestUnitArc: true)
-            legs.append(.group([move, turn]))
+            // A leg marked for flair gets a swell as the vehicle crosses it,
+            // which is how a flat tile suggests going over the top of a loop.
+            if flair?[index] == true {
+                let swell = SKAction.sequence([
+                    .scale(to: 1.45, duration: max(0.01, legTime * 0.5)),
+                    .scale(to: 1.0, duration: max(0.01, legTime * 0.5))
+                ])
+                legs.append(.group([move, turn, swell]))
+            } else {
+                legs.append(.group([move, turn]))
+            }
         }
 
         node.run(.repeatForever(.sequence(legs)))

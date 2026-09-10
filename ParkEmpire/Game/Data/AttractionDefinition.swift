@@ -42,6 +42,9 @@ enum AttractionKind: String, Codable {
     case ride
     /// Guests get on and are set down at another station on the same railway.
     case transport
+    /// Guests ride track the player laid themselves. How good the ride is
+    /// depends on how much track there is.
+    case custom
 }
 
 struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
@@ -76,20 +79,31 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     var needsWater = false
 
     var category: BuildCategory {
-        kind == .transport ? .transport : .attraction
+        kind == .ride ? .attraction : .transport
     }
 
-    /// A station with no railway against it has nowhere to send anybody.
+    /// A station with no track against it has nothing to run on.
     var requiresTrackAccess: Bool { kind == .transport }
+    var requiresCoasterTrackAccess: Bool { kind == .custom }
 
     var requiresWaterAccess: Bool { needsWater }
 
     /// The same ride with its purchased upgrades folded in. Returning a
     /// definition rather than a separate stats type means every system that
     /// already reads a definition picks up upgrades without being told.
-    func applying(_ upgrades: [String: Int]) -> AttractionDefinition {
-        guard !upgrades.isEmpty else { return self }
+    func applying(_ upgrades: [String: Int],
+                  trackLength: Int = 0,
+                  trackThrill: Double = 0) -> AttractionDefinition {
+        guard !upgrades.isEmpty || kind == .custom else { return self }
         func level(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
+
+        // A ride the player laid the track for is only as good as the track.
+        // A short circuit is a shuttle; a long one is a proper coaster, and
+        // the ride lasts as long as it takes to get round.
+        let track = self.kind == .custom ? Double(trackLength) : 0
+        let thrill = self.kind == .custom ? trackThrill : 0
+        let trackExcitement = min(30, track * 0.7) + min(35, thrill)
+        let trackDuration = min(150, track * 1.6)
 
         return AttractionDefinition(
             id: id,
@@ -97,9 +111,10 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             summary: summary,
             purchasePrice: purchasePrice,
             capacity: Int((Double(capacity) * UpgradeContent.capacityFactor(level: level(.capacity))).rounded()),
-            rideDuration: rideDuration,
+            rideDuration: rideDuration + trackDuration,
             loadDuration: loadDuration * UpgradeContent.loadingFactor(level: level(.loading)),
-            excitement: SimMath.clamp(excitement + UpgradeContent.themingExcitement(level: level(.theming))),
+            excitement: SimMath.clamp(excitement + trackExcitement
+                                      + UpgradeContent.themingExcitement(level: level(.theming))),
             nausea: nausea,
             maintenanceRate: maintenanceRate * UpgradeContent.wearFactor(level: level(.reliability)),
             operatingCostPerCycle: operatingCostPerCycle,

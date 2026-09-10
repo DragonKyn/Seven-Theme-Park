@@ -10,10 +10,38 @@ enum TerrainType: String, Codable {
     /// Railway. Guests cannot walk on it; trains run along it between
     /// stations, and nothing else can be built over it.
     case track
+    /// Coaster track. Laid the same way as railway and just as unwalkable,
+    /// but it belongs to one station rather than to a network of them.
+    case coasterTrack
+    /// A vertical loop. Costs more, and is worth far more to the ride.
+    case coasterLoop
+    /// An airtime hill.
+    case coasterHill
+    /// A corkscrew.
+    case coasterHelix
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {
         self == .path || self == .entrance
+    }
+
+    /// Every kind of coaster track, which all join to one another.
+    static let coasterPieces: Set<TerrainType> = [
+        .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix
+    ]
+
+    var isCoasterTrack: Bool { TerrainType.coasterPieces.contains(self) }
+
+    /// How much a tile of this adds to a ride, beyond simply being longer.
+    /// Plain track is the baseline; the special pieces are what the player is
+    /// actually paying for.
+    var coasterThrill: Double {
+        switch self {
+        case .coasterLoop: return 9
+        case .coasterHelix: return 7
+        case .coasterHill: return 4
+        default: return 0
+        }
     }
 }
 

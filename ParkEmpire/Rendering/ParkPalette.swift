@@ -29,6 +29,10 @@ enum ParkPalette {
     static let guestUnhappy = UIColor(red: 0.90, green: 0.32, blue: 0.28, alpha: 1)
 
     static let ballast = UIColor(red: 0.44, green: 0.41, blue: 0.37, alpha: 1)
+    static let coasterBed = UIColor(red: 0.30, green: 0.33, blue: 0.40, alpha: 1)
+    static let coasterRail = UIColor(red: 0.98, green: 0.72, blue: 0.28, alpha: 1)
+    static let coasterTie = UIColor(red: 0.20, green: 0.22, blue: 0.28, alpha: 1)
+
     static let rail = UIColor(red: 0.72, green: 0.73, blue: 0.75, alpha: 1)
     static let sleeper = UIColor(red: 0.32, green: 0.24, blue: 0.18, alpha: 1)
 
@@ -93,6 +97,7 @@ enum ParkPalette {
         case .entrance: return entrance
         case .water: return alternate ? waterAlt : water
         case .track: return ballast
+        case .coasterTrack: return coasterBed
         case .grass: return alternate ? grassAlt : grass
         }
     }

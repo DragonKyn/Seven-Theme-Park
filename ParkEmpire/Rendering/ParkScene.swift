@@ -376,6 +376,10 @@ final class ParkScene: SKScene {
         case .entrance: terrain = 2
         case .water: terrain = 3
         case .track: terrain = 4
+        case .coasterTrack: terrain = 5
+        case .coasterLoop: terrain = 6
+        case .coasterHill: terrain = 7
+        case .coasterHelix: terrain = 8
         }
         let alternate = (coord.x + coord.y) % 2 != 0 ? 1 : 0
         return terrain * 100 + alternate * 50 + trackConnections(at: coord, map: map)
@@ -403,19 +407,27 @@ final class ParkScene: SKScene {
     /// Railway is drawn from what it joins on to, so a straight run reads as
     /// a straight run. Everything else is a flat colour.
     private func texture(for tile: Tile, at coord: GridCoord, map: ParkMap) -> SKTexture {
-        guard tile.terrain == .track else {
+        guard tile.terrain == .track || tile.terrain.isCoasterTrack else {
             return SpriteFactory.tileTexture(colour: colour(for: tile, at: coord),
                                              side: Self.tileSide)
         }
 
-        return SpriteFactory.trackTileTexture(connections: trackConnections(at: coord, map: map),
-                                              side: Self.tileSide)
+        let connections = trackConnections(at: coord, map: map)
+        if tile.terrain.coasterThrill > 0 {
+            return SpriteFactory.coasterElementTexture(connections: connections,
+                                                       side: Self.tileSide,
+                                                       element: tile.terrain)
+        }
+        return SpriteFactory.trackTileTexture(connections: connections,
+                                              side: Self.tileSide,
+                                              coaster: tile.terrain.isCoasterTrack)
     }
 
     /// Which of the four neighbours are also railway, as north, east, south
     /// and west bits. Zero for anything that is not railway itself.
     private func trackConnections(at coord: GridCoord, map: ParkMap) -> Int {
-        guard map.tile(at: coord)?.terrain == .track else { return 0 }
+        guard let terrain = map.tile(at: coord)?.terrain,
+              terrain == .track || terrain.isCoasterTrack else { return 0 }
         let offsets: [(Int, GridCoord)] = [
             (1, GridCoord(coord.x, coord.y + 1)),
             (2, GridCoord(coord.x + 1, coord.y)),
@@ -423,7 +435,12 @@ final class ParkScene: SKScene {
             (8, GridCoord(coord.x - 1, coord.y))
         ]
         var connections = 0
-        for (bit, neighbour) in offsets where map.tile(at: neighbour)?.terrain == .track {
+        // Every kind of coaster piece joins every other, so a loop bolted
+        // between two straights reads as connected to both.
+        for (bit, neighbour) in offsets {
+            guard let other = map.tile(at: neighbour)?.terrain else { continue }
+            let joins = terrain.isCoasterTrack ? other.isCoasterTrack : other == terrain
+            guard joins else { continue }
             connections |= bit
         }
         return connections
@@ -456,15 +473,37 @@ final class ParkScene: SKScene {
         for node in trainNodes { node.removeFromParent() }
         trainNodes.removeAll()
 
-        let network = state.trackNetwork
-        let stations = state.attractions.filter { $0.definition?.kind == .transport }
-        let carSize = CGSize(width: Self.tileSide * 0.86, height: Self.tileSide * 0.46)
+        runTrains(on: state.trackNetwork,
+                  servedBy: state.attractions.filter { $0.baseDefinition?.kind == .transport },
+                  coaster: false,
+                  map: state.map)
+        runTrains(on: state.coasterNetwork,
+                  servedBy: state.attractions.filter { $0.baseDefinition?.kind == .custom },
+                  coaster: true,
+                  map: state.map)
+    }
+
+    /// Puts a train on every circuit that has something to serve it.
+    ///
+    /// The railway and the coaster are the same problem with different
+    /// liveries and different speeds: a ring of tiles, some stations against
+    /// it, and a string of cars to run round it.
+    private func runTrains(on network: TrackNetwork,
+                           servedBy stations: [Attraction],
+                           coaster: Bool,
+                           map: ParkMap) {
+        let carSize = coaster
+            ? CGSize(width: Self.tileSide * 0.62, height: Self.tileSide * 0.40)
+            : CGSize(width: Self.tileSide * 0.86, height: Self.tileSide * 0.46)
+        // A railway needs a station at each end to be worth running. A coaster
+        // circuit is one ride, so one station is the whole thing.
+        let stationsNeeded = coaster ? 1 : 2
 
         for (index, route) in network.routes.enumerated() where route.tiles.count > 2 {
             // A train only runs where there is something for it to do. Laying
             // a tile of track should not put a locomotive on the map.
             let served = stations.filter { network.routeIndex(touching: $0.rect) == index }
-            guard served.count >= 2 else { continue }
+            guard served.count >= stationsNeeded else { continue }
 
             // Tile centres turn through a right angle at a bend. Rounding
             // them off makes the train curve through a corner the way the
@@ -479,23 +518,38 @@ final class ParkScene: SKScene {
             let isLoop = route.isLoop
             // A line is stored one way, and the train covers it twice a cycle,
             // so it needs twice as long to run at the same speed as a loop.
-            let duration = Double(route.tiles.count) * (isLoop ? 0.85 : 1.7)
+            // A coaster is meant to be quick and a park train is not.
+            let pace = coaster ? 0.34 : 0.85
+            let duration = Double(route.tiles.count) * (isLoop ? pace : pace * 2)
 
-            // Three cars either way. On a loop it is a locomotive pulling two
-            // carriages, each starting a tile further back round the ring. On
-            // a dead-ended line it is a push-pull set: a locomotive at each
-            // end facing outwards, so the train reverses at the terminus
-            // without anything having to turn round.
-            let cars = 3
-            let spacing = Self.tileSide
+            // Which points sit on a loop, a hill or a corkscrew, so the train
+            // can react as it crosses one.
+            var flair: [Bool]?
+            if coaster && isLoop {
+                let perTile = max(1, points.count / max(route.tiles.count, 1))
+                let special = route.tiles.map { (map.tile(at: $0)?.terrain.coasterThrill ?? 0) > 0 }
+                flair = (0..<points.count).map { special[min($0 / perTile, special.count - 1)] }
+            }
+
+            // On a loop the lead car pulls the rest, each starting a tile
+            // further back round the ring. On a dead-ended line it is a
+            // push-pull set with a locomotive at each end, so the train
+            // reverses at the terminus without anything turning round.
+            let cars = coaster ? 4 : 3
+            let spacing = coaster ? Self.tileSide * 0.68 : Self.tileSide
             let consist = spacing * CGFloat(cars - 1)
 
             for carriage in 0..<cars {
-                let isTailLocomotive = !isLoop && carriage == cars - 1
-                let isLocomotive = carriage == 0 || isTailLocomotive
+                // A coaster train has a lead car and followers. A shuttle
+                // railway has a locomotive at each end so it can reverse.
+                let isTailLocomotive = !coaster && !isLoop && carriage == cars - 1
+                let isLeading = carriage == 0 || isTailLocomotive
 
-                let node = SKSpriteNode(texture: SpriteFactory.trainCarTexture(
-                    isLocomotive: isLocomotive, size: carSize))
+                let texture = coaster
+                    ? SpriteFactory.coasterCarTexture(isLeading: carriage == 0, size: carSize)
+                    : SpriteFactory.trainCarTexture(isLocomotive: isLeading, size: carSize)
+
+                let node = SKSpriteNode(texture: texture)
                 node.size = carSize
                 // The rear locomotive faces the other way, which is what makes
                 // a set that runs equally well in both directions read as one.
@@ -509,7 +563,11 @@ final class ParkScene: SKScene {
                     let back = (carriage * perTile) % points.count
                     let offset = (points.count - back) % points.count
                     let carPath = Array(points[offset...] + points[..<offset])
-                    PathMotion.drive(node, around: carPath, duration: duration)
+                    let carFlair = flair.map { Array($0[offset...] + $0[..<offset]) }
+                    PathMotion.drive(node,
+                                     around: carPath,
+                                     duration: duration,
+                                     flair: carFlair)
                 } else {
                     let run = PathMotion.shuttleRun(along: points,
                                                     carIndex: carriage,
