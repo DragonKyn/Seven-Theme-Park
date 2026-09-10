@@ -16,9 +16,10 @@ enum PlacementValidator {
 
     static func check(definition: BuildableDefinition,
                       origin: GridCoord,
+                      rotation: Int = 0,
                       map: ParkMap,
                       cash: Double) -> PlacementCheck {
-        let rect = GridRect(origin: origin, size: definition.footprint)
+        let rect = GridRect(origin: origin, size: definition.footprint(rotatedBy: rotation))
 
         for coord in rect.coords where !map.isInside(coord) {
             return .invalid("Outside the park")

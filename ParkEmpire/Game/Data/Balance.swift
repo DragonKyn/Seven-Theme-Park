@@ -6,8 +6,10 @@ enum Balance {
 
     // MARK: - World
 
-    static let mapWidth = 30
-    static let mapHeight = 30
+    /// A new park's grid. Parks saved at an older size keep it: the map
+    /// decodes its own dimensions, so a 30x30 park stays 30x30.
+    static let mapWidth = 60
+    static let mapHeight = 60
     static let startingPathLength = 4
     static let startingCash: Double = 25_000
 
@@ -22,7 +24,7 @@ enum Balance {
 
     // MARK: - Guests
 
-    static let maxGuests = 300
+    static let maxGuests = 420
     /// Tiles per sim-second.
     static let guestWalkSpeed: Double = 1.6
     static let guestWalkSpeedVariance: Double = 0.25

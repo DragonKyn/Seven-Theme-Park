@@ -45,6 +45,12 @@ struct GridSize: Hashable, Codable {
 
     static let single = GridSize(1, 1)
     var tileCount: Int { width * height }
+
+    /// The footprint after turning it a quarter turn at a time. A quarter or
+    /// three-quarter turn swaps the sides; a half turn leaves them alone.
+    func rotated(by quarterTurns: Int) -> GridSize {
+        ((quarterTurns % 4) + 4) % 4 % 2 == 0 ? self : GridSize(height, width)
+    }
 }
 
 /// An axis-aligned block of tiles: a building footprint or a selection.

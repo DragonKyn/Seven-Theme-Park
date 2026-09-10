@@ -13,6 +13,8 @@ struct Facility: Codable, Identifiable {
     var name: String
     var origin: GridCoord
     var size: GridSize
+    /// Quarter turns clockwise, 0 to 3.
+    var rotation: Int = 0
 
     var isOpen: Bool = true
     /// Selling price. Zero for facilities that do not sell anything.
@@ -92,6 +94,7 @@ extension Facility {
         name = container.value(.name, or: "Facility")
         origin = container.value(.origin, or: GridCoord.zero)
         size = container.value(.size, or: GridSize.single)
+        rotation = container.value(.rotation, or: 0)
         isOpen = container.value(.isOpen, or: true)
         price = container.value(.price, or: 0)
         queue = container.value(.queue, or: [])

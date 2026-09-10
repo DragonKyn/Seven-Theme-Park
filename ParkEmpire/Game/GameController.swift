@@ -131,6 +131,24 @@ final class GameController: ObservableObject {
         build = BuildState()
     }
 
+    /// Whether turning the current selection would change anything.
+    var canRotate: Bool {
+        build.isActive && !build.isDemolishing && (selectedDefinition?.canRotate ?? false)
+    }
+
+    func rotateBuild() {
+        guard canRotate else { return }
+        build.rotation = (build.rotation + 1) % 4
+        updateGhost(at: build.ghost)
+    }
+
+    /// The ground the current selection would take up, turned. The preview and
+    /// the placement rules both read this so they can never disagree.
+    var ghostFootprint: GridSize {
+        guard let definition = selectedDefinition else { return .single }
+        return definition.footprint(rotatedBy: build.rotation)
+    }
+
     func select(definitionID: String) {
         build.selectedID = definitionID
         build.isDemolishing = false
@@ -177,7 +195,7 @@ final class GameController: ObservableObject {
             return
         }
 
-        let check = state.placementCheck(for: definition, at: coord)
+        let check = state.placementCheck(for: definition, at: coord, rotation: build.rotation)
         build.ghostValid = check.isValid
         build.ghostReason = check.reason
     }
@@ -189,7 +207,7 @@ final class GameController: ObservableObject {
             if build.isDemolishing {
                 requestDemolition(at: coord)
             } else if let definition = selectedDefinition {
-                _ = state.place(definition, at: coord)
+                _ = state.place(definition, at: coord, rotation: build.rotation)
                 refreshUI()
             }
             updateGhost(at: coord)
@@ -510,6 +528,9 @@ struct BuildState {
     /// camera. Off by default so dragging the map is never destructive.
     var isDrawing = false
     var category: BuildCategory = .path
+    /// Quarter turns clockwise applied to whatever is about to be placed.
+    /// Kept across placements, so a row of benches all face the same way.
+    var rotation = 0
     var selectedID: String?
     var ghost: GridCoord?
     var ghostValid = false

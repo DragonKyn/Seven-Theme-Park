@@ -39,6 +39,26 @@ struct BuildMenuView: View {
 
                 Spacer(minLength: 0)
 
+                if controller.canRotate {
+                    Button {
+                        controller.rotateBuild()
+                    } label: {
+                        Label("Turn", systemImage: "rotate.right")
+                            .labelStyle(.iconOnly)
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 40, height: 32)
+                            .foregroundStyle(controller.build.rotation == 0
+                                             ? Theme.textPrimary
+                                             : Color.black)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(controller.build.rotation == 0
+                                          ? Theme.control
+                                          : Theme.accent)
+                            )
+                    }
+                }
+
                 if controller.canDraw {
                     Button {
                         controller.toggleDrawing()
@@ -127,6 +147,9 @@ struct BuildMenuView: View {
         }
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
+        }
+        if controller.canRotate {
+            return "Tap to place. Turn rotates it a quarter turn. Buildings must touch a walkway."
         }
         return "Tap the map to place. Drag moves the map. Buildings must touch a walkway."
     }

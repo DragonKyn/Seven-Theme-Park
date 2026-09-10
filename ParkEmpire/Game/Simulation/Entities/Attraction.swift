@@ -15,6 +15,9 @@ struct Attraction: Codable, Identifiable {
     var name: String
     var origin: GridCoord
     var size: GridSize
+    /// Quarter turns clockwise, 0 to 3. `size` is already the turned
+    /// footprint, so only the artwork needs to know about this.
+    var rotation: Int = 0
 
     /// Player-controlled. A closed ride keeps its guests but takes no new ones.
     var isOpen: Bool = true
@@ -96,6 +99,7 @@ extension Attraction {
         name = container.value(.name, or: "Ride")
         origin = container.value(.origin, or: GridCoord.zero)
         size = container.value(.size, or: GridSize.single)
+        rotation = container.value(.rotation, or: 0)
         isOpen = container.value(.isOpen, or: true)
         condition = container.value(.condition, or: 100)
         isBroken = container.value(.isBroken, or: false)

@@ -1,10 +1,15 @@
 import SpriteKit
 import UIKit
 
-/// A placed building: the block itself plus its name and a queue-length badge.
+/// A placed building: the block itself, its name on a chip, and a queue-length
+/// badge.
 @MainActor
 final class BuildingNode: SKSpriteNode {
 
+    /// Holds the name chip. Kept as a container so it can be turned back
+    /// upright and repositioned when the building itself is rotated.
+    private let labelNode = SKNode()
+    private let labelChip = SKShapeNode()
     private let titleLabel = SKLabelNode(fontNamed: "HelveticaNeue-Bold")
     private let badgeLabel = SKLabelNode(fontNamed: "HelveticaNeue-Bold")
     private let badgeBackground = SKSpriteNode()
@@ -12,6 +17,10 @@ final class BuildingNode: SKSpriteNode {
     /// The parts of the building that move. Most rides have one; a race
     /// track and a bumper car arena have several.
     private var motionNodes: [SKSpriteNode] = []
+    /// How far below the middle of the building the name sits, before any
+    /// rotation is applied.
+    private var labelDrop: CGFloat = 0
+    private var quarterTurns = 0
 
     /// A nil `title` means no label at all, which is what scenery wants: a
     /// park with forty captioned trees is unreadable.
@@ -19,20 +28,33 @@ final class BuildingNode: SKSpriteNode {
         super.init(texture: texture, color: .clear, size: size)
 
         if let title {
-            titleLabel.text = title
+            // A dark chip behind the name. White text alone disappears against
+            // pale artwork and turns to mush where two buildings sit close
+            // together; a chip keeps each name legible on its own.
+            labelChip.fillColor = ParkPalette.labelChip
+            labelChip.strokeColor = .clear
+            labelChip.zPosition = 0
+
             titleLabel.fontSize = 9
             titleLabel.fontColor = .white
             titleLabel.verticalAlignmentMode = .center
             titleLabel.horizontalAlignmentMode = .center
-            titleLabel.position = CGPoint(x: 0, y: -size.height / 2 - 8)
-            titleLabel.zPosition = 2
-            addChild(titleLabel)
+            titleLabel.zPosition = 1
+
+            labelNode.zPosition = 40
+            labelNode.addChild(labelChip)
+            labelNode.addChild(titleLabel)
+            addChild(labelNode)
+
+            labelDrop = size.height / 2 + 9
+            labelNode.position = CGPoint(x: 0, y: -labelDrop)
+            setTitle(title)
         }
 
         badgeBackground.texture = SpriteFactory.circleTexture(colour: ParkPalette.badge, diameter: 18)
         badgeBackground.size = CGSize(width: 18, height: 18)
         badgeBackground.position = CGPoint(x: size.width / 2 - 4, y: size.height / 2 - 4)
-        badgeBackground.zPosition = 3
+        badgeBackground.zPosition = 41
         badgeBackground.isHidden = true
         addChild(badgeBackground)
 
@@ -52,6 +74,24 @@ final class BuildingNode: SKSpriteNode {
     func setTitle(_ title: String?) {
         guard let title, titleLabel.parent != nil, titleLabel.text != title else { return }
         titleLabel.text = title
+
+        // The chip is fitted to the text rather than to the building, so a
+        // Carousel and a Go Karts: Grand Prix both get a chip that suits them.
+        let width = max(18, titleLabel.frame.width + 10)
+        let height: CGFloat = 14
+        labelChip.path = CGPath(roundedRect: CGRect(x: -width / 2, y: -height / 2,
+                                                    width: width, height: height),
+                                cornerWidth: height / 2,
+                                cornerHeight: height / 2,
+                                transform: nil)
+    }
+
+    /// Names are hidden when the park is zoomed out far enough that they would
+    /// be unreadable anyway. At that distance the shape of the park is what
+    /// matters, not what each thing is called.
+    func setLabelVisible(_ visible: Bool) {
+        guard labelNode.parent != nil, labelNode.isHidden == visible else { return }
+        labelNode.isHidden = !visible
     }
 
     /// Shows the number of guests waiting, a warning marker, or nothing.
@@ -68,6 +108,27 @@ final class BuildingNode: SKSpriteNode {
         if badgeLabel.text != text {
             badgeLabel.text = text
         }
+    }
+
+    /// Turns the artwork.
+    ///
+    /// The name and the badge are children of the building, so they would turn
+    /// with it. Both are turned back upright, and the name is moved round to
+    /// wherever "below the building" ended up, so a rotated ride does not end
+    /// up captioned sideways off its own edge.
+    func setRotation(quarterTurns: Int) {
+        let turns = ((quarterTurns % 4) + 4) % 4
+        guard turns != self.quarterTurns else { return }
+        self.quarterTurns = turns
+
+        let angle = -CGFloat(turns) * .pi / 2
+        zRotation = angle
+
+        labelNode.zRotation = -angle
+        // Undoing the parent's rotation on a point below the centre.
+        labelNode.position = CGPoint(x: sin(-angle) * labelDrop,
+                                     y: -cos(-angle) * labelDrop)
+        badgeBackground.zRotation = -angle
     }
 
     func setDimmed(_ dimmed: Bool) {

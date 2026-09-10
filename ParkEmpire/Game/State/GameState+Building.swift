@@ -4,16 +4,23 @@ import Foundation
 /// change the park's layout.
 extension GameState {
 
-    func placementCheck(for definition: BuildableDefinition, at origin: GridCoord) -> PlacementCheck {
+    func placementCheck(for definition: BuildableDefinition,
+                        at origin: GridCoord,
+                        rotation: Int = 0) -> PlacementCheck {
         PlacementValidator.check(definition: definition,
                                  origin: origin,
+                                 rotation: rotation,
                                  map: map,
                                  cash: ledger.spendableCash)
     }
 
     @discardableResult
-    func place(_ definition: BuildableDefinition, at origin: GridCoord) -> Bool {
-        guard placementCheck(for: definition, at: origin).isValid else { return false }
+    func place(_ definition: BuildableDefinition,
+               at origin: GridCoord,
+               rotation: Int = 0) -> Bool {
+        guard placementCheck(for: definition, at: origin, rotation: rotation).isValid else {
+            return false
+        }
 
         // Money only moves once we know the definition is one we can build.
         switch definition {
@@ -27,7 +34,8 @@ extension GameState {
                 definitionID: attractionDefinition.id,
                 name: uniqueName(for: attractionDefinition.displayName),
                 origin: origin,
-                size: attractionDefinition.footprint
+                size: attractionDefinition.footprint(rotatedBy: rotation),
+                rotation: rotation
             )
             attractions.append(attraction)
             map.setBuilding(attraction.id, on: attraction.rect.coords)
@@ -38,7 +46,8 @@ extension GameState {
                 definitionID: facilityDefinition.id,
                 name: uniqueName(for: facilityDefinition.displayName),
                 origin: origin,
-                size: facilityDefinition.footprint,
+                size: facilityDefinition.footprint(rotatedBy: rotation),
+                rotation: rotation,
                 price: facilityDefinition.defaultPrice
             )
             facilities.append(facility)
@@ -49,7 +58,8 @@ extension GameState {
                 id: UUID(),
                 definitionID: sceneryDefinition.id,
                 origin: origin,
-                size: sceneryDefinition.footprint
+                size: sceneryDefinition.footprint(rotatedBy: rotation),
+                rotation: rotation
             )
             scenery.append(item)
             map.setBuilding(item.id, on: item.rect.coords)

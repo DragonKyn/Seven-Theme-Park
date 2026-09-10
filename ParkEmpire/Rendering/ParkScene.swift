@@ -60,6 +60,10 @@ final class ParkScene: SKScene {
     private var renderedLitterGeneration = -1
     private var trainNodes: [SKSpriteNode] = []
     private var renderedTrackGeneration = -1
+    private var labelsVisible = true
+    /// Camera scale beyond which building names are hidden. Bigger numbers are
+    /// further out, because the camera scales the world down as it zooms out.
+    private static let labelCutoffScale: CGFloat = 1.35
     private var ghostNode: SKSpriteNode?
     private var selectionNode: SKSpriteNode?
 
@@ -322,6 +326,7 @@ final class ParkScene: SKScene {
         syncScenery(state: controller.state)
         syncTrains(state: controller.state)
         syncBuildings(state: controller.state)
+        updateLabelVisibility()
         syncEntranceSign(state: controller.state)
         syncGuests(state: controller.state)
         syncStaff(state: controller.state)
@@ -388,6 +393,15 @@ final class ParkScene: SKScene {
         ParkPalette.colour(for: tile.terrain, alternate: (coord.x + coord.y) % 2 != 0)
     }
 
+    /// Names are dropped once the park is zoomed out far enough that they
+    /// would be a wall of chips rather than information.
+    private func updateLabelVisibility() {
+        let visible = cameraNode.xScale <= Self.labelCutoffScale
+        guard visible != labelsVisible else { return }
+        labelsVisible = visible
+        for node in buildingNodes.values { node.setLabelVisible(visible) }
+    }
+
     // MARK: - Trains
 
     /// Runs a train round each length of track the player has laid.
@@ -440,6 +454,7 @@ final class ParkScene: SKScene {
             let node = buildingNode(for: attraction.id,
                                     size: attraction.size,
                                     origin: attraction.origin,
+                                    rotation: attraction.rotation,
                                     appearance: attraction.definition?.appearance ?? .unknown,
                                     title: attraction.name)
             node.setMotionRunning(attraction.isOperational)
@@ -456,6 +471,7 @@ final class ParkScene: SKScene {
             let node = buildingNode(for: facility.id,
                                     size: facility.size,
                                     origin: facility.origin,
+                                    rotation: facility.rotation,
                                     appearance: facility.definition?.appearance ?? .unknown,
                                     title: facility.name)
             if facility.isUnusable {
@@ -482,12 +498,14 @@ final class ParkScene: SKScene {
             guard sceneryNodes[item.id] == nil else { continue }
 
             let appearance = item.definition?.appearance ?? .unknown
-            let pixelSize = CGSize(width: CGFloat(item.size.width) * Self.tileSide,
-                                   height: CGFloat(item.size.height) * Self.tileSide)
+            let drawnSize = item.size.rotated(by: item.rotation)
+            let pixelSize = CGSize(width: CGFloat(drawnSize.width) * Self.tileSide,
+                                   height: CGFloat(drawnSize.height) * Self.tileSide)
             let node = BuildingNode(
                 texture: BuildingArtwork.bodyTexture(for: appearance, size: pixelSize),
                 size: pixelSize,
                 title: nil)
+            node.setRotation(quarterTurns: item.rotation)
             node.position = CGPoint(
                 x: (CGFloat(item.origin.x) + CGFloat(item.size.width) / 2) * Self.tileSide,
                 y: (CGFloat(item.origin.y) + CGFloat(item.size.height) / 2) * Self.tileSide)
@@ -505,6 +523,7 @@ final class ParkScene: SKScene {
     private func buildingNode(for id: UUID,
                               size: GridSize,
                               origin: GridCoord,
+                              rotation: Int,
                               appearance: BuildingAppearance,
                               title: String) -> BuildingNode {
         if let existing = buildingNodes[id] {
@@ -512,12 +531,17 @@ final class ParkScene: SKScene {
             return existing
         }
 
-        let pixelSize = CGSize(width: CGFloat(size.width) * Self.tileSide,
-                               height: CGFloat(size.height) * Self.tileSide)
+        // `size` is the ground the building takes up, already turned. The
+        // artwork is drawn the way round it was designed and then rotated, so
+        // a turned building is not a squashed one.
+        let drawnSize = size.rotated(by: rotation)
+        let pixelSize = CGSize(width: CGFloat(drawnSize.width) * Self.tileSide,
+                               height: CGFloat(drawnSize.height) * Self.tileSide)
         let node = BuildingNode(texture: BuildingArtwork.bodyTexture(for: appearance, size: pixelSize),
                                 size: pixelSize,
                                 title: title)
         node.configureMotion(appearance: appearance, buildingSize: pixelSize)
+        node.setRotation(quarterTurns: rotation)
         node.position = CGPoint(x: (CGFloat(origin.x) + CGFloat(size.width) / 2) * Self.tileSide,
                                 y: (CGFloat(origin.y) + CGFloat(size.height) / 2) * Self.tileSide)
         buildingLayer.addChild(node)
@@ -809,7 +833,7 @@ final class ParkScene: SKScene {
 
         let size = controller.build.isDemolishing
             ? GridSize.single
-            : (controller.selectedDefinition?.footprint ?? .single)
+            : controller.ghostFootprint
 
         let pixelSize = CGSize(width: CGFloat(size.width) * Self.tileSide,
                                height: CGFloat(size.height) * Self.tileSide)

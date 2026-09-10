@@ -54,6 +54,19 @@ protocol BuildableDefinition {
 }
 
 extension BuildableDefinition {
+    /// The ground this takes up once turned. Occupancy, access tiles and the
+    /// placement preview all work from this rather than from the raw
+    /// footprint, so rotation needs no special cases anywhere else.
+    func footprint(rotatedBy quarterTurns: Int) -> GridSize {
+        footprint.rotated(by: quarterTurns)
+    }
+
+    /// Turning a one-tile object achieves nothing, and turning terrain is
+    /// meaningless, so the build menu only offers it where it does something.
+    var canRotate: Bool {
+        !(self is TerrainDefinition) && footprint.width != footprint.height
+    }
+
     var requiresPathAccess: Bool { true }
     var requiresTrackAccess: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }

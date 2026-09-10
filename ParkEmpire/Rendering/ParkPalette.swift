@@ -50,6 +50,9 @@ enum ParkPalette {
     static let bin = UIColor(red: 0.45, green: 0.50, blue: 0.55, alpha: 1)
     static let litter = UIColor(red: 0.58, green: 0.47, blue: 0.30, alpha: 1)
     static let broken = UIColor(red: 0.88, green: 0.24, blue: 0.22, alpha: 1)
+    /// Behind a building's name. Dark and translucent so a name stays
+    /// legible over pale artwork and over another building's corner.
+    static let labelChip = UIColor(red: 0.10, green: 0.13, blue: 0.19, alpha: 0.78)
     static let badge = UIColor(red: 0.15, green: 0.17, blue: 0.22, alpha: 0.9)
 
     static let janitor = UIColor(red: 0.30, green: 0.72, blue: 0.62, alpha: 1)

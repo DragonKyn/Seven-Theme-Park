@@ -8,6 +8,8 @@ struct SceneryItem: Codable, Identifiable {
     let definitionID: String
     var origin: GridCoord
     var size: GridSize
+    /// Quarter turns clockwise, 0 to 3.
+    var rotation: Int = 0
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
 
@@ -23,5 +25,6 @@ extension SceneryItem {
         definitionID = container.value(.definitionID, or: "")
         origin = container.value(.origin, or: GridCoord(0, 0))
         size = container.value(.size, or: .single)
+        rotation = container.value(.rotation, or: 0)
     }
 }
