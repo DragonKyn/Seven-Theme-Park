@@ -120,6 +120,7 @@ final class GameController: ObservableObject {
     func enterBuildMode(category: BuildCategory) {
         build.isActive = true
         build.isDemolishing = false
+        build.pending = nil
         build.category = category
         if selectedDefinition?.category != category {
             build.selectedID = GameContent.buildables(in: category, unlockLevel: state.unlockLevel).first?.id
@@ -131,15 +132,12 @@ final class GameController: ObservableObject {
         build = BuildState()
     }
 
-    /// Whether turning the current selection would change anything.
+    /// Whether turning would change anything. Only ever offered on a
+    /// placement that is waiting to be confirmed, because that is the only
+    /// point at which the player can see what they are turning.
     var canRotate: Bool {
-        build.isActive && !build.isDemolishing && (selectedDefinition?.canRotate ?? false)
-    }
-
-    func rotateBuild() {
-        guard canRotate else { return }
-        build.rotation = (build.rotation + 1) % 4
-        updateGhost(at: build.ghost)
+        guard build.isActive, !build.isDemolishing, build.pending != nil else { return false }
+        return pendingDefinition?.canRotate ?? false
     }
 
     /// The ground the current selection would take up, turned. The preview and
@@ -152,6 +150,7 @@ final class GameController: ObservableObject {
     func select(definitionID: String) {
         build.selectedID = definitionID
         build.isDemolishing = false
+        build.pending = nil
         if !canDraw { build.isDrawing = false }
     }
 
@@ -169,6 +168,7 @@ final class GameController: ObservableObject {
     func enterDemolishMode() {
         build.isActive = true
         build.isDemolishing = true
+        build.pending = nil
         build.isDrawing = false
         build.selectedID = nil
     }
@@ -200,6 +200,66 @@ final class GameController: ObservableObject {
         build.ghostReason = check.reason
     }
 
+    // MARK: - Placement, in two steps
+
+    /// Whether this is something worth looking at before paying for it.
+    ///
+    /// A tree or a bin is one tile, cheap, and has no orientation to get
+    /// wrong, so those still go down on a tap. Anything bigger or anything
+    /// that can be turned is worth seeing in place first: getting a ride the
+    /// wrong way round and paying for the privilege is not a decision anybody
+    /// meant to make.
+    private func needsConfirmation(_ definition: BuildableDefinition) -> Bool {
+        guard !(definition is TerrainDefinition) else { return false }
+        return definition.canRotate || definition.footprint.tileCount > 1
+    }
+
+    var pendingDefinition: BuildableDefinition? {
+        guard let pending = build.pending else { return nil }
+        return GameContent.allBuildables.first { $0.id == pending.definitionID }
+    }
+
+    /// Whether the pending placement would be allowed, and why not if it
+    /// would not. Checked continuously, because the park can change under it.
+    var pendingCheck: PlacementCheck? {
+        guard let pending = build.pending, let definition = pendingDefinition else { return nil }
+        return state.placementCheck(for: definition,
+                                    at: pending.origin,
+                                    rotation: pending.rotation)
+    }
+
+    /// Ground the pending placement would take up.
+    var pendingFootprint: GridSize {
+        guard let pending = build.pending, let definition = pendingDefinition else { return .single }
+        return definition.footprint(rotatedBy: pending.rotation)
+    }
+
+    func rotatePending() {
+        guard var pending = build.pending,
+              let definition = pendingDefinition,
+              definition.canRotate else { return }
+        pending.rotation = (pending.rotation + 1) % 4
+        // Carried into the next placement, so a row of benches all face the
+        // same way without being turned one at a time.
+        build.rotation = pending.rotation
+        build.pending = pending
+    }
+
+    @discardableResult
+    func confirmPending() -> Bool {
+        guard let pending = build.pending, let definition = pendingDefinition else { return false }
+        guard state.place(definition, at: pending.origin, rotation: pending.rotation) else {
+            return false
+        }
+        build.pending = nil
+        refreshUI()
+        return true
+    }
+
+    func cancelPending() {
+        build.pending = nil
+    }
+
     /// A tap on the map. In build mode it places or removes; otherwise it
     /// inspects whatever is under the finger.
     func handleTap(at coord: GridCoord, guestID: UUID?, staffID: UUID? = nil) {
@@ -207,8 +267,16 @@ final class GameController: ObservableObject {
             if build.isDemolishing {
                 requestDemolition(at: coord)
             } else if let definition = selectedDefinition {
-                _ = state.place(definition, at: coord, rotation: build.rotation)
-                refreshUI()
+                if needsConfirmation(definition) {
+                    // Lines up the placement and waits. Nothing is charged
+                    // until the player has seen it standing there.
+                    build.pending = PendingPlacement(definitionID: definition.id,
+                                                     origin: coord,
+                                                     rotation: build.rotation)
+                } else {
+                    _ = state.place(definition, at: coord, rotation: build.rotation)
+                    refreshUI()
+                }
             }
             updateGhost(at: coord)
             return
@@ -531,10 +599,20 @@ struct BuildState {
     /// Quarter turns clockwise applied to whatever is about to be placed.
     /// Kept across placements, so a row of benches all face the same way.
     var rotation = 0
+    /// A placement lined up and waiting to be confirmed. Nothing has been
+    /// built or charged while this is set.
+    var pending: PendingPlacement?
     var selectedID: String?
     var ghost: GridCoord?
     var ghostValid = false
     var ghostReason: String?
+}
+
+/// Somewhere a building is about to go, once the player says so.
+struct PendingPlacement: Equatable {
+    let definitionID: String
+    var origin: GridCoord
+    var rotation: Int
 }
 
 struct PendingDemolition: Identifiable {

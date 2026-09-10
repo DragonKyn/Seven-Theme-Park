@@ -19,6 +19,18 @@ struct BuildMenuView: View {
     }
 
     var body: some View {
+        Group {
+            if let definition = controller.pendingDefinition {
+                PlacementConfirmBar(controller: controller, definition: definition)
+                    .padding(10)
+                    .panelBackground()
+            } else {
+                catalogue
+            }
+        }
+    }
+
+    private var catalogue: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 ForEach(BuildCategory.allCases) { category in
@@ -38,26 +50,6 @@ struct BuildMenuView: View {
                 }
 
                 Spacer(minLength: 0)
-
-                if controller.canRotate {
-                    Button {
-                        controller.rotateBuild()
-                    } label: {
-                        Label("Turn", systemImage: "rotate.right")
-                            .labelStyle(.iconOnly)
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 40, height: 32)
-                            .foregroundStyle(controller.build.rotation == 0
-                                             ? Theme.textPrimary
-                                             : Color.black)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(controller.build.rotation == 0
-                                          ? Theme.control
-                                          : Theme.accent)
-                            )
-                    }
-                }
 
                 if controller.canDraw {
                     Button {
@@ -148,10 +140,7 @@ struct BuildMenuView: View {
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
         }
-        if controller.canRotate {
-            return "Tap to place. Turn rotates it a quarter turn. Buildings must touch a walkway."
-        }
-        return "Tap the map to place. Drag moves the map. Buildings must touch a walkway."
+        return "Tap the map to line something up. You can turn it and check it before paying."
     }
 }
 
@@ -218,3 +207,118 @@ private struct BuildItemCard: View {
     /// high-density screen.
     private static let thumbnailSide: CGFloat = 114
 }
+
+/// Shown while a placement is lined up but not yet paid for: what it is,
+/// what it costs, which way round it is, and the three things the player can
+/// do about it.
+struct PlacementConfirmBar: View {
+    @ObservedObject var controller: GameController
+    let definition: BuildableDefinition
+
+    private var check: PlacementCheck? { controller.pendingCheck }
+    private var isValid: Bool { check?.isValid ?? false }
+    private var affordable: Bool { controller.hud.cash >= definition.purchasePrice }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 9) {
+                thumbnail
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(definition.displayName)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        Text(CurrencyFormatter.short(definition.purchasePrice))
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .foregroundStyle(affordable ? Theme.money : Theme.danger)
+                        Text("\(controller.pendingFootprint.width)×\(controller.pendingFootprint.height) tiles")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                if definition.canRotate {
+                    Button {
+                        controller.rotatePending()
+                    } label: {
+                        VStack(spacing: 1) {
+                            Image(systemName: "rotate.right")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("Turn")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                        }
+                        .frame(width: 46, height: 40)
+                        .foregroundStyle(Color.black)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Theme.accentWarm)
+                        )
+                    }
+                }
+            }
+
+            Text(hint)
+                .font(.caption2)
+                .foregroundStyle(isValid ? Theme.textSecondary : Theme.danger)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                Button {
+                    controller.cancelPending()
+                } label: {
+                    Text("Cancel")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Theme.control)
+                        )
+                        .foregroundStyle(Theme.textPrimary)
+                }
+
+                Button {
+                    controller.confirmPending()
+                } label: {
+                    Label("Build it", systemImage: "hammer.fill")
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(isValid ? Theme.accent : Theme.control)
+                        )
+                        .foregroundStyle(isValid ? Color.black : Theme.textSecondary)
+                }
+                .disabled(!isValid)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let appearance = definition.previewAppearance {
+            Image(uiImage: BuildingArtwork.previewImage(
+                for: appearance,
+                size: CGSize(width: 120, height: 120)))
+                .resizable()
+                .frame(width: 40, height: 40)
+        } else {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Theme.control)
+                .frame(width: 40, height: 40)
+        }
+    }
+
+    private var hint: String {
+        if let reason = check?.reason { return reason }
+        return "Tap the map to move it. Turn it until it faces the way you want, then build it."
+    }
+}
+

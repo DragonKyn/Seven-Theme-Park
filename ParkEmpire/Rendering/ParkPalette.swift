@@ -19,6 +19,9 @@ enum ParkPalette {
     static let shop = UIColor(red: 0.92, green: 0.62, blue: 0.78, alpha: 1)
 
     static let ghostValid = UIColor(red: 0.30, green: 0.85, blue: 0.45, alpha: 0.55)
+    /// Round a placement that is lined up and legal. Brighter than the plain
+    /// ghost fill, because this one is asking for an answer.
+    static let previewValid = UIColor(red: 0.36, green: 1.00, blue: 0.58, alpha: 1)
     static let ghostInvalid = UIColor(red: 0.92, green: 0.30, blue: 0.30, alpha: 0.55)
 
     static let guestHappy = UIColor(red: 0.20, green: 0.72, blue: 0.35, alpha: 1)

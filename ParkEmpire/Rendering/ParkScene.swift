@@ -67,6 +67,10 @@ final class ParkScene: SKScene {
     /// further out, because the camera scales the world down as it zooms out.
     private static let labelCutoffScale: CGFloat = 1.35
     private var ghostNode: SKSpriteNode?
+    /// The building that is lined up but not yet paid for, and the frame
+    /// round the ground it would occupy.
+    private var previewNode: SKSpriteNode?
+    private var previewOutline: SKSpriteNode?
     private var selectionNode: SKSpriteNode?
 
     private var renderedMapGeneration = -1
@@ -896,6 +900,19 @@ final class ParkScene: SKScene {
     // MARK: - Build preview
 
     private func syncGhost(controller: GameController) {
+        // A placement waiting to be confirmed is drawn as the thing itself,
+        // the way round it would actually stand. A tinted rectangle told the
+        // player where a building would go but nothing about which way it was
+        // facing, which is how a ride ends up backwards and paid for.
+        if let pending = controller.build.pending,
+           let definition = controller.pendingDefinition {
+            syncPendingPreview(pending: pending, definition: definition, controller: controller)
+            ghostNode?.isHidden = true
+            return
+        }
+
+        hidePendingPreview()
+
         guard controller.build.isActive,
               let coord = controller.build.ghost else {
             ghostNode?.isHidden = true
@@ -925,6 +942,78 @@ final class ParkScene: SKScene {
         node.size = pixelSize
         node.position = CGPoint(x: (CGFloat(coord.x) + CGFloat(size.width) / 2) * Self.tileSide,
                                 y: (CGFloat(coord.y) + CGFloat(size.height) / 2) * Self.tileSide)
+    }
+
+    /// Draws the building that is waiting to be confirmed, plus a frame round
+    /// the ground it would take up, coloured by whether it would be allowed.
+    private func syncPendingPreview(pending: PendingPlacement,
+                                    definition: BuildableDefinition,
+                                    controller: GameController) {
+        let footprint = controller.pendingFootprint
+        let drawn = footprint.rotated(by: pending.rotation)
+        let groundSize = CGSize(width: CGFloat(footprint.width) * Self.tileSide,
+                                height: CGFloat(footprint.height) * Self.tileSide)
+        let drawnSize = CGSize(width: CGFloat(drawn.width) * Self.tileSide,
+                               height: CGFloat(drawn.height) * Self.tileSide)
+        let centre = CGPoint(x: (CGFloat(pending.origin.x) + CGFloat(footprint.width) / 2) * Self.tileSide,
+                             y: (CGFloat(pending.origin.y) + CGFloat(footprint.height) / 2) * Self.tileSide)
+        let valid = controller.pendingCheck?.isValid ?? false
+
+        let art: SKSpriteNode
+        if let existing = previewNode {
+            art = existing
+        } else {
+            art = SKSpriteNode()
+            art.zPosition = 6
+            art.alpha = 0.92
+            overlayLayer.addChild(art)
+            previewNode = art
+        }
+
+        if let appearance = definition.previewAppearance {
+            art.texture = BuildingArtwork.bodyTexture(for: appearance, size: drawnSize)
+        } else {
+            art.texture = SpriteFactory.buildingTexture(colour: ParkPalette.ghostValid, size: drawnSize)
+        }
+        art.size = drawnSize
+        art.zRotation = -CGFloat(((pending.rotation % 4) + 4) % 4) * .pi / 2
+        art.position = centre
+        art.isHidden = false
+        // A placement that cannot be made is greyed as well as outlined, so it
+        // reads as refused even where the frame is hard to see.
+        art.colorBlendFactor = valid ? 0 : 0.55
+        art.color = ParkPalette.ghostInvalid
+
+        let frame: SKSpriteNode
+        if let existing = previewOutline {
+            frame = existing
+        } else {
+            frame = SKSpriteNode()
+            frame.zPosition = 7
+            overlayLayer.addChild(frame)
+            previewOutline = frame
+
+            // A slow pulse, so an unconfirmed placement never gets mistaken
+            // for something already built.
+            let grow = SKAction.scale(to: 1.04, duration: 0.6)
+            let shrink = SKAction.scale(to: 1.0, duration: 0.6)
+            grow.timingMode = .easeInEaseOut
+            shrink.timingMode = .easeInEaseOut
+            frame.run(.repeatForever(.sequence([grow, shrink])))
+        }
+
+        frame.texture = SpriteFactory.outlineTexture(
+            colour: valid ? ParkPalette.previewValid : ParkPalette.ghostInvalid,
+            size: groundSize,
+            lineWidth: 4)
+        frame.size = groundSize
+        frame.position = centre
+        frame.isHidden = false
+    }
+
+    private func hidePendingPreview() {
+        previewNode?.isHidden = true
+        previewOutline?.isHidden = true
     }
 
     // MARK: - Selection highlight

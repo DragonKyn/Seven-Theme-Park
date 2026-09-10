@@ -52,6 +52,7 @@ struct GameView: View {
             }
             .animation(.easeInOut(duration: 0.18), value: controller.build.isActive)
             .animation(.easeInOut(duration: 0.18), value: controller.selection?.identity)
+            .animation(.easeInOut(duration: 0.18), value: controller.build.pending)
 
             if let award = controller.celebration {
                 CelebrationView(award: award) { controller.dismissCelebration() }
