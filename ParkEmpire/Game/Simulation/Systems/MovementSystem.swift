@@ -101,7 +101,8 @@ final class MovementSystem {
                 state.guests[guestIndex].think(
                     ThoughtCatalog.queueTooLong(state.attractions[attractionIndex].name),
                     mood: .negative,
-                    at: now)
+                    at: now,
+                    icon: .queue)
                 sendExploring(guestIndex: guestIndex, state: state, now: now)
                 return
             }
@@ -133,7 +134,8 @@ final class MovementSystem {
                 state.guests[guestIndex].think(
                     ThoughtCatalog.queueTooLong(state.facilities[facilityIndex].name),
                     mood: .negative,
-                    at: now)
+                    at: now,
+                    icon: .queue)
                 sendExploring(guestIndex: guestIndex, state: state, now: now)
                 return
             }

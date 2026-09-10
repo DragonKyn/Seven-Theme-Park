@@ -154,11 +154,11 @@ final class FacilitySystem {
         let (text, mood) = ThoughtCatalog.priceReaction(item: definition.displayName.lowercased(),
                                                         price: price,
                                                         willingness: willingness)
-        state.guests[guestIndex].think(text, mood: mood, at: now)
+        state.guests[guestIndex].think(text, mood: mood, at: now, icon: .money)
 
         guard guest.cash >= price else {
             let (outOfMoney, outOfMoneyMood) = ThoughtCatalog.outOfMoney()
-            state.guests[guestIndex].think(outOfMoney, mood: outOfMoneyMood, at: now)
+            state.guests[guestIndex].think(outOfMoney, mood: outOfMoneyMood, at: now, icon: .money)
             return false
         }
 

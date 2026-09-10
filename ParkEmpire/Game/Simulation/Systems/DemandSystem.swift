@@ -115,6 +115,7 @@ final class DemandSystem {
             walkSpeed: (Balance.guestWalkSpeed + speedJitter) * speedScale,
             plannedVisitLength: Balance.visitLengthBase + visitJitter
         )
+        guest.appearance = GuestAppearance.random(for: age, using: &state.rng)
 
         guest.nextDecisionAt = now + 1
 
@@ -131,7 +132,7 @@ final class DemandSystem {
             parkRating: state.parkRating)
         let willingness = GuestEconomics.admissionWillingness(price: price, acceptable: acceptable)
         let (text, mood) = ThoughtCatalog.admission(price: price, willingness: willingness)
-        guest.think(text, mood: mood, at: now)
+        guest.think(text, mood: mood, at: now, icon: .money)
 
         state.guests.append(guest)
         state.statistics.guestsAdmittedToday += 1

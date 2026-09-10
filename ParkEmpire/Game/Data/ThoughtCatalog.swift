@@ -4,15 +4,18 @@ import Foundation
 /// so reading a guest's thought list explains what the park is doing to them.
 enum ThoughtCatalog {
 
-    static func need(hunger: Double, thirst: Double, bathroom: Double, energy: Double) -> (String, ThoughtMood)? {
-        if bathroom > 90 { return ("I really need a restroom.", .negative) }
-        if thirst > 85 { return ("I'm so thirsty.", .negative) }
-        if hunger > 85 { return ("I'm starving.", .negative) }
-        if energy < 18 { return ("My feet are killing me.", .negative) }
-        if bathroom > 70 { return ("I should find a restroom soon.", .neutral) }
-        if hunger > 70 { return ("I'm getting hungry.", .neutral) }
-        if thirst > 70 { return ("I could go for a drink.", .neutral) }
-        if energy < 32 { return ("I need somewhere to sit.", .neutral) }
+    static func need(hunger: Double,
+                     thirst: Double,
+                     bathroom: Double,
+                     energy: Double) -> (String, ThoughtMood, ThoughtIcon)? {
+        if bathroom > 90 { return ("I really need a restroom.", .negative, .restroom) }
+        if thirst > 85 { return ("I'm so thirsty.", .negative, .drink) }
+        if hunger > 85 { return ("I'm starving.", .negative, .food) }
+        if energy < 18 { return ("My feet are killing me.", .negative, .tired) }
+        if bathroom > 70 { return ("I should find a restroom soon.", .neutral, .restroom) }
+        if hunger > 70 { return ("I'm getting hungry.", .neutral, .food) }
+        if thirst > 70 { return ("I could go for a drink.", .neutral, .drink) }
+        if energy < 32 { return ("I need somewhere to sit.", .neutral, .tired) }
         return nil
     }
 

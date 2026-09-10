@@ -127,7 +127,7 @@ final class AttractionSystem {
         state.guests[guestIndex].recentAttractions = recent
 
         let (text, mood) = ThoughtCatalog.afterRide(attractionName, satisfaction: satisfaction)
-        state.guests[guestIndex].think(text, mood: mood, at: now)
+        state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
 
         return satisfaction
     }

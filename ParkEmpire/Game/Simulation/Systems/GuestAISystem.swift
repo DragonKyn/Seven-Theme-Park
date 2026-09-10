@@ -101,16 +101,16 @@ final class GuestAISystem {
         guard now - lastThought > 22 else { return }
         let guest = state.guests[index]
 
-        if let (text, mood) = ThoughtCatalog.need(hunger: guest.hunger,
-                                                  thirst: guest.thirst,
-                                                  bathroom: guest.bathroomNeed,
-                                                  energy: guest.energy) {
-            state.guests[index].think(text, mood: mood, at: now)
+        if let (text, mood, icon) = ThoughtCatalog.need(hunger: guest.hunger,
+                                                        thirst: guest.thirst,
+                                                        bathroom: guest.bathroomNeed,
+                                                        energy: guest.energy) {
+            state.guests[index].think(text, mood: mood, at: now, icon: icon)
             return
         }
         let cleanliness = state.map.cleanlinessScore
         if cleanliness < 0.55, guest.personality.cleanlinessSensitivity > 45 {
-            state.guests[index].think("There's rubbish everywhere.", mood: .negative, at: now)
+            state.guests[index].think("There's rubbish everywhere.", mood: .negative, at: now, icon: .dirty)
             return
         }
         if cleanliness > 0.97, state.map.litteredTiles.isEmpty, guest.happiness > 60 {
@@ -138,7 +138,7 @@ final class GuestAISystem {
         state.guests[index].activity = .exploring
         state.guests[index].nextDecisionAt = now
         state.guests[index].adjustHappiness(-Balance.happinessQueueAbandonPenalty)
-        state.guests[index].think(ThoughtCatalog.abandonedQueue(name), mood: .negative, at: now)
+        state.guests[index].think(ThoughtCatalog.abandonedQueue(name), mood: .negative, at: now, icon: .queue)
     }
 
     /// Removes a guest from whichever queue it is standing in.
@@ -408,7 +408,7 @@ final class GuestAISystem {
             if let attraction = state.attraction(id: id), let definition = attraction.definition {
                 let (text, mood) = ThoughtCatalog.joinedQueue(attraction.name,
                                                              wait: attraction.estimatedWait(definition: definition))
-                state.guests[guestIndex].think(text, mood: mood, at: now)
+                state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
             }
         case .exit:
             if let reason = option.departureReason {

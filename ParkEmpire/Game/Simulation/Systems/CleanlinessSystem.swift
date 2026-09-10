@@ -54,7 +54,7 @@ final class CleanlinessSystem {
         state.guests[index].trashCarriedFor = 0
 
         if !hasUsableBin {
-            state.guests[index].think("There's nowhere to put my rubbish.", mood: .negative, at: now)
+            state.guests[index].think("There's nowhere to put my rubbish.", mood: .negative, at: now, icon: .dirty)
         }
     }
 

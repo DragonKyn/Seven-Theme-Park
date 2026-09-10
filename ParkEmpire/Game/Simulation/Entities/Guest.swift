@@ -47,6 +47,21 @@ struct GuestThought: Codable, Equatable, Identifiable {
     var mood: ThoughtMood
     /// Sim time the thought occurred, used to age thoughts out of the panel.
     var simTime: Double
+    /// What the thought is about, so it can be shown as a bubble over the
+    /// guest without words.
+    var icon: ThoughtIcon = .general
+}
+
+extension GuestThought {
+    /// Lenient decoding so thoughts saved before bubbles existed still load.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = container.value(.id, or: UUID())
+        text = container.value(.text, or: "")
+        mood = container.value(.mood, or: .neutral)
+        simTime = container.value(.simTime, or: 0)
+        icon = container.value(.icon, or: .general)
+    }
 }
 
 /// Randomised traits that make two guests in identical circumstances behave
@@ -80,6 +95,7 @@ struct Guest: Codable, Identifiable {
     var name: String
     var ageCategory: AgeCategory
     var personality: GuestPersonality
+    var appearance: GuestAppearance = .unknown
 
     // Money
     var cash: Double
@@ -128,10 +144,13 @@ struct Guest: Codable, Identifiable {
     }
 
     /// Adds a thought, keeping only the most recent handful.
-    mutating func think(_ text: String, mood: ThoughtMood, at simTime: Double) {
+    mutating func think(_ text: String,
+                        mood: ThoughtMood,
+                        at simTime: Double,
+                        icon: ThoughtIcon = .general) {
         // Avoid repeating the same thought back-to-back.
         if thoughts.last?.text == text { return }
-        thoughts.append(GuestThought(text: text, mood: mood, simTime: simTime))
+        thoughts.append(GuestThought(text: text, mood: mood, simTime: simTime, icon: icon))
         if thoughts.count > 8 {
             thoughts.removeFirst(thoughts.count - 8)
         }
@@ -149,6 +168,7 @@ extension Guest {
         id = container.value(.id, or: UUID())
         name = container.value(.name, or: "Guest")
         ageCategory = container.value(.ageCategory, or: .adult)
+        appearance = container.value(.appearance, or: .unknown)
         personality = container.value(.personality,
                                       or: GuestPersonality(thrillPreference: 50,
                                                            patience: 50,

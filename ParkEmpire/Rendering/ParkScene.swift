@@ -29,10 +29,17 @@ final class ParkScene: SKScene {
     private var buildingNodes: [UUID: BuildingNode] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
-    /// Which of the three mood textures each guest sprite is currently showing,
-    /// so the texture is only swapped when the mood actually changes.
-    private var guestMoodIndex: [UUID: Int] = [:]
-    private var guestTextures: [SKTexture] = []
+    /// Which mood each guest sprite is currently drawn with, so the texture is
+    /// only swapped when the mood actually changes.
+    private var guestMood: [UUID: GuestMood] = [:]
+    /// The last thought each guest has already had a bubble for.
+    private var shownThought: [UUID: UUID] = [:]
+    /// Bubbles currently on screen. Held so the cap can be enforced without a
+    /// counter that a completion block would have to decrement.
+    private var bubbleNodes: [SKNode] = []
+    /// Ceiling on bubbles on screen at once. A park where every guest is
+    /// thinking out loud is noise rather than information.
+    private static let maxBubbles = 10
     private var staffNodes: [UUID: SKSpriteNode] = [:]
     private var staffTextures: [StaffRole: SKTexture] = [:]
     private var litterNodes: [GridCoord: SKSpriteNode] = [:]
@@ -426,30 +433,28 @@ final class ParkScene: SKScene {
     // MARK: - Guests
 
     private func syncGuests(state: GameState) {
-        let diameter = Self.tileSide * 0.42
-        if guestTextures.isEmpty {
-            guestTextures = [
-                SpriteFactory.circleTexture(colour: ParkPalette.guestUnhappy, diameter: diameter),
-                SpriteFactory.circleTexture(colour: ParkPalette.guestNeutral, diameter: diameter),
-                SpriteFactory.circleTexture(colour: ParkPalette.guestHappy, diameter: diameter)
-            ]
-        }
+        let height = Self.tileSide * 0.58
+        let guestSize = CGSize(width: height * GuestArtwork.aspect, height: height)
+        let now = state.clock.simTime
 
         var seen = Set<UUID>()
 
         for guest in state.guests where guest.isActive {
             seen.insert(guest.id)
-            let mood = moodIndex(for: guest.happiness)
+            let mood = GuestMood(happiness: guest.happiness)
 
             let node: SKSpriteNode
             if let existing = guestNodes[guest.id] {
                 node = existing
             } else {
-                node = SKSpriteNode(texture: guestTextures[mood])
-                node.size = CGSize(width: diameter, height: diameter)
+                node = SKSpriteNode(texture: GuestArtwork.texture(for: guest.appearance,
+                                                                  age: guest.ageCategory,
+                                                                  mood: mood,
+                                                                  height: height))
+                node.size = guestSize
                 guestLayer.addChild(node)
                 guestNodes[guest.id] = node
-                guestMoodIndex[guest.id] = mood
+                guestMood[guest.id] = mood
             }
 
             // Guests inside a ride or a building are not drawn.
@@ -459,9 +464,12 @@ final class ParkScene: SKScene {
             }
             node.isHidden = false
 
-            if guestMoodIndex[guest.id] != mood {
-                guestMoodIndex[guest.id] = mood
-                node.texture = guestTextures[mood]
+            if guestMood[guest.id] != mood {
+                guestMood[guest.id] = mood
+                node.texture = GuestArtwork.texture(for: guest.appearance,
+                                                    age: guest.ageCategory,
+                                                    mood: mood,
+                                                    height: height)
             }
 
             var offset = CGPoint.zero
@@ -473,21 +481,52 @@ final class ParkScene: SKScene {
 
             node.position = CGPoint(x: (guest.position.x + offset.x) * Self.tileSide,
                                     y: (guest.position.y + offset.y) * Self.tileSide)
+
+            showBubbleIfNeeded(for: guest, on: node, now: now)
         }
 
         for (id, node) in guestNodes where !seen.contains(id) {
             node.removeFromParent()
             guestNodes.removeValue(forKey: id)
-            guestMoodIndex.removeValue(forKey: id)
+            guestMood.removeValue(forKey: id)
+            shownThought.removeValue(forKey: id)
         }
     }
 
-    private func moodIndex(for happiness: Double) -> Int {
-        switch happiness {
-        case ..<40: return 0
-        case ..<70: return 1
-        default: return 2
-        }
+    /// Pops a bubble over a guest who has just thought something new.
+    ///
+    /// Only fresh thoughts qualify, so loading a save does not fire a bubble
+    /// over every guest at once, and only a handful are ever on screen
+    /// together: a park where everybody is thinking out loud reads as noise.
+    private func showBubbleIfNeeded(for guest: Guest, on node: SKSpriteNode, now: Double) {
+        guard let thought = guest.thoughts.last else { return }
+        guard shownThought[guest.id] != thought.id else { return }
+        shownThought[guest.id] = thought.id
+
+        bubbleNodes.removeAll { $0.parent == nil }
+        guard now - thought.simTime < 2.5, bubbleNodes.count < Self.maxBubbles else { return }
+
+        let side = Self.tileSide * 0.62
+        let bubble = SKSpriteNode(texture: GuestArtwork.bubbleTexture(icon: thought.icon,
+                                                                     mood: thought.mood,
+                                                                     side: side))
+        bubble.size = CGSize(width: side, height: side)
+        bubble.position = CGPoint(x: side * 0.34, y: node.size.height * 0.55 + side * 0.42)
+        bubble.zPosition = 6
+        bubble.setScale(0.25)
+        bubble.alpha = 0
+        node.addChild(bubble)
+        bubbleNodes.append(bubble)
+
+        let pop = SKAction.scale(to: 1.0, duration: 0.18)
+        pop.timingMode = .easeOut
+        let appear = SKAction.group([pop, .fadeIn(withDuration: 0.14)])
+        let leave = SKAction.group([.fadeOut(withDuration: 0.35),
+                                    .moveBy(x: 0, y: side * 0.30, duration: 0.35)])
+        bubble.run(.sequence([appear,
+                              .wait(forDuration: 2.4),
+                              leave,
+                              .removeFromParent()]))
     }
 
     // MARK: - Litter
