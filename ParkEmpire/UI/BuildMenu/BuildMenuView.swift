@@ -71,19 +71,27 @@ struct BuildMenuView: View {
                     }
                 }
 
+                // Icon only, and the same size as every other button on the
+                // row. Five category buttons plus a Draw toggle plus a worded
+                // Remove button is wider than a phone, and the label was
+                // wrapping under its own icon.
                 Button {
                     controller.enterDemolishMode()
                 } label: {
                     Label("Remove", systemImage: "trash.fill")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .padding(.horizontal, 10)
-                        .frame(height: 32)
-                        .foregroundStyle(controller.build.isDemolishing ? Color.black : Theme.textPrimary)
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(width: 40, height: 32)
+                        // Red at rest as well as when active, so the one
+                        // destructive button on the row does not look like
+                        // another category to try.
+                        .foregroundStyle(controller.build.isDemolishing ? Color.black : Theme.danger)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .fill(controller.build.isDemolishing ? Theme.danger : Theme.control)
                         )
                 }
+                .accessibilityLabel("Remove")
             }
 
             if !controller.build.isDemolishing {
