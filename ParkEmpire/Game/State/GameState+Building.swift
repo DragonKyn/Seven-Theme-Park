@@ -51,7 +51,9 @@ extension GameState {
                 price: facilityDefinition.defaultPrice
             )
             facilities.append(facility)
-            map.setBuilding(facility.id, on: facility.rect.coords)
+            map.setBuilding(facility.id,
+                            on: facility.rect.coords,
+                            blocking: !facilityDefinition.kind.isFurniture)
 
         case let elementDefinition as CoasterElementDefinition:
             let element = TrackElement(

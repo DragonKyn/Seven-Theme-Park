@@ -13,6 +13,13 @@ enum FacilityKind: String, Codable {
         self == .food || self == .drink || self == .souvenir
     }
 
+    /// Park furniture: it stands on the walkway rather than beside it, and
+    /// guests walk round it. A bench on the grass behind a path is a bench
+    /// nobody sits on, which is not what a bench is for.
+    var isFurniture: Bool {
+        self == .bench || self == .bin
+    }
+
     /// Kinds that get dirty or fill up and need a janitor's attention.
     var needsServicing: Bool {
         self == .bathroom || self == .bin
@@ -63,6 +70,16 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
 
     var category: BuildCategory {
         kind.sellsGoods ? .shop : .facility
+    }
+
+    /// Furniture goes on the path. Everything else goes beside it.
+    var bedTerrain: TerrainType? {
+        kind.isFurniture ? .path : nil
+    }
+
+    /// Furniture is already on the walkway, so there is nothing to touch.
+    var requiresPathAccess: Bool {
+        !kind.isFurniture
     }
 
     var previewAppearance: BuildingAppearance? { appearance }

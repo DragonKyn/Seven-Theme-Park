@@ -70,7 +70,7 @@ struct ParkMap: Codable {
     func isAreaBuildable(_ rect: GridRect) -> Bool {
         for coord in rect.coords {
             guard let tile = tile(at: coord) else { return false }
-            if tile.terrain != .grass || tile.buildingID != nil { return false }
+            if tile.terrain != .grass || tile.isOccupied { return false }
         }
         return true
     }
@@ -101,7 +101,9 @@ struct ParkMap: Codable {
         generation += 1
     }
 
-    mutating func setBuilding(_ id: UUID?, on coords: [GridCoord]) {
+    /// Claims tiles for a building.  is false for park furniture,
+    /// which stands on the walkway without closing it.
+    mutating func setBuilding(_ id: UUID?, on coords: [GridCoord], blocking: Bool = true) {
         var changed = false
         for coord in coords where isInside(coord) {
             let index = linearIndex(of: coord)
@@ -109,6 +111,9 @@ struct ParkMap: Codable {
                 tiles[index].buildingID = id
                 changed = true
             }
+            // Cleared tiles go back to blocking, so the flag never outlives
+            // the thing that set it.
+            tiles[index].blocksMovement = id == nil ? true : blocking
         }
         if changed { generation += 1 }
     }

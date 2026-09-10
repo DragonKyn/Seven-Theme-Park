@@ -338,7 +338,7 @@ enum GameContent {
         AttractionDefinition(
             id: "ride.fishingboats",
             displayName: "Fishing Boats",
-            summary: "A slow lap of a reedy pond. Needs water beside it, and calms a nauseous crowd.",
+            summary: "A slow lap of a reedy pond. Sits on the water, and calms a nauseous crowd.",
             purchasePrice: 4_600,
             capacity: 12,
             rideDuration: 95,
@@ -356,7 +356,7 @@ enum GameContent {
         AttractionDefinition(
             id: "ride.bumperboats",
             displayName: "Bumper Boats",
-            summary: "Bumper cars, wet. Needs water beside it, and the queue never stops laughing.",
+            summary: "Bumper cars, wet. Sits on the water, and the queue never stops laughing.",
             purchasePrice: 6_800,
             capacity: 12,
             rideDuration: 65,
@@ -391,7 +391,7 @@ enum GameContent {
         AttractionDefinition(
             id: "ride.wavepool",
             displayName: "Wave Rider",
-            summary: "A standing wave to surf. Needs water beside it, and thrills without spinning anybody.",
+            summary: "A standing wave to surf. Sits on the water, and thrills without spinning anybody.",
             purchasePrice: 14_000,
             capacity: 10,
             rideDuration: 60,
@@ -551,7 +551,7 @@ enum GameContent {
         FacilityDefinition(
             id: "facility.bench",
             displayName: "Bench",
-            summary: "Tired guests sit here instead of going home early.",
+            summary: "Goes straight on the walkway. Tired guests sit here instead of going home early.",
             kind: .bench,
             purchasePrice: 120,
             defaultPrice: 0,
@@ -568,7 +568,7 @@ enum GameContent {
         FacilityDefinition(
             id: "facility.bin",
             displayName: "Garbage Bin",
-            summary: "Guests carrying rubbish look for one. Without bins, they litter.",
+            summary: "Goes straight on the walkway. Without bins, guests carrying rubbish drop it.",
             kind: .bin,
             purchasePrice: 80,
             defaultPrice: 0,

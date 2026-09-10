@@ -44,11 +44,13 @@ enum PlacementValidator {
                     ? tile.terrain.isCoasterTrack
                     : tile.terrain == bed
                 guard matches else {
-                    return .invalid(bed == .water
-                                    ? "Needs to sit on water"
-                                    : "Lay coaster track here first")
+                    switch bed {
+                    case .water: return .invalid("Needs to sit on water")
+                    case .path: return .invalid("Goes on a walkway")
+                    default: return .invalid("Lay coaster track here first")
+                    }
                 }
-                guard tile.buildingID == nil else {
+                guard !tile.isOccupied else {
                     return .invalid("Something is already here")
                 }
             }

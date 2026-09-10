@@ -39,6 +39,10 @@ struct Tile: Codable {
     var terrain: TerrainType = .grass
     /// Identifier of the building occupying this tile, if any.
     var buildingID: UUID?
+    /// Whether whatever is here stops guests walking through. A bench or a
+    /// bin sits on the walkway and is walked around rather than blocking it,
+    /// which is where park furniture actually goes.
+    var blocksMovement: Bool = true
     /// Rubbish on the ground, 0-100. Only ever non-zero on walkable tiles,
     /// because guests can only drop it where they can stand.
     var litter: Double = 0
@@ -47,8 +51,11 @@ struct Tile: Codable {
     var beauty: Double = 0
 
     var isWalkable: Bool {
-        buildingID == nil && terrain.isWalkableTerrain
+        (buildingID == nil || !blocksMovement) && terrain.isWalkableTerrain
     }
+
+    /// Whether anything at all is standing here, blocking or not.
+    var isOccupied: Bool { buildingID != nil }
 
     var hasLitter: Bool { litter > 0.5 }
 }
@@ -60,6 +67,7 @@ extension Tile {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         terrain = container.value(.terrain, or: .grass)
         buildingID = container.optionalValue(.buildingID)
+        blocksMovement = container.value(.blocksMovement, or: true)
         litter = container.value(.litter, or: 0)
         beauty = container.value(.beauty, or: 0)
     }
