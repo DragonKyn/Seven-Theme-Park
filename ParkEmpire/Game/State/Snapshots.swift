@@ -115,6 +115,19 @@ struct GuestDetail: Identifiable {
 // MARK: - Attraction inspector
 
 struct AttractionDetail: Identifiable {
+    /// One upgrade track on one ride, with what it would cost to take the
+    /// next step. A nil cost means it is already at its maximum.
+    struct UpgradeLine: Identifiable {
+        let id: String
+        let kind: RideUpgradeKind
+        let displayName: String
+        let summary: String
+        let symbolName: String
+        let level: Int
+        let maxLevel: Int
+        let cost: Double?
+    }
+
     let id: UUID
     let name: String
     let typeName: String
@@ -131,8 +144,26 @@ struct AttractionDetail: Identifiable {
     let totalGuests: Int
     let satisfaction: Double?
     let operatingCostPerCycle: Double
+    let upgrades: [UpgradeLine]
 
     init(attraction: Attraction) {
+        let ridePrice = attraction.baseDefinition?.purchasePrice ?? 0
+        upgrades = UpgradeContent.rideUpgrades.map { upgrade in
+            let level = attraction.upgradeLevel(upgrade.kind)
+            let next = level + 1
+            return UpgradeLine(
+                id: upgrade.kind.rawValue,
+                kind: upgrade.kind,
+                displayName: upgrade.displayName,
+                summary: upgrade.summary,
+                symbolName: upgrade.symbolName,
+                level: level,
+                maxLevel: upgrade.maxLevel,
+                cost: next <= upgrade.maxLevel
+                    ? upgrade.cost(forLevel: next, ridePrice: ridePrice)
+                    : nil)
+        }
+
         id = attraction.id
         name = attraction.name
         isOpen = attraction.isOpen
@@ -235,14 +266,28 @@ struct StaffDetail: Identifiable {
     let activityText: String
     let tasksCompleted: Int
     let dailyWage: Double
+    let trainingLevel: Int
+    let maxTrainingLevel: Int
+    let trainingTitle: String
+    /// Nil once the employee has had all the training there is.
+    let trainingCost: Double?
 
     init(staff: Staff, state: GameState) {
+        trainingLevel = staff.trainingLevel
+        maxTrainingLevel = UpgradeContent.staffTraining.maxLevel
+        trainingTitle = staff.trainingTitle
+        let nextLevel = staff.trainingLevel + 1
+        trainingCost = nextLevel <= UpgradeContent.staffTraining.maxLevel
+            ? UpgradeContent.staffTraining.cost(forLevel: nextLevel,
+                                                hiringCost: staff.definition?.hiringCost ?? 0)
+            : nil
+
         id = staff.id
         name = staff.name
         roleName = staff.definition?.displayName ?? staff.role.rawValue.capitalized
         symbolName = staff.definition?.symbolName ?? "person.fill"
         tasksCompleted = staff.tasksCompleted
-        dailyWage = staff.definition?.dailyWage ?? 0
+        dailyWage = staff.dailyWage
         activityText = StaffDetail.describe(staff.activity, state: state)
     }
 

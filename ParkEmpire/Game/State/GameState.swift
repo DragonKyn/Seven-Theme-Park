@@ -194,7 +194,7 @@ final class GameState: Codable {
 
     /// Total wages per park day across every employee.
     var dailyPayroll: Double {
-        staff.reduce(0.0) { $0 + ($1.definition?.dailyWage ?? 0) }
+        staff.reduce(0.0) { $0 + $1.dailyWage }
     }
 
     func staffCount(role: StaffRole) -> Int {

@@ -35,8 +35,32 @@ struct Staff: Codable, Identifiable {
     var workTimer: Double = 0
     var nextJobSearchAt: Double = 0
     var tasksCompleted: Int = 0
+    /// 0 to `StaffTrainingDefinition.maxLevel`. One track rather than a skill
+    /// tree: the decision is how many people to train, not which skill.
+    var trainingLevel: Int = 0
 
     var definition: StaffDefinition? { StaffContent.definition(for: role) }
+
+    /// Training makes an employee both quicker on their feet and quicker at
+    /// the job itself, and their wage follows.
+    var effectiveWalkSpeed: Double {
+        walkSpeed * (1 + UpgradeContent.staffTraining.walkSpeedPerLevel * Double(trainingLevel))
+    }
+
+    var workRate: Double {
+        1 + UpgradeContent.staffTraining.workRatePerLevel * Double(trainingLevel)
+    }
+
+    var dailyWage: Double {
+        (definition?.dailyWage ?? 0)
+            * (1 + UpgradeContent.staffTraining.wagePerLevel * Double(trainingLevel))
+    }
+
+    var wagePerSecond: Double { dailyWage / Balance.dayLength }
+
+    var trainingTitle: String {
+        UpgradeContent.staffTraining.title(forLevel: trainingLevel)
+    }
 
     /// The job currently being travelled to or performed.
     var currentJob: StaffJob? {
@@ -49,5 +73,25 @@ struct Staff: Codable, Identifiable {
     var isIdle: Bool {
         if case .idle = activity { return true }
         return false
+    }
+}
+
+extension Staff {
+    /// Lenient decoding so a save written before training existed still loads
+    /// with everybody untrained rather than failing outright.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = container.value(.id, or: UUID())
+        name = container.value(.name, or: "Employee")
+        role = container.value(.role, or: .janitor)
+        position = container.value(.position, or: .zero)
+        tile = container.value(.tile, or: GridCoord.zero)
+        route = container.value(.route, or: [])
+        walkSpeed = container.value(.walkSpeed, or: Balance.staffWalkSpeed)
+        activity = container.value(.activity, or: .idle)
+        workTimer = container.value(.workTimer, or: 0)
+        nextJobSearchAt = container.value(.nextJobSearchAt, or: 0)
+        tasksCompleted = container.value(.tasksCompleted, or: 0)
+        trainingLevel = container.value(.trainingLevel, or: 0)
     }
 }

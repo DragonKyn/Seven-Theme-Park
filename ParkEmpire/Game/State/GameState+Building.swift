@@ -74,6 +74,16 @@ extension GameState {
                                         radius: definition.beautyRadius)
         }
 
+        // A themed ride decorates the ground around it, which is half of why
+        // theming is worth buying.
+        for attraction in attractions {
+            let level = attraction.upgradeLevel(.theming)
+            guard level > 0 else { continue }
+            sources.append(ParkMap.BeautySource(rect: attraction.rect,
+                                                beauty: UpgradeContent.themingBeauty(level: level),
+                                                radius: UpgradeContent.themingBeautyRadius))
+        }
+
         // Water is terrain rather than an object, so it has no entity to hang
         // its prettiness on and is folded in a tile at a time instead.
         for definition in GameContent.terrains where definition.beauty > 0 {

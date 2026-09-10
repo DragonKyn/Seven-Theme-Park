@@ -335,6 +335,65 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    // MARK: - Upgrades
+
+    /// What the next level of an upgrade costs on a ride, or nil when it is
+    /// already at its maximum.
+    func upgradeCost(_ kind: RideUpgradeKind, attractionID: UUID) -> Double? {
+        guard let attraction = state.attraction(id: attractionID),
+              let definition = UpgradeContent.rideUpgrade(kind),
+              let base = attraction.baseDefinition else { return nil }
+        let next = attraction.upgradeLevel(kind) + 1
+        guard next <= definition.maxLevel else { return nil }
+        return definition.cost(forLevel: next, ridePrice: base.purchasePrice)
+    }
+
+    func canAffordUpgrade(_ kind: RideUpgradeKind, attractionID: UUID) -> Bool {
+        guard let cost = upgradeCost(kind, attractionID: attractionID) else { return false }
+        return state.ledger.canAfford(cost)
+    }
+
+    @discardableResult
+    func buyUpgrade(_ kind: RideUpgradeKind, attractionID: UUID) -> Bool {
+        guard let cost = upgradeCost(kind, attractionID: attractionID),
+              state.ledger.canAfford(cost),
+              let index = state.attractionIndex(id: attractionID) else { return false }
+
+        state.ledger.spend(cost, on: .construction)
+        let next = state.attractions[index].upgradeLevel(kind) + 1
+        state.attractions[index].upgrades[kind.rawValue] = next
+
+        // Theming decorates the ground around the ride, so the beauty field
+        // has to be rebuilt the same way placing scenery rebuilds it.
+        if kind == .theming { state.refreshBeauty() }
+
+        refreshUI()
+        return true
+    }
+
+    /// What the next level of training costs for one employee, or nil when
+    /// they have had all of it.
+    func trainingCost(staffID: UUID) -> Double? {
+        guard let member = state.staffMember(id: staffID),
+              let definition = member.definition else { return nil }
+        let next = member.trainingLevel + 1
+        guard next <= UpgradeContent.staffTraining.maxLevel else { return nil }
+        return UpgradeContent.staffTraining.cost(forLevel: next,
+                                                 hiringCost: definition.hiringCost)
+    }
+
+    @discardableResult
+    func trainStaff(id: UUID) -> Bool {
+        guard let cost = trainingCost(staffID: id),
+              state.ledger.canAfford(cost),
+              let index = state.staffIndex(id: id) else { return false }
+
+        state.ledger.spend(cost, on: .wages)
+        state.staff[index].trainingLevel += 1
+        refreshUI()
+        return true
+    }
+
     // MARK: - Dashboards
 
     func makeFinanceSnapshot() -> FinanceSnapshot {

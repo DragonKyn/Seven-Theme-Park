@@ -30,6 +30,18 @@ struct StaffInspectorView: View {
                 }
             }
 
+            SectionCard(title: "Training") {
+                UpgradeRowView(title: member.trainingTitle,
+                               summary: "Walks faster, works faster, and costs more to keep.",
+                               symbolName: "graduationcap.fill",
+                               level: member.trainingLevel,
+                               maxLevel: member.maxTrainingLevel,
+                               cost: member.trainingCost,
+                               affordable: controller.hud.cash >= (member.trainingCost ?? 0)) {
+                    controller.trainStaff(id: member.id)
+                }
+            }
+
             Button(role: .destructive) {
                 controller.fireStaff(id: member.id)
             } label: {

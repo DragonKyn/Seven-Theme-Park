@@ -42,6 +42,22 @@ struct AttractionInspectorView: View {
                 }
             }
 
+            SectionCard(title: "Upgrades") {
+                VStack(spacing: 10) {
+                    ForEach(attraction.upgrades) { upgrade in
+                        UpgradeRowView(title: upgrade.displayName,
+                                       summary: upgrade.summary,
+                                       symbolName: upgrade.symbolName,
+                                       level: upgrade.level,
+                                       maxLevel: upgrade.maxLevel,
+                                       cost: upgrade.cost,
+                                       affordable: controller.hud.cash >= (upgrade.cost ?? 0)) {
+                            controller.buyUpgrade(upgrade.kind, attractionID: attraction.id)
+                        }
+                    }
+                }
+            }
+
             HStack(spacing: 8) {
                 Button {
                     controller.setRideOpen(!attraction.isOpen, attractionID: attraction.id)

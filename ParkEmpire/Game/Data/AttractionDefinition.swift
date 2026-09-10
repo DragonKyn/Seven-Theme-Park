@@ -30,6 +30,31 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
 
     var category: BuildCategory { .attraction }
 
+    /// The same ride with its purchased upgrades folded in. Returning a
+    /// definition rather than a separate stats type means every system that
+    /// already reads a definition picks up upgrades without being told.
+    func applying(_ upgrades: [String: Int]) -> AttractionDefinition {
+        guard !upgrades.isEmpty else { return self }
+        func level(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
+
+        return AttractionDefinition(
+            id: id,
+            displayName: displayName,
+            summary: summary,
+            purchasePrice: purchasePrice,
+            capacity: Int((Double(capacity) * UpgradeContent.capacityFactor(level: level(.capacity))).rounded()),
+            rideDuration: rideDuration,
+            loadDuration: loadDuration * UpgradeContent.loadingFactor(level: level(.loading)),
+            excitement: SimMath.clamp(excitement + UpgradeContent.themingExcitement(level: level(.theming))),
+            nausea: nausea,
+            maintenanceRate: maintenanceRate * UpgradeContent.wearFactor(level: level(.reliability)),
+            operatingCostPerCycle: operatingCostPerCycle,
+            footprint: footprint,
+            unlockLevel: unlockLevel,
+            appearance: appearance
+        )
+    }
+
     var previewAppearance: BuildingAppearance? { appearance }
 
     /// Coarse label used in the build menu and ride inspector.

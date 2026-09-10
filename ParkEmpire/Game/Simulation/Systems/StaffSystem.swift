@@ -46,7 +46,7 @@ final class StaffSystem {
 
     private func chargeWages(state: GameState, dt: Double) {
         guard !state.staff.isEmpty else { return }
-        let perSecond = state.staff.reduce(0.0) { $0 + ($1.definition?.wagePerSecond ?? 0) }
+        let perSecond = state.staff.reduce(0.0) { $0 + $1.wagePerSecond }
         state.ledger.spend(perSecond * dt, on: .wages)
     }
 
@@ -210,7 +210,7 @@ final class StaffSystem {
         let result = Locomotion.advance(position: &member.position,
                                         tile: &member.tile,
                                         route: &member.route,
-                                        speed: member.walkSpeed,
+                                        speed: member.effectiveWalkSpeed,
                                         dt: dt,
                                         map: map)
         state.staff[staffIndex] = member
@@ -236,9 +236,9 @@ final class StaffSystem {
 
         switch job {
         case .repairRide:
-            state.staff[staffIndex].workTimer = Balance.repairDuration
+            state.staff[staffIndex].workTimer = Balance.repairDuration / state.staff[staffIndex].workRate
         case .inspectRide:
-            state.staff[staffIndex].workTimer = Balance.inspectionDuration
+            state.staff[staffIndex].workTimer = Balance.inspectionDuration / state.staff[staffIndex].workRate
         case .entertain:
             state.staff[staffIndex].workTimer = 25
         case .cleanLitter, .serviceFacility:
@@ -271,7 +271,8 @@ final class StaffSystem {
                       now: Double) {
         switch job {
         case .cleanLitter(let coord):
-            let remaining = state.map.removeLitter(Balance.litterCleanRate * dt, at: coord)
+            let remaining = state.map.removeLitter(
+                Balance.litterCleanRate * state.staff[staffIndex].workRate * dt, at: coord)
             if remaining <= 0 {
                 state.statistics.litterCleanedTotal += 1
                 finish(staffIndex: staffIndex, state: state, now: now)
@@ -283,7 +284,8 @@ final class StaffSystem {
                 return
             }
             state.facilities[facilityIndex].soiling = max(
-                0, state.facilities[facilityIndex].soiling - Balance.facilityCleanRate * dt)
+                0, state.facilities[facilityIndex].soiling
+                    - Balance.facilityCleanRate * state.staff[staffIndex].workRate * dt)
             if state.facilities[facilityIndex].soiling <= 0 {
                 state.facilities[facilityIndex].timesServiced += 1
                 finish(staffIndex: staffIndex, state: state, now: now)
@@ -317,7 +319,7 @@ final class StaffSystem {
     private func entertainNearbyGuests(staffIndex: Int, state: GameState, dt: Double) {
         let centre = state.staff[staffIndex].position
         let radius = Balance.entertainerRadius
-        let boost = Balance.entertainerHappinessPerSecond * dt
+        let boost = Balance.entertainerHappinessPerSecond * state.staff[staffIndex].workRate * dt
 
         for index in state.guests.indices where state.guests[index].isActive {
             let distance = SimMath.distance(state.guests[index].position, centre)

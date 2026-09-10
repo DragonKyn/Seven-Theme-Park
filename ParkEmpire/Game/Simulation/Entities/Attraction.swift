@@ -26,6 +26,9 @@ struct Attraction: Codable, Identifiable {
     /// noticeably more often.
     var timeSinceInspection: Double = 0
     var totalBreakdowns: Int = 0
+    /// Purchased upgrade levels, keyed by `RideUpgradeKind.rawValue`. Stored
+    /// by raw string so a build that drops an upgrade kind still decodes.
+    var upgrades: [String: Int] = [:]
 
     var phase: RidePhase = .loading
     var phaseTimer: Double = 0
@@ -41,7 +44,14 @@ struct Attraction: Codable, Identifiable {
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
 
-    var definition: AttractionDefinition? { GameContent.attraction(definitionID) }
+    /// The ride as the catalogue describes it, before anything was bought
+    /// for it. Only upgrade pricing should need this.
+    var baseDefinition: AttractionDefinition? { GameContent.attraction(definitionID) }
+
+    /// The ride as it actually runs, upgrades included.
+    var definition: AttractionDefinition? { baseDefinition?.applying(upgrades) }
+
+    func upgradeLevel(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
 
     /// Open for business: the player has not closed it and it is not broken.
     var isOperational: Bool { isOpen && !isBroken }
@@ -91,6 +101,7 @@ extension Attraction {
         isBroken = container.value(.isBroken, or: false)
         timeSinceInspection = container.value(.timeSinceInspection, or: 0)
         totalBreakdowns = container.value(.totalBreakdowns, or: 0)
+        upgrades = container.value(.upgrades, or: [:])
         phase = container.value(.phase, or: .loading)
         phaseTimer = container.value(.phaseTimer, or: 0)
         queue = container.value(.queue, or: [])
