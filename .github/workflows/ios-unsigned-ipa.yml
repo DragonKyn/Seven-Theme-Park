@@ -10,6 +10,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-15
@@ -46,62 +49,55 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_ENTITLEMENTS="" \
             clean build 2>&1 | tee xcodebuild.log
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
-          exit "${PIPESTATUS[0]}"
+          # PIPESTATUS is rewritten by the next command, so snapshot it first.
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
 
-      # Actions logs need a signed-in session even on a public repo, but the run
-      # summary page is readable by anyone. Mirroring the diagnostics there is
-      # what makes a failed build debuggable from outside GitHub.
-      - name: Publish diagnostics to the run summary
+      - name: Describe what the build produced
         if: always()
         run: |
-          set -uo pipefail
-          log=xcodebuild.log
+          set +e
+          products=build/Build/Products/Release-iphoneos
           {
-            echo "## Build diagnostics"
-            echo
-            echo "Build step exit code: \`${{ steps.build.outputs.exit_code || 'unknown' }}\`"
-            echo
-            if [ ! -f "$log" ]; then
-              echo "No \`xcodebuild.log\` was produced."
-              exit 0
-            fi
-            echo "Log lines: \`$(wc -l < "$log" | tr -d ' ')\`"
-            echo
-            echo "### Errors"
-            echo
-            echo '```'
-            grep -nE "(error:|fatal error:|\*\* BUILD FAILED|Command .* failed|The following build commands failed)" "$log" \
-              | head -300 || echo "(no lines matched the error pattern)"
-            echo '```'
-            echo
-            echo "### Warnings (first 60)"
-            echo
-            echo '```'
-            grep -nE "warning:" "$log" | head -60 || echo "(none)"
-            echo '```'
-            echo
-            echo "### Last 120 log lines"
-            echo
-            echo '```'
-            tail -120 "$log"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "=== exit code: ${{ steps.build.outputs.exit_code || 'unknown' }}"
+            echo "=== products tree"
+            ls -lR "$products" 2>&1 | head -80
+            echo "=== app binary"
+            file "$products/ParkEmpire.app/ParkEmpire" 2>&1
+            ls -l "$products/ParkEmpire.app/ParkEmpire" 2>&1
+            echo "=== swift sources xcodebuild saw"
+            grep -cE "SwiftCompile|CompileSwiftSources" xcodebuild.log 2>&1
+            echo "=== errors"
+            grep -nE "(error:|\*\* BUILD FAILED|The following build commands failed)" xcodebuild.log 2>&1 | head -200
+          } > build-report.txt 2>&1
+          cat build-report.txt
 
-      - name: Upload full build log
+      # Actions logs and job summaries both need a signed-in session, even on a
+      # public repository. Committing the log to a branch makes it readable
+      # through raw.githubusercontent.com instead.
+      - name: Publish log to the ci-logs branch
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcodebuild-log
-          path: xcodebuild.log
-          if-no-files-found: warn
-          retention-days: 14
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/logs && cp xcodebuild.log build-report.txt /tmp/logs/ 2>/dev/null || true
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-logs
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + 2>/dev/null || true
+          cp /tmp/logs/* . 2>/dev/null || true
+          echo "run ${{ github.run_number }} · commit ${{ github.sha }} · $(date -u)" > README.md
+          git add -A
+          git commit -m "CI log for run ${{ github.run_number }}" --allow-empty
+          git push -f origin ci-logs
 
       - name: Package into an IPA
         run: |
           set -euo pipefail
           APP_PATH="build/Build/Products/Release-iphoneos/ParkEmpire.app"
           test -d "$APP_PATH" || { echo "App bundle not found at $APP_PATH"; exit 1; }
+          test -f "$APP_PATH/ParkEmpire" || { echo "No executable inside the app bundle"; exit 1; }
           rm -rf Payload ParkEmpire.ipa
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
