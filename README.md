@@ -110,15 +110,26 @@ Added in Phase 5 so far:
   on the same railway, which saves a long walk across a big park. The railway
   is derived from the tiles whenever the map changes, so nothing can fall out
   of step with what is on the ground.
-- **Trains that look like trains.** Track tiles are drawn from what they join
-  on to, so a straight run reads as a straight run. A locomotive and two
-  carriages run each route, each starting a tile further back, so the train
-  bends through corners instead of pivoting as one block.
+- **Trains that look like trains.** A track tile with two neighbours at right
+  angles is drawn as a curve about the corner they share. A train only appears
+  on a run that at least two stations sit against. On a loop it is a
+  locomotive and two carriages, each starting a tile further back so the train
+  bends through corners; a dead-ended line gets a single railcar.
 - **Achievements.** Seventeen of them, each a ladder of six tiers rather than a
   single target, each paying out more steeply at every rung. Metrics are
   counters the simulation already kept or values read straight off the park.
   Earning one sets off a card and a confetti burst.
-- **A car park.** Outside the gate, below the sign. Nothing simulates it.
+- **A car park.** Outside the gate, below the sign. It takes five levels,
+  each adding one per cent to arrivals and each costing twice the last, so
+  paving it is something a park saves up for rather than a shortcut.
+- **A bigger park.** New parks are sixty tiles square rather than thirty, and
+  take four hundred guests. A park saved at the old size keeps it.
+- **Rotation.** Anything whose footprint is not square can be turned a quarter
+  turn at a time. The turned footprint is what occupancy, access tiles and the
+  placement preview all work from, so it needed no special cases.
+- **Readable names.** Building names sit on a chip fitted to the text, and are
+  dropped once the park is zoomed out far enough that they would be a wall of
+  chips rather than information.
 
 Not yet built (later phases, by design): reputation tiers, unlock progression,
 objectives, sound, tutorial, custom coaster building.

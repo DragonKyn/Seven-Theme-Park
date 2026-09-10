@@ -32,6 +32,8 @@ final class ParkScene: SKScene {
     private let overlayLayer = SKNode()
 
     private var tileNodes: [SKSpriteNode] = []
+    /// How each tile currently looks, so unchanged tiles are skipped.
+    private var tileAppearance: [Int] = []
     private var buildingNodes: [UUID: BuildingNode] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
@@ -345,17 +347,44 @@ final class ParkScene: SKScene {
         guard state.map.generation != renderedMapGeneration else { return }
         renderedMapGeneration = state.map.generation
 
+        // A sixty-tile-square park is three and a half thousand sprites, and
+        // painting one path tile bumps the generation for all of them. Each
+        // tile keeps a small code for how it currently looks, so the common
+        // case is an integer comparison rather than building a texture key.
         for index in 0..<state.map.tileCount {
             let coord = state.map.coord(atLinearIndex: index)
             guard let tile = state.map.tile(at: coord) else { continue }
+            let code = appearanceCode(for: tile, at: coord, map: state.map)
+            guard tileAppearance[index] != code else { continue }
+            tileAppearance[index] = code
             tileNodes[index].texture = texture(for: tile, at: coord, map: state.map)
         }
     }
 
+    /// A cheap number standing for everything that decides how a tile is
+    /// drawn: its terrain, which square of the grass check it is on, and for
+    /// railway, which neighbours it joins.
+    private func appearanceCode(for tile: Tile, at coord: GridCoord, map: ParkMap) -> Int {
+        let terrain: Int
+        switch tile.terrain {
+        case .grass: terrain = 0
+        case .path: terrain = 1
+        case .entrance: terrain = 2
+        case .water: terrain = 3
+        case .track: terrain = 4
+        }
+        let alternate = (coord.x + coord.y) % 2 != 0 ? 1 : 0
+        return terrain * 100 + alternate * 50 + trackConnections(at: coord, map: map)
+    }
+
     private func buildTileNodes(state: GameState) {
         tileNodes.reserveCapacity(state.map.tileCount)
+        tileAppearance = Array(repeating: -1, count: state.map.tileCount)
         for index in 0..<state.map.tileCount {
             let coord = state.map.coord(atLinearIndex: index)
+            tileAppearance[index] = appearanceCode(for: state.map.tile(at: coord) ?? Tile(),
+                                                   at: coord,
+                                                   map: state.map)
             let node = SKSpriteNode(texture: texture(for: state.map.tile(at: coord) ?? Tile(),
                                                      at: coord,
                                                      map: state.map))
@@ -375,7 +404,14 @@ final class ParkScene: SKScene {
                                              side: Self.tileSide)
         }
 
-        // North, east, south, west.
+        return SpriteFactory.trackTileTexture(connections: trackConnections(at: coord, map: map),
+                                              side: Self.tileSide)
+    }
+
+    /// Which of the four neighbours are also railway, as north, east, south
+    /// and west bits. Zero for anything that is not railway itself.
+    private func trackConnections(at coord: GridCoord, map: ParkMap) -> Int {
+        guard map.tile(at: coord)?.terrain == .track else { return 0 }
         let offsets: [(Int, GridCoord)] = [
             (1, GridCoord(coord.x, coord.y + 1)),
             (2, GridCoord(coord.x + 1, coord.y)),
@@ -386,7 +422,7 @@ final class ParkScene: SKScene {
         for (bit, neighbour) in offsets where map.tile(at: neighbour)?.terrain == .track {
             connections |= bit
         }
-        return SpriteFactory.trackTileTexture(connections: connections, side: Self.tileSide)
+        return connections
     }
 
     private func colour(for tile: Tile, at coord: GridCoord) -> UIColor {
