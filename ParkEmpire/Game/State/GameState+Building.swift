@@ -53,6 +53,19 @@ extension GameState {
             facilities.append(facility)
             map.setBuilding(facility.id, on: facility.rect.coords)
 
+        case let elementDefinition as CoasterElementDefinition:
+            let element = TrackElement(
+                id: UUID(),
+                definitionID: elementDefinition.id,
+                origin: origin,
+                size: elementDefinition.footprint(rotatedBy: rotation),
+                rotation: rotation
+            )
+            trackElements.append(element)
+            // Claiming the tiles is what stops two elements being stacked on
+            // one another; the terrain underneath stays track either way.
+            map.setBuilding(element.id, on: element.rect.coords)
+
         case let sceneryDefinition as SceneryDefinition:
             let item = SceneryItem(
                 id: UUID(),
@@ -130,6 +143,9 @@ extension GameState {
                 return 0
             }
         }
+        if let element = trackElement(at: coord) {
+            return (element.definition?.purchasePrice ?? 0) * 0.5
+        }
         if let item = sceneryItem(at: coord) {
             return (item.definition?.purchasePrice ?? 0) * 0.5
         }
@@ -142,6 +158,13 @@ extension GameState {
 
     /// Scenery deliberately is not a `ParkTarget`: guests never travel to it
     /// and there is nothing to inspect, so it is found by tile instead.
+    /// Like scenery, an element is found by tile rather than being a target:
+    /// guests never travel to one and there is nothing to inspect.
+    func trackElement(at coord: GridCoord) -> TrackElement? {
+        guard let buildingID = map.tile(at: coord)?.buildingID else { return nil }
+        return trackElements.first { $0.id == buildingID }
+    }
+
     func sceneryItem(at coord: GridCoord) -> SceneryItem? {
         guard let buildingID = map.tile(at: coord)?.buildingID else { return nil }
         return scenery.first { $0.id == buildingID }
@@ -175,6 +198,14 @@ extension GameState {
             default:
                 return false
             }
+        }
+
+        if let element = trackElement(at: coord),
+           let index = trackElements.firstIndex(where: { $0.id == element.id }) {
+            map.setBuilding(nil, on: element.rect.coords)
+            trackElements.remove(at: index)
+            ledger.receive(demolitionRefundValue(for: element.definition), as: .other)
+            return true
         }
 
         if let item = sceneryItem(at: coord), let index = sceneryIndex(id: item.id) {

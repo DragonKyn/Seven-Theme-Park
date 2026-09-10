@@ -117,7 +117,9 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     var requiresTrackAccess: Bool { kind == .transport }
     var requiresCoasterTrackAccess: Bool { kind == .custom }
 
-    var requiresWaterAccess: Bool { needsWater }
+    /// A boat ride sits on the water rather than next to it. It still has to
+    /// touch a walkway, because guests have to be able to reach the jetty.
+    var bedTerrain: TerrainType? { needsWater ? .water : nil }
 
     /// The same ride with its purchased upgrades folded in. Returning a
     /// definition rather than a separate stats type means every system that

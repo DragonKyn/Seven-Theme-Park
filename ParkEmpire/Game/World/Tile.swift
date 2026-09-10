@@ -13,13 +13,13 @@ enum TerrainType: String, Codable {
     /// Coaster track. Laid the same way as railway and just as unwalkable,
     /// but it belongs to one station rather than to a network of them.
     case coasterTrack
-    /// A vertical loop. Costs more, and is worth far more to the ride.
+    /// The one-tile elements the coaster used to have. No longer offered:
+    /// an element is a structure placed across several tiles now, so a loop
+    /// can be the size of a loop. These stay so a park saved with them still
+    /// loads, and they behave as ordinary coaster track.
     case coasterLoop
-    /// An airtime hill.
     case coasterHill
-    /// A corkscrew.
     case coasterHelix
-    /// A gap the train is launched over, landing on the far side.
     case coasterJump
 
     /// Guests may only ever stand on walkable terrain.
@@ -33,19 +33,6 @@ enum TerrainType: String, Codable {
     ]
 
     var isCoasterTrack: Bool { TerrainType.coasterPieces.contains(self) }
-
-    /// How much a tile of this adds to a ride, beyond simply being longer.
-    /// Plain track is the baseline; the special pieces are what the player is
-    /// actually paying for.
-    var coasterThrill: Double {
-        switch self {
-        case .coasterJump: return 11
-        case .coasterLoop: return 9
-        case .coasterHelix: return 7
-        case .coasterHill: return 4
-        default: return 0
-        }
-    }
 }
 
 struct Tile: Codable {

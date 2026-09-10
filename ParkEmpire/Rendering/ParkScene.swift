@@ -36,6 +36,7 @@ final class ParkScene: SKScene {
     private var tileAppearance: [Int] = []
     private var buildingNodes: [UUID: BuildingNode] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
+    private var elementNodes: [UUID: SKSpriteNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
     /// Which mood each guest sprite is currently drawn with, so the texture is
     /// only swapped when the mood actually changes.
@@ -330,6 +331,7 @@ final class ParkScene: SKScene {
         syncTiles(state: controller.state)
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
+        syncTrackElements(state: controller.state)
         syncTrains(state: controller.state)
         syncBuildings(state: controller.state)
         updateLabelVisibility()
@@ -476,11 +478,6 @@ final class ParkScene: SKScene {
             return SpriteFactory.tileTexture(colour: ParkPalette.entrance, side: Self.tileSide)
         case .track, .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
             let connections = trackConnections(at: coord, map: map)
-            if tile.terrain.coasterThrill > 0 {
-                return SpriteFactory.coasterElementTexture(connections: connections,
-                                                           side: Self.tileSide,
-                                                           element: tile.terrain)
-            }
             return SpriteFactory.trackTileTexture(connections: connections,
                                                   side: Self.tileSide,
                                                   coaster: tile.terrain.isCoasterTrack)
@@ -494,6 +491,38 @@ final class ParkScene: SKScene {
         guard visible != labelsVisible else { return }
         labelsVisible = visible
         for node in buildingNodes.values { node.setLabelVisible(visible) }
+    }
+
+    /// Loops, corkscrews and jumps sitting on the track. Like scenery, they
+    /// never change once placed, so this only adds and removes.
+    private func syncTrackElements(state: GameState) {
+        var seen = Set<UUID>()
+
+        for element in state.trackElements {
+            seen.insert(element.id)
+            guard elementNodes[element.id] == nil, let definition = element.definition else { continue }
+
+            // Drawn the way round it was designed and then turned, so a
+            // rotated loop is not a squashed one.
+            let drawn = element.size.rotated(by: element.rotation)
+            let pixelSize = CGSize(width: CGFloat(drawn.width) * Self.tileSide,
+                                   height: CGFloat(drawn.height) * Self.tileSide)
+
+            let node = SKSpriteNode(texture: CoasterElementArtwork.texture(for: definition.motif,
+                                                                          size: pixelSize))
+            node.size = pixelSize
+            node.zRotation = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
+            node.position = CGPoint(
+                x: (CGFloat(element.origin.x) + CGFloat(element.size.width) / 2) * Self.tileSide,
+                y: (CGFloat(element.origin.y) + CGFloat(element.size.height) / 2) * Self.tileSide)
+            trainLayer.addChild(node)
+            elementNodes[element.id] = node
+        }
+
+        for (id, node) in elementNodes where !seen.contains(id) {
+            node.removeFromParent()
+            elementNodes.removeValue(forKey: id)
+        }
     }
 
     // MARK: - Trains
@@ -513,11 +542,11 @@ final class ParkScene: SKScene {
         runTrains(on: state.trackNetwork,
                   servedBy: state.attractions.filter { $0.baseDefinition?.kind == .transport },
                   coaster: false,
-                  map: state.map)
+                  elements: [])
         runTrains(on: state.coasterNetwork,
                   servedBy: state.attractions.filter { $0.baseDefinition?.kind == .custom },
                   coaster: true,
-                  map: state.map)
+                  elements: state.trackElements)
     }
 
     /// Puts a train on every circuit that has something to serve it.
@@ -528,7 +557,7 @@ final class ParkScene: SKScene {
     private func runTrains(on network: TrackNetwork,
                            servedBy stations: [Attraction],
                            coaster: Bool,
-                           map: ParkMap) {
+                           elements: [TrackElement]) {
         let carSize = coaster
             ? CGSize(width: Self.tileSide * 0.62, height: Self.tileSide * 0.40)
             : CGSize(width: Self.tileSide * 0.86, height: Self.tileSide * 0.46)
@@ -562,19 +591,19 @@ final class ParkScene: SKScene {
             // Which points sit on a loop, a hill or a corkscrew, so the train
             // can react as it crosses one.
             // How much the train reacts on each tile. A jump throws it much
-            // further than a hill does, so the flair is scaled by the piece.
+            // further than a hill does, so the reaction comes from whichever
+            // element that tile happens to be under.
             var flair: [CGFloat]?
-            if coaster && isLoop {
-                let perTile = max(1, points.count / max(route.tiles.count, 1))
-                let swell: [CGFloat] = route.tiles.map { tile in
-                    switch map.tile(at: tile)?.terrain {
-                    case .coasterJump: return 1.85
-                    case .coasterLoop: return 1.5
-                    case .coasterHelix: return 1.35
-                    case .coasterHill: return 1.22
-                    default: return 1
+            if coaster && isLoop && !elements.isEmpty {
+                var intensity: [GridCoord: CGFloat] = [:]
+                for element in elements {
+                    guard let strength = element.definition?.intensity else { continue }
+                    for coord in element.rect.coords {
+                        intensity[coord] = max(intensity[coord] ?? 1, strength)
                     }
                 }
+                let perTile = max(1, points.count / max(route.tiles.count, 1))
+                let swell = route.tiles.map { intensity[$0] ?? 1 }
                 flair = (0..<points.count).map { swell[min($0 / perTile, swell.count - 1)] }
             }
 
@@ -1086,7 +1115,9 @@ final class ParkScene: SKScene {
             previewNode = art
         }
 
-        if let appearance = definition.previewAppearance {
+        if let element = definition as? CoasterElementDefinition {
+            art.texture = CoasterElementArtwork.texture(for: element.motif, size: drawnSize)
+        } else if let appearance = definition.previewAppearance {
             art.texture = BuildingArtwork.bodyTexture(for: appearance, size: drawnSize)
         } else {
             art.texture = SpriteFactory.buildingTexture(colour: ParkPalette.ghostValid, size: drawnSize)

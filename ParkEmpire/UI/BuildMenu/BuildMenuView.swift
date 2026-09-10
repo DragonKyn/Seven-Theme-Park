@@ -185,6 +185,9 @@ struct BuildMenuView: View {
         if controller.build.category == .transport {
             return "Drag out a loop of track, then put stations on it. Guests ride between them."
         }
+        if controller.build.category == .coaster {
+            return "Drag out a circuit of track, drop elements on to it, then put a station beside it."
+        }
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
         }
@@ -232,7 +235,15 @@ private struct BuildItemCard: View {
     /// The same artwork the map draws, so what you pick is what you get.
     @ViewBuilder
     private var thumbnail: some View {
-        if let appearance = definition.previewAppearance {
+        if let element = definition as? CoasterElementDefinition {
+            // Elements are wide and thin, so the thumbnail keeps their shape
+            // rather than squaring them off into a smudge.
+            Image(uiImage: CoasterElementArtwork.previewImage(
+                for: element.motif,
+                size: CGSize(width: 132, height: 66)))
+                .resizable()
+                .frame(width: 44, height: 22)
+        } else if let appearance = definition.previewAppearance {
             Image(uiImage: BuildingArtwork.previewImage(
                 for: appearance,
                 size: CGSize(width: BuildItemCard.thumbnailSide,

@@ -35,6 +35,26 @@ enum PlacementValidator {
             if tile.terrain == .entrance { return .invalid("That is the entrance") }
             if tile.terrain != .grass { return .invalid("Clear the ground here first") }
             if tile.buildingID != nil { return .invalid("Something is in the way") }
+        } else if let bed = definition.bedTerrain {
+            // Built on top of something rather than beside it: every tile it
+            // covers has to be that terrain, and free.
+            for coord in rect.coords {
+                guard let tile = map.tile(at: coord) else { return .invalid("Outside the park") }
+                let matches = bed == .coasterTrack
+                    ? tile.terrain.isCoasterTrack
+                    : tile.terrain == bed
+                guard matches else {
+                    return .invalid(bed == .water
+                                    ? "Needs to sit on water"
+                                    : "Lay coaster track here first")
+                }
+                guard tile.buildingID == nil else {
+                    return .invalid("Something is already here")
+                }
+            }
+            if definition.requiresPathAccess && map.accessTiles(for: rect).isEmpty {
+                return .invalid("Needs to touch a walkway")
+            }
         } else {
             guard map.isAreaBuildable(rect) else {
                 return .invalid("Something is in the way")
@@ -44,9 +64,6 @@ enum PlacementValidator {
             }
             if definition.requiresTrackAccess && !map.touchesTerrain(.track, around: rect) {
                 return .invalid("Needs to touch a track")
-            }
-            if definition.requiresWaterAccess && !map.touchesTerrain(.water, around: rect) {
-                return .invalid("Needs to sit against water")
             }
             if definition.requiresCoasterTrackAccess
                 && !map.touchesTerrain(.coasterTrack, around: rect) {

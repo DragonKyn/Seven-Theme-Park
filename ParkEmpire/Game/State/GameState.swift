@@ -23,6 +23,8 @@ final class GameState: Codable {
     var facilities: [Facility] = []
     var staff: [Staff] = []
     var scenery: [SceneryItem] = []
+    /// Loops, corkscrews and jumps sitting on the player's own track.
+    var trackElements: [TrackElement] = []
 
     // MARK: - Park-level state
 
@@ -91,6 +93,7 @@ final class GameState: Codable {
         facilities = container.value(.facilities, or: [])
         staff = container.value(.staff, or: [])
         scenery = container.value(.scenery, or: [])
+        trackElements = container.value(.trackElements, or: [])
         ledger = container.value(.ledger, or: Ledger(startingCash: Balance.startingCash))
         clock = container.value(.clock, or: SimulationClock())
         statistics = container.value(.statistics, or: ParkStatistics())
@@ -150,12 +153,16 @@ final class GameState: Codable {
                 attractions[index].trackThrill = 0
                 continue
             }
-            let tiles = network.routes[routeIndex].tiles
+            let tiles = Set(network.routes[routeIndex].tiles)
             attractions[index].trackLength = tiles.count
-            // Special pieces count for far more than the ground they cover,
-            // which is the whole reason to pay for them.
-            attractions[index].trackThrill = tiles.reduce(0) {
-                $0 + (map.tile(at: $1)?.terrain.coasterThrill ?? 0)
+            // Elements count for far more than the ground they cover, which is
+            // the whole reason to pay for one. An element counts once, however
+            // many tiles of the circuit it happens to sit on.
+            attractions[index].trackThrill = trackElements.reduce(0) { total, element in
+                guard element.rect.coords.contains(where: { tiles.contains($0) }) else {
+                    return total
+                }
+                return total + (element.definition?.thrill ?? 0)
             }
         }
     }

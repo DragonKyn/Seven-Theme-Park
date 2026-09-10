@@ -30,7 +30,9 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "sparkles"
         case .shop: return "cart"
         case .facility: return "figure.stand"
-        case .coaster: return "figure.rolling"
+        // A swooping line, which is what track looks like. The rolling
+        // figure it had before is a wheelchair symbol.
+        case .coaster: return "point.topleft.down.curvedto.point.bottomright.up"
         case .transport: return "tram.fill"
         case .scenery: return "tree.fill"
         }
@@ -51,10 +53,11 @@ protocol BuildableDefinition {
     var requiresPathAccess: Bool { get }
     /// Whether it also has to sit against a railway to be any use.
     var requiresTrackAccess: Bool { get }
-    /// Whether it has to sit against water.
-    var requiresWaterAccess: Bool { get }
     /// Whether it has to sit against coaster track.
     var requiresCoasterTrackAccess: Bool { get }
+    /// Terrain this is built on top of rather than beside. A boat ride goes on
+    /// the water; a loop goes on the track it loops.
+    var bedTerrain: TerrainType? { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
     /// terrain rather than an object, and there is nothing to draw.
     var previewAppearance: BuildingAppearance? { get }
@@ -76,8 +79,8 @@ extension BuildableDefinition {
 
     var requiresPathAccess: Bool { true }
     var requiresTrackAccess: Bool { false }
-    var requiresWaterAccess: Bool { false }
     var requiresCoasterTrackAccess: Bool { false }
+    var bedTerrain: TerrainType? { nil }
     var previewAppearance: BuildingAppearance? { nil }
 }
 
