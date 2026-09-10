@@ -12,8 +12,9 @@ struct CelebrationView: View {
     @State private var burst = false
     @State private var cardIn = false
 
-    /// How long the whole thing is on screen.
-    private static let dwell: TimeInterval = 3.2
+    /// How long the whole thing is on screen. Long enough to read three lines
+    /// without hurrying; a tap dismisses it sooner.
+    private static let dwell: TimeInterval = 7.0
 
     var body: some View {
         ZStack {
@@ -59,8 +60,29 @@ struct CelebrationView: View {
                 .multilineTextAlignment(.center)
 
             Text("Tier \(award.tierName)")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white.opacity(0.80))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(.white.opacity(0.12)))
+
+            // What was actually achieved. The name alone does not say.
+            Text(award.accomplishment)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.accent)
+                .multilineTextAlignment(.center)
+
+            Text(award.summary)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.62))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let next = award.nextTarget {
+                Text("Next: \(next)")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
 
             Text("\(CurrencyFormatter.short(award.reward)) awarded")
                 .font(.system(size: 13, weight: .heavy, design: .rounded))

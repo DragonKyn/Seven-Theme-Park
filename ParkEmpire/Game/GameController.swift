@@ -388,6 +388,21 @@ final class GameController: ObservableObject {
         return true
     }
 
+    /// What paving the next stretch of car park costs, or nil once it is
+    /// finished.
+    func carParkUpgradeCost() -> Double? {
+        CarParkContent.cost(forLevel: state.carParkLevel + 1)
+    }
+
+    @discardableResult
+    func upgradeCarPark() -> Bool {
+        guard let cost = carParkUpgradeCost(), state.ledger.canAfford(cost) else { return false }
+        state.ledger.spend(cost, on: .construction)
+        state.carParkLevel += 1
+        refreshUI()
+        return true
+    }
+
     /// What the next level of training costs for one employee, or nil when
     /// they have had all of it.
     func trainingCost(staffID: UUID) -> Double? {

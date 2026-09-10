@@ -51,6 +51,7 @@ final class ParkScene: SKScene {
     /// The uniform the cached staff textures were drawn in.
     private var renderedUniform: ParkColour?
     private var carPark: SKSpriteNode?
+    private var renderedCarParkLevel = -1
     private var entranceSign: SKSpriteNode?
     private var entranceSignLabel: SKLabelNode?
     private var renderedParkName: String?
@@ -759,7 +760,7 @@ final class ParkScene: SKScene {
         let entrance = state.map.entranceCoord
         board.position = CGPoint(x: (CGFloat(entrance.x) + 0.5) * Self.tileSide,
                                  y: (CGFloat(entrance.y) - 0.85) * Self.tileSide)
-        syncCarPark(entrance: entrance)
+        syncCarPark(entrance: entrance, level: state.carParkLevel)
 
         guard renderedParkName != state.parkName else { return }
         renderedParkName = state.parkName
@@ -773,14 +774,19 @@ final class ParkScene: SKScene {
     /// The car park outside the gate. Drawn once and never touched again: it
     /// is scenery in the plainest sense, with nothing to simulate and nothing
     /// to select.
-    private func syncCarPark(entrance: GridCoord) {
+    private func syncCarPark(entrance: GridCoord, level: Int) {
         let size = CGSize(width: Self.tileSide * 13, height: Self.tileSide * 4.4)
 
         let node: SKSpriteNode
         if let existing = carPark {
             node = existing
+            if renderedCarParkLevel != level {
+                renderedCarParkLevel = level
+                node.texture = SpriteFactory.carParkTexture(level: level, size: size)
+            }
         } else {
-            node = SKSpriteNode(texture: SpriteFactory.carParkTexture(size: size))
+            renderedCarParkLevel = level
+            node = SKSpriteNode(texture: SpriteFactory.carParkTexture(level: level, size: size))
             node.size = size
             // Below the tiles, so nothing in the park can be confused for it.
             node.zPosition = -1

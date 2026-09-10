@@ -25,6 +25,20 @@ struct ParkSettingsView: View {
                     }
                 }
 
+                Section("Car park") {
+                    UpgradeRowView(title: CarParkContent.name(forLevel: controller.state.carParkLevel),
+                                   summary: CarParkContent.summary,
+                                   symbolName: "car.fill",
+                                   level: controller.state.carParkLevel,
+                                   maxLevel: CarParkContent.maxLevel,
+                                   cost: controller.carParkUpgradeCost(),
+                                   affordable: controller.hud.cash >= (controller.carParkUpgradeCost() ?? 0),
+                                   onLightBackground: true) {
+                        controller.upgradeCarPark()
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 Section("Staff uniform") {
                     VStack(alignment: .leading, spacing: 10) {
                         UniformPicker(selected: controller.state.uniformColour) {

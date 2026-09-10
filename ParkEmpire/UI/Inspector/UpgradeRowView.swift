@@ -15,6 +15,10 @@ struct UpgradeRowView: View {
     /// Nil once there is nothing left to buy.
     let cost: Double?
     let affordable: Bool
+    /// Set when the row sits in a system-styled sheet rather than on one of
+    /// the park's own dark panels, so the text picks up the sheet's colours
+    /// instead of being white on white.
+    var onLightBackground = false
     let onBuy: () -> Void
 
     var body: some View {
@@ -28,12 +32,12 @@ struct UpgradeRowView: View {
                 HStack(spacing: 6) {
                     Text(title)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.textPrimary)
+                        .foregroundStyle(onLightBackground ? Color.primary : Theme.textPrimary)
                     LevelPips(level: level, maxLevel: maxLevel)
                 }
                 Text(summary)
                     .font(.system(size: 10))
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(onLightBackground ? Color.secondary : Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -47,7 +51,7 @@ struct UpgradeRowView: View {
                         .frame(height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(affordable ? Theme.accent : Theme.control)
+                                .fill(affordable ? Theme.accent : (onLightBackground ? Color.secondary.opacity(0.18) : Theme.control))
                         )
                         .foregroundStyle(affordable ? Color.black : Theme.danger)
                 }
@@ -71,7 +75,7 @@ struct LevelPips: View {
         HStack(spacing: 2) {
             ForEach(0..<max(maxLevel, 1), id: \.self) { index in
                 Circle()
-                    .fill(index < level ? Theme.accentWarm : Color.white.opacity(0.18))
+                    .fill(index < level ? Theme.accentWarm : Color.secondary.opacity(0.28))
                     .frame(width: 5, height: 5)
             }
         }

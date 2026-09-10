@@ -34,6 +34,9 @@ final class GameState: Codable {
     /// The colour every employee's uniform is drawn in. Park-wide rather than
     /// per-employee: it is a decision about the park, not about a person.
     var uniformColour: ParkColour = .teal
+    /// How much of the car park outside the gate has been paved, 0 to
+    /// `CarParkContent.maxLevel`.
+    var carParkLevel: Int = 0
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -92,6 +95,7 @@ final class GameState: Codable {
         alerts = container.value(.alerts, or: [])
         admissionPrice = container.value(.admissionPrice, or: Balance.defaultAdmissionPrice)
         uniformColour = container.value(.uniformColour, or: .teal)
+        carParkLevel = container.value(.carParkLevel, or: 0)
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())

@@ -21,6 +21,29 @@ enum AchievementMetric: String, Codable {
     case lifetimeProfit
     case cashOnHand
     case daysOperated
+
+    /// Reads after a number: "2,000 meals served".
+    var pastTense: String {
+        switch self {
+        case .guestsAdmitted: return "guests admitted"
+        case .ridesGiven: return "rides given"
+        case .foodSold: return "meals served"
+        case .drinksSold: return "drinks poured"
+        case .souvenirsSold: return "souvenirs sold"
+        case .litterCleaned: return "pieces of litter swept"
+        case .repairsCompleted: return "rides repaired"
+        case .upgradesBought: return "upgrades bought"
+        case .transportTrips: return "train journeys"
+        case .attractionCount: return "rides standing at once"
+        case .sceneryCount: return "decorations placed"
+        case .staffCount: return "staff on the payroll"
+        case .guestsInPark: return "guests in the park at once"
+        case .parkRating: return "park rating reached"
+        case .lifetimeProfit: return "lifetime profit"
+        case .cashOnHand: return "in the bank"
+        case .daysOperated: return "days open"
+        }
+    }
 }
 
 /// One achievement, with a ladder of thresholds rather than a single target.
@@ -60,10 +83,30 @@ struct AchievementDefinition: Identifiable {
         return numerals[tier - 1]
     }
 
-    /// Whether the metric is money, so the list can format it properly.
+    /// Whether the metric is money, so it can be formatted properly.
     var isCurrency: Bool {
         metric == .lifetimeProfit || metric == .cashOnHand
     }
+
+    func formatted(_ value: Double) -> String {
+        isCurrency
+            ? CurrencyFormatter.short(value)
+            : Self.countFormatter.string(from: NSNumber(value: Int(value))) ?? "\(Int(value))"
+    }
+
+    /// What reaching a tier means in words: the threshold and the metric it
+    /// counts. A name on its own does not tell the player what they did.
+    func accomplishment(forTier tier: Int) -> String {
+        guard let threshold = threshold(forTier: tier) else { return summary }
+        return "\(formatted(threshold)) \(metric.pastTense)"
+    }
+
+    private static let countFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
 }
 
 enum AchievementContent {
@@ -248,4 +291,16 @@ struct AchievementAward: Codable, Identifiable, Equatable {
     var name: String { definition?.name ?? "Achievement" }
     var symbolName: String { definition?.symbolName ?? "rosette" }
     var tierName: String { AchievementDefinition.tierName(tier) }
+    var summary: String { definition?.summary ?? "" }
+
+    /// What this tier actually took, in words.
+    var accomplishment: String {
+        definition?.accomplishment(forTier: tier) ?? ""
+    }
+
+    /// The next rung, so the celebration also points at what to aim for.
+    var nextTarget: String? {
+        guard let definition, let threshold = definition.threshold(forTier: tier + 1) else { return nil }
+        return "\(definition.formatted(threshold)) \(definition.metric.pastTense)"
+    }
 }

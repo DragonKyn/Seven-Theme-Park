@@ -234,10 +234,11 @@ enum SpriteFactory {
     /// park below the sign. Nothing simulates it and nothing can be built on
     /// it; it is there so the gate reads as somewhere people arrive at rather
     /// than the edge of the world.
-    static func carParkTexture(size: CGSize) -> SKTexture {
-        texture(key: "car-park-\(Int(size.width))x\(Int(size.height))", size: size) { context, size in
+    static func carParkTexture(level: Int, size: CGSize) -> SKTexture {
+        texture(key: "car-park-\(level)-\(Int(size.width))x\(Int(size.height))", size: size) { context, size in
             let asphalt = CGRect(origin: .zero, size: size)
-            ParkPalette.asphalt.setFill()
+            // Gravel at first, blacker tarmac as it is paved.
+            ParkPalette.carParkSurface(level: level).setFill()
             UIBezierPath(roundedRect: asphalt, cornerRadius: size.height * 0.06).fill()
 
             // Two banks of bays with an aisle between them.
@@ -260,10 +261,14 @@ enum SpriteFactory {
 
             // Cars in some of the bays, and not the same ones in each bank, so
             // it reads as a car park in use rather than a pattern.
-            let occupied: [(Int, Int)] = [
-                (0, 0), (0, 1), (0, 3), (0, 4), (0, 5), (0, 8), (0, 9),
-                (1, 1), (1, 2), (1, 4), (1, 7), (1, 8), (1, 10)
+            // More of it paved means more of it used, which is the whole point
+            // of paying for the next level.
+            let allBays: [(Int, Int)] = [
+                (0, 0), (0, 1), (0, 3), (0, 4), (0, 5), (0, 8), (0, 9), (0, 6), (0, 10), (0, 2),
+                (1, 1), (1, 2), (1, 4), (1, 7), (1, 8), (1, 10), (1, 0), (1, 5), (1, 9), (1, 3)
             ]
+            let filled = 6 + level * 3
+            let occupied = Array(allBays.prefix(min(filled, allBays.count)))
             let liveries: [ParkColour] = [.red, .blue, .cream, .slate, .green, .amber, .violet]
 
             for (order, slot) in occupied.enumerated() {

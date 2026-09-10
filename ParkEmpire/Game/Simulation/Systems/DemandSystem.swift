@@ -51,7 +51,14 @@ final class DemandSystem {
         // Nobody comes to a park they cannot walk into.
         guard state.map.isWalkable(state.map.entranceCoord) else { return 0 }
 
-        return SimMath.clamp(appeal * ratingFactor * priceFactor, 0, Balance.maxArrivalsPerMinute)
+        // Parking is a small, steady multiplier rather than another source of
+        // appeal: it decides how many of the people who already want to come
+        // can actually get here.
+        let parking = CarParkContent.demandMultiplier(level: state.carParkLevel)
+
+        return SimMath.clamp(appeal * ratingFactor * priceFactor * parking,
+                             0,
+                             Balance.maxArrivalsPerMinute)
     }
 
     /// Admits guests immediately, bypassing the demand model.

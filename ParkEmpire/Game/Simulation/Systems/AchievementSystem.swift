@@ -107,15 +107,6 @@ struct AchievementProgress: Identifiable {
     }
 
     func format(_ value: Double) -> String {
-        definition.isCurrency
-            ? CurrencyFormatter.short(value)
-            : Self.countFormatter.string(from: NSNumber(value: Int(value))) ?? "\(Int(value))"
+        definition.formatted(value)
     }
-
-    private static let countFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter
-    }()
 }
