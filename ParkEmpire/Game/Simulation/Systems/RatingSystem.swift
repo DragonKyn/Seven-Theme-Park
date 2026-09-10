@@ -44,13 +44,13 @@ final class RatingSystem {
         // Guest happiness. An empty park is treated as neutral rather than zero.
         let guestCount = state.guestCount
         let happiness = guestCount > 0 ? state.averageHappiness / 100 : 0.5
-        components.append(Component(name: "Guest happiness", weight: 0.25, value: happiness))
+        components.append(Component(name: "Guest happiness", weight: 0.22, value: happiness))
 
         // Attraction variety: distinct ride types, plus a nudge for quantity.
         let distinctTypes = Set(state.attractions.map(\.definitionID)).count
         let varietyScore = min(1.0, Double(distinctTypes) / 4.0) * 0.7
             + min(1.0, Double(state.attractions.count) / 6.0) * 0.3
-        components.append(Component(name: "Attraction variety", weight: 0.15, value: varietyScore))
+        components.append(Component(name: "Attraction variety", weight: 0.13, value: varietyScore))
 
         // Facility availability, measured against the crowd it has to serve.
         components.append(Component(name: "Facility availability",
@@ -67,12 +67,12 @@ final class RatingSystem {
         components.append(Component(name: "Queue satisfaction", weight: 0.10, value: queueScore(state: state)))
 
         // Litter on the paths plus the state of the bins and restrooms.
-        components.append(Component(name: "Cleanliness", weight: 0.15, value: cleanlinessScore(state: state)))
+        components.append(Component(name: "Cleanliness", weight: 0.13, value: cleanlinessScore(state: state)))
 
         // Whether the rides actually run when guests turn up.
         components.append(Component(name: "Ride reliability", weight: 0.10, value: reliabilityScore(state: state)))
 
-        components.append(Component(name: "Park appearance", weight: 0.05, value: appearanceScore(state: state)))
+        components.append(Component(name: "Park appearance", weight: 0.12, value: appearanceScore(state: state)))
 
         return components
     }
@@ -104,10 +104,12 @@ final class RatingSystem {
         return SimMath.clamp(averageCondition / 100 - brokenPenalty * 0.8, 0, 1)
     }
 
-    /// Placeholder for the decoration system in a later phase: for now a park
-    /// looks good when it is clean and has not been paved end to end.
+    /// A park looks good when it is clean, decorated, and has not been paved
+    /// end to end. Decoration carries the most weight of the three because it
+    /// is the only one of them the player builds on purpose.
     private func appearanceScore(state: GameState) -> Double {
         let clean = state.map.cleanlinessScore
+        let decorated = state.map.beautyScore
 
         var grass = 0
         for index in 0..<state.map.tileCount {
@@ -118,7 +120,7 @@ final class RatingSystem {
         // Best around 70% open ground: neither a car park nor an empty field.
         let balance = SimMath.clamp(1 - abs(grassRatio - 0.7) / 0.7, 0, 1)
 
-        return clean * 0.7 + balance * 0.3
+        return clean * 0.4 + decorated * 0.45 + balance * 0.15
     }
 
     private func facilityScore(state: GameState, guestCount: Int) -> Double {

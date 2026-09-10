@@ -18,6 +18,7 @@ final class GameState: Codable {
     var attractions: [Attraction] = []
     var facilities: [Facility] = []
     var staff: [Staff] = []
+    var scenery: [SceneryItem] = []
 
     // MARK: - Park-level state
 
@@ -66,6 +67,7 @@ final class GameState: Codable {
         attractions = container.value(.attractions, or: [])
         facilities = container.value(.facilities, or: [])
         staff = container.value(.staff, or: [])
+        scenery = container.value(.scenery, or: [])
         ledger = container.value(.ledger, or: Ledger(startingCash: Balance.startingCash))
         clock = container.value(.clock, or: SimulationClock())
         statistics = container.value(.statistics, or: ParkStatistics())
@@ -109,6 +111,10 @@ final class GameState: Codable {
 
     func facilityIndex(id: UUID) -> Int? {
         facilities.firstIndex { $0.id == id }
+    }
+
+    func sceneryIndex(id: UUID) -> Int? {
+        scenery.firstIndex { $0.id == id }
     }
 
     func guestIndex(id: UUID) -> Int? {

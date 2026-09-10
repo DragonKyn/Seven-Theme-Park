@@ -82,6 +82,14 @@ struct GridRect: Hashable, Codable {
         return result
     }
 
+    /// How many tiles away `coord` is from the nearest tile of this rect,
+    /// counting a diagonal step as one. Zero when the coordinate is inside.
+    func chebyshevDistance(to coord: GridCoord) -> Int {
+        let dx = max(origin.x - coord.x, coord.x - (origin.x + size.width - 1), 0)
+        let dy = max(origin.y - coord.y, coord.y - (origin.y + size.height - 1), 0)
+        return max(dx, dy)
+    }
+
     /// Centre of the rect in tile-space, used for label and sprite placement.
     var centre: CGPoint {
         CGPoint(x: CGFloat(origin.x) + CGFloat(size.width) / 2.0,

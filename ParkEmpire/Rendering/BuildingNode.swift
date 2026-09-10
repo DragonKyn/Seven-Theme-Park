@@ -12,17 +12,21 @@ final class BuildingNode: SKSpriteNode {
     /// The one part of the building that moves, if it has one.
     private var motionNode: SKSpriteNode?
 
-    init(texture: SKTexture, size: CGSize, title: String) {
+    /// A nil `title` means no label at all, which is what scenery wants: a
+    /// park with forty captioned trees is unreadable.
+    init(texture: SKTexture, size: CGSize, title: String?) {
         super.init(texture: texture, color: .clear, size: size)
 
-        titleLabel.text = title
-        titleLabel.fontSize = 9
-        titleLabel.fontColor = .white
-        titleLabel.verticalAlignmentMode = .center
-        titleLabel.horizontalAlignmentMode = .center
-        titleLabel.position = CGPoint(x: 0, y: -size.height / 2 - 8)
-        titleLabel.zPosition = 2
-        addChild(titleLabel)
+        if let title {
+            titleLabel.text = title
+            titleLabel.fontSize = 9
+            titleLabel.fontColor = .white
+            titleLabel.verticalAlignmentMode = .center
+            titleLabel.horizontalAlignmentMode = .center
+            titleLabel.position = CGPoint(x: 0, y: -size.height / 2 - 8)
+            titleLabel.zPosition = 2
+            addChild(titleLabel)
+        }
 
         badgeBackground.texture = SpriteFactory.circleTexture(colour: ParkPalette.badge, diameter: 18)
         badgeBackground.size = CGSize(width: 18, height: 18)
@@ -44,8 +48,8 @@ final class BuildingNode: SKSpriteNode {
         fatalError("BuildingNode is created in code only")
     }
 
-    func setTitle(_ title: String) {
-        guard titleLabel.text != title else { return }
+    func setTitle(_ title: String?) {
+        guard let title, titleLabel.parent != nil, titleLabel.text != title else { return }
         titleLabel.text = title
     }
 
@@ -118,6 +122,16 @@ final class BuildingNode: SKSpriteNode {
                                                .wait(forDuration: 1.1),
                                                plunge,
                                                .wait(forDuration: 1.4)])))
+
+        case .bob:
+            // A short, slow pulse: enough to catch the eye, not enough to
+            // pull attention away from the guests.
+            node.position = .zero
+            let up = SKAction.scaleY(to: 1.12, duration: 1.1)
+            let down = SKAction.scaleY(to: 0.94, duration: 1.1)
+            up.timingMode = .easeInEaseOut
+            down.timingMode = .easeInEaseOut
+            node.run(.repeatForever(.sequence([up, down])))
 
         case .circuit:
             // The track is drawn in texture space with y downward; the scene

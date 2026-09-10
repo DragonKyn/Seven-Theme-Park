@@ -198,13 +198,18 @@ final class GameController: ObservableObject {
 
     private func requestDemolition(at coord: GridCoord) {
         let refund = state.demolitionRefund(at: coord)
-        guard let target = state.target(at: coord) else {
+
+        let name: String
+        if let target = state.target(at: coord) {
+            name = state.displayName(of: target)
+        } else if let item = state.sceneryItem(at: coord) {
+            name = item.definition?.displayName ?? "this decoration"
+        } else {
             // Paths are cheap; remove without ceremony.
             if state.demolish(at: coord) { refreshUI() }
             return
         }
 
-        let name = state.displayName(of: target)
         if refund >= 500 {
             pendingDemolition = PendingDemolition(coord: coord, name: name, refund: refund)
         } else {

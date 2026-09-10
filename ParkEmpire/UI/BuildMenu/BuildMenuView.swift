@@ -120,6 +120,9 @@ struct BuildMenuView: View {
         if controller.canDraw {
             return "Tap to place a walkway. Drag moves the map. Turn on Draw to lay a run."
         }
+        if controller.build.category == .scenery {
+            return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
+        }
         return "Tap the map to place. Drag moves the map. Buildings must touch a walkway."
     }
 }

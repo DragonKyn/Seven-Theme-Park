@@ -53,6 +53,10 @@ enum Balance {
     static let happinessDriftPerSecond: Double = 0.05
     static let happinessUnmetNeedPenalty: Double = 0.09
     static let happinessQueueBoredomPerSecond: Double = 0.035
+    /// Happiness gained per second on a perfectly decorated tile, scaled down
+    /// by how pretty the tile actually is. Comparable to the drift rate, so
+    /// pleasant surroundings roughly double the rate a guest cheers up.
+    static let happinessBeautyPerSecond: Double = 0.06
     static let happinessRideBase: Double = 9
     static let happinessThrillMatchBonus: Double = 9
     static let happinessOverpricedPenalty: Double = 7

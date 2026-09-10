@@ -43,12 +43,34 @@ extension GameState {
             facilities.append(facility)
             map.setBuilding(facility.id, on: facility.rect.coords)
 
+        case let sceneryDefinition as SceneryDefinition:
+            let item = SceneryItem(
+                id: UUID(),
+                definitionID: sceneryDefinition.id,
+                origin: origin,
+                size: sceneryDefinition.footprint
+            )
+            scenery.append(item)
+            map.setBuilding(item.id, on: item.rect.coords)
+            refreshBeauty()
+
         default:
             return false
         }
 
         ledger.spend(definition.purchasePrice, on: .construction)
         return true
+    }
+
+    /// Rebuilds the tile beauty field from the scenery currently placed.
+    /// Called on every scenery change rather than tracked incrementally,
+    /// because removing one item can uncover overlap from several others.
+    func refreshBeauty() {
+        let sources = scenery.compactMap { item -> (rect: GridRect, definition: SceneryDefinition)? in
+            guard let definition = item.definition else { return nil }
+            return (item.rect, definition)
+        }
+        map.recomputeBeauty(from: sources)
     }
 
     /// What sits on a tile, if anything.
@@ -74,10 +96,20 @@ extension GameState {
                 return 0
             }
         }
+        if let item = sceneryItem(at: coord) {
+            return (item.definition?.purchasePrice ?? 0) * 0.5
+        }
         if map.tile(at: coord)?.terrain == .path {
             return GameContent.path.refundValue
         }
         return 0
+    }
+
+    /// Scenery deliberately is not a `ParkTarget`: guests never travel to it
+    /// and there is nothing to inspect, so it is found by tile instead.
+    func sceneryItem(at coord: GridCoord) -> SceneryItem? {
+        guard let buildingID = map.tile(at: coord)?.buildingID else { return nil }
+        return scenery.first { $0.id == buildingID }
     }
 
     @discardableResult
@@ -105,6 +137,14 @@ extension GameState {
             default:
                 return false
             }
+        }
+
+        if let item = sceneryItem(at: coord), let index = sceneryIndex(id: item.id) {
+            map.setBuilding(nil, on: item.rect.coords)
+            scenery.remove(at: index)
+            refreshBeauty()
+            ledger.receive(demolitionRefundValue(for: item.definition), as: .other)
+            return true
         }
 
         guard let tile = map.tile(at: coord) else { return false }

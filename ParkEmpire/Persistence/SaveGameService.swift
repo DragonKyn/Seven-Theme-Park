@@ -74,10 +74,14 @@ final class SaveGameService {
         return migrate(save)
     }
 
-    /// Hook for save-format upgrades. Version 1 needs no work; later versions
-    /// adjust the decoded state here rather than at every call site.
+    /// Hook for save-format upgrades. Adjusting the decoded state here rather
+    /// than at every call site.
     private func migrate(_ save: SaveGame) -> GameState {
-        save.state
+        let state = save.state
+        // Rebuilt rather than trusted, so retuning a decoration's beauty in a
+        // later build takes effect on parks that were saved before the change.
+        state.refreshBeauty()
+        return state
     }
 
     func summary(for slot: Int) -> SaveSlotSummary? {

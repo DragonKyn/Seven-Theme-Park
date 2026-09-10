@@ -39,9 +39,11 @@ struct ManagementView: View {
                     LabeledContent("Facilities", value: "\(snapshot.facilityCount)")
                 }
 
-                Section("Cleanliness") {
+                Section("Upkeep and looks") {
                     LabeledContent("Park cleanliness", value: "\(Int(snapshot.cleanliness * 100))%")
                     LabeledContent("Littered tiles", value: "\(snapshot.litteredTiles)")
+                    LabeledContent("Decoration", value: "\(Int(snapshot.beauty * 100))%")
+                    LabeledContent("Scenery placed", value: "\(snapshot.sceneryCount)")
                     LabeledContent("Broken rides", value: "\(snapshot.brokenRides)")
                 }
 

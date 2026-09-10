@@ -22,7 +22,9 @@ struct SaveGame: Codable {
     /// 1: Phase 1 foundation.
     /// 2: Phase 2 adds litter, staff and ride maintenance. Every type that
     ///    gained fields decodes leniently, so a version 1 save still loads.
-    static let currentVersion = 2
+    /// 3: Phase 3 adds scenery and per-tile beauty. Older saves load with an
+    ///    empty scenery list, and the beauty field is rebuilt from it on load.
+    static let currentVersion = 3
 
     var version: Int
     var savedAt: Date

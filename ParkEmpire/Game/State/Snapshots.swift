@@ -360,6 +360,8 @@ struct DashboardSnapshot {
     let brokenRides: Int
     let cleanliness: Double
     let litteredTiles: Int
+    let beauty: Double
+    let sceneryCount: Int
 
     let staffCount: Int
     let dailyPayroll: Double
@@ -397,6 +399,8 @@ struct DashboardSnapshot {
         brokenRides = state.attractions.reduce(0) { $0 + ($1.isBroken ? 1 : 0) }
         cleanliness = state.map.cleanlinessScore
         litteredTiles = state.map.litteredTiles.count
+        beauty = state.map.beautyScore
+        sceneryCount = state.scenery.count
 
         staffCount = state.staff.count
         dailyPayroll = state.dailyPayroll

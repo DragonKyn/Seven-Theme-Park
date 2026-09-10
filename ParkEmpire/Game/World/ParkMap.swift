@@ -168,6 +168,62 @@ struct ParkMap: Codable {
         let saturation = litterTotal / (Double(walkable) * 100)
         return SimMath.clamp(1 - saturation * 6, 0, 1)
     }
+
+    // MARK: - Beauty
+
+    func beauty(at coord: GridCoord) -> Double {
+        guard isInside(coord) else { return 0 }
+        return tiles[linearIndex(of: coord)].beauty
+    }
+
+    /// Average prettiness of the ground guests can actually stand on.
+    /// Decorating the far corner of an empty field should not flatter the
+    /// park rating, so unwalkable tiles are not counted.
+    var beautyScore: Double {
+        var total = 0.0
+        var count = 0
+        for tile in tiles where tile.isWalkable {
+            total += tile.beauty
+            count += 1
+        }
+        guard count > 0 else { return 0 }
+        return SimMath.clamp(total / Double(count) / 100, 0, 1)
+    }
+
+    /// Rebuilds the whole beauty field from the scenery that is currently
+    /// placed. Cheap enough to redo wholesale: it only runs when the player
+    /// places or removes something, never per tick, and doing it this way
+    /// means the field can never drift out of step with the scenery list.
+    mutating func recomputeBeauty(from sources: [(rect: GridRect, definition: SceneryDefinition)]) {
+        for index in tiles.indices {
+            tiles[index].beauty = 0
+        }
+
+        for source in sources {
+            let radius = source.definition.beautyRadius
+            let area = source.rect
+            let minX = area.origin.x - radius
+            let maxX = area.origin.x + area.size.width - 1 + radius
+            let minY = area.origin.y - radius
+            let maxY = area.origin.y + area.size.height - 1 + radius
+
+            for y in minY...maxY {
+                for x in minX...maxX {
+                    let coord = GridCoord(x, y)
+                    guard isInside(coord) else { continue }
+                    let distance = area.chebyshevDistance(to: coord)
+                    let contribution = source.definition.beauty(atDistance: distance)
+                    guard contribution > 0 else { continue }
+
+                    // Overlapping scenery stacks with diminishing returns, so
+                    // a wall of trees is worth less than spreading them out.
+                    let index = linearIndex(of: coord)
+                    let current = tiles[index].beauty
+                    tiles[index].beauty = min(100, current + contribution * (1 - current / 100))
+                }
+            }
+        }
+    }
 }
 
 extension ParkMap {

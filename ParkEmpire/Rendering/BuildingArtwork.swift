@@ -32,6 +32,13 @@ enum BuildingArtwork {
             case .restroom:  drawRestroom(context, size, primary, secondary, accent)
             case .bench:     drawBench(context, size, primary, secondary, accent)
             case .bin:       drawBin(context, size, primary, secondary, accent)
+            case .tree:      drawTree(context, size, primary, secondary, accent)
+            case .conifer:   drawConifer(context, size, primary, secondary, accent)
+            case .flowerBed: drawFlowerBed(context, size, primary, secondary, accent)
+            case .fountain:  drawFountainBasin(context, size, primary, secondary, accent)
+            case .lamp:      drawLamp(context, size, primary, secondary, accent)
+            case .topiary:   drawTopiary(context, size, primary, secondary, accent)
+            case .statue:    drawStatue(context, size, primary, secondary, accent)
             }
         }
     }
@@ -56,6 +63,7 @@ enum BuildingArtwork {
             case .swingBoat: drawBoat(context, size, primary, secondary, accent)
             case .dropTower: drawTowerCar(context, size, primary, secondary, accent)
             case .coaster:   drawTrain(context, size, primary, secondary, accent)
+            case .fountain:  drawFountainJet(context, size, primary, secondary, accent)
             default:         break
             }
         }
@@ -73,6 +81,8 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.30, height: shortest * 0.18)
         case .coaster:
             return CGSize(width: shortest * 0.26, height: shortest * 0.16)
+        case .fountain:
+            return CGSize(width: shortest * 0.30, height: shortest * 0.42)
         default:
             return .zero
         }
@@ -466,5 +476,173 @@ enum BuildingArtwork {
         let ridge = CGRect(x: body.minX + body.width * 0.20, y: body.minY + body.height * 0.24,
                            width: body.width * 0.60, height: max(1, size.height * 0.04))
         fill(UIBezierPath(rect: ridge), accent)
+    }
+
+    // MARK: - Scenery
+
+    private static func drawTree(_ context: CGContext,
+                                 _ size: CGSize,
+                                 _ primary: UIColor,
+                                 _ secondary: UIColor,
+                                 _ accent: UIColor) {
+        let trunk = CGRect(x: size.width * 0.44, y: size.height * 0.58,
+                           width: size.width * 0.12, height: size.height * 0.34)
+        fill(UIBezierPath(roundedRect: trunk, cornerRadius: trunk.width * 0.4), accent)
+
+        withShadow(context) {
+            let canopy = CGRect(x: size.width * 0.12, y: size.height * 0.14,
+                                width: size.width * 0.76, height: size.height * 0.56)
+            fill(UIBezierPath(ovalIn: canopy), primary)
+        }
+        // A lighter blob catches the light and stops the canopy reading flat.
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.20, y: size.height * 0.18,
+                                         width: size.width * 0.34, height: size.height * 0.34)),
+             secondary)
+    }
+
+    private static func drawConifer(_ context: CGContext,
+                                    _ size: CGSize,
+                                    _ primary: UIColor,
+                                    _ secondary: UIColor,
+                                    _ accent: UIColor) {
+        let trunk = CGRect(x: size.width * 0.45, y: size.height * 0.72,
+                           width: size.width * 0.10, height: size.height * 0.22)
+        fill(UIBezierPath(roundedRect: trunk, cornerRadius: trunk.width * 0.4), accent)
+
+        withShadow(context) {
+            // Two stacked triangles read as a fir at any zoom level.
+            let tiers: [(CGFloat, CGFloat, CGFloat)] = [(0.10, 0.55, 0.62), (0.32, 0.78, 0.78)]
+            for tier in tiers {
+                let cone = UIBezierPath()
+                cone.move(to: CGPoint(x: size.width * 0.5, y: size.height * tier.0))
+                cone.addLine(to: CGPoint(x: size.width * (0.5 + tier.2 / 2), y: size.height * tier.1))
+                cone.addLine(to: CGPoint(x: size.width * (0.5 - tier.2 / 2), y: size.height * tier.1))
+                cone.close()
+                fill(cone, primary)
+            }
+        }
+    }
+
+    private static func drawFlowerBed(_ context: CGContext,
+                                      _ size: CGSize,
+                                      _ primary: UIColor,
+                                      _ secondary: UIColor,
+                                      _ accent: UIColor) {
+        let bed = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.10, dy: size.height * 0.22)
+        fill(UIBezierPath(roundedRect: bed, cornerRadius: bed.height * 0.3), accent)
+
+        // Fixed offsets, so a bed always looks the same between frames.
+        let spots: [(CGFloat, CGFloat)] = [
+            (0.26, 0.36), (0.50, 0.28), (0.74, 0.38),
+            (0.34, 0.62), (0.62, 0.66), (0.50, 0.50)
+        ]
+        for (index, spot) in spots.enumerated() {
+            let diameter = size.width * 0.17
+            let rect = CGRect(x: spot.0 * size.width - diameter / 2,
+                              y: spot.1 * size.height - diameter / 2,
+                              width: diameter, height: diameter)
+            fill(UIBezierPath(ovalIn: rect), index % 2 == 0 ? primary : secondary)
+        }
+    }
+
+    private static func drawFountainBasin(_ context: CGContext,
+                                          _ size: CGSize,
+                                          _ primary: UIColor,
+                                          _ secondary: UIColor,
+                                          _ accent: UIColor) {
+        let basin = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.08, dy: size.height * 0.08)
+        withShadow(context) {
+            fill(UIBezierPath(ovalIn: basin), accent)
+        }
+        let water = basin.insetBy(dx: basin.width * 0.14, dy: basin.height * 0.14)
+        fill(UIBezierPath(ovalIn: water), primary)
+
+        let inner = water.insetBy(dx: water.width * 0.26, dy: water.height * 0.26)
+        fill(UIBezierPath(ovalIn: inner), secondary)
+    }
+
+    /// The water, drawn separately so it can pulse.
+    private static func drawFountainJet(_ context: CGContext,
+                                        _ size: CGSize,
+                                        _ primary: UIColor,
+                                        _ secondary: UIColor,
+                                        _ accent: UIColor) {
+        let column = CGRect(x: size.width * 0.38, y: size.height * 0.18,
+                            width: size.width * 0.24, height: size.height * 0.72)
+        fill(UIBezierPath(roundedRect: column, cornerRadius: column.width / 2),
+             ParkPalette.colour(.white).withAlphaComponent(0.85))
+
+        let crown = CGRect(x: size.width * 0.20, y: 0,
+                           width: size.width * 0.60, height: size.height * 0.30)
+        fill(UIBezierPath(ovalIn: crown),
+             ParkPalette.colour(.white).withAlphaComponent(0.70))
+    }
+
+    private static func drawLamp(_ context: CGContext,
+                                 _ size: CGSize,
+                                 _ primary: UIColor,
+                                 _ secondary: UIColor,
+                                 _ accent: UIColor) {
+        let base = CGRect(x: size.width * 0.34, y: size.height * 0.80,
+                          width: size.width * 0.32, height: size.height * 0.12)
+        fill(UIBezierPath(roundedRect: base, cornerRadius: base.height * 0.4), accent)
+
+        let post = CGRect(x: size.width * 0.45, y: size.height * 0.30,
+                          width: size.width * 0.10, height: size.height * 0.54)
+        fill(UIBezierPath(rect: post), accent)
+
+        withShadow(context) {
+            let head = CGRect(x: size.width * 0.30, y: size.height * 0.12,
+                              width: size.width * 0.40, height: size.height * 0.26)
+            fill(UIBezierPath(ovalIn: head), primary)
+        }
+        let glow = CGRect(x: size.width * 0.38, y: size.height * 0.18,
+                          width: size.width * 0.24, height: size.height * 0.14)
+        fill(UIBezierPath(ovalIn: glow), secondary)
+    }
+
+    private static func drawTopiary(_ context: CGContext,
+                                    _ size: CGSize,
+                                    _ primary: UIColor,
+                                    _ secondary: UIColor,
+                                    _ accent: UIColor) {
+        let planter = CGRect(x: size.width * 0.26, y: size.height * 0.66,
+                             width: size.width * 0.48, height: size.height * 0.26)
+        fill(UIBezierPath(roundedRect: planter, cornerRadius: planter.height * 0.22), accent)
+
+        withShadow(context) {
+            let bush = CGRect(x: size.width * 0.16, y: size.height * 0.14,
+                              width: size.width * 0.68, height: size.height * 0.58)
+            fill(UIBezierPath(roundedRect: bush, cornerRadius: bush.width * 0.34), primary)
+        }
+        let sheen = CGRect(x: size.width * 0.26, y: size.height * 0.22,
+                           width: size.width * 0.26, height: size.height * 0.22)
+        fill(UIBezierPath(ovalIn: sheen), secondary)
+    }
+
+    private static func drawStatue(_ context: CGContext,
+                                   _ size: CGSize,
+                                   _ primary: UIColor,
+                                   _ secondary: UIColor,
+                                   _ accent: UIColor) {
+        let plinth = CGRect(x: size.width * 0.22, y: size.height * 0.64,
+                            width: size.width * 0.56, height: size.height * 0.28)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: plinth, cornerRadius: plinth.height * 0.16), accent)
+        }
+
+        let torso = CGRect(x: size.width * 0.38, y: size.height * 0.28,
+                           width: size.width * 0.24, height: size.height * 0.40)
+        fill(UIBezierPath(roundedRect: torso, cornerRadius: torso.width * 0.4), primary)
+
+        let head = CGRect(x: size.width * 0.41, y: size.height * 0.14,
+                          width: size.width * 0.18, height: size.height * 0.18)
+        fill(UIBezierPath(ovalIn: head), primary)
+
+        let sash = CGRect(x: torso.minX, y: torso.minY + torso.height * 0.30,
+                          width: torso.width, height: max(1, size.height * 0.04))
+        fill(UIBezierPath(rect: sash), secondary)
     }
 }

@@ -16,12 +16,14 @@ final class ParkScene: SKScene {
 
     private let worldNode = SKNode()
     private let tileLayer = SKNode()
+    private let sceneryLayer = SKNode()
     private let buildingLayer = SKNode()
     private let guestLayer = SKNode()
     private let overlayLayer = SKNode()
 
     private var tileNodes: [SKSpriteNode] = []
     private var buildingNodes: [UUID: BuildingNode] = [:]
+    private var sceneryNodes: [UUID: BuildingNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
     /// Which of the three mood textures each guest sprite is currently showing,
     /// so the texture is only swapped when the mood actually changes.
@@ -56,6 +58,7 @@ final class ParkScene: SKScene {
 
         if worldNode.parent == nil {
             worldNode.addChild(tileLayer)
+            worldNode.addChild(sceneryLayer)
             worldNode.addChild(buildingLayer)
             worldNode.addChild(overlayLayer)
             worldNode.addChild(guestLayer)
@@ -63,6 +66,7 @@ final class ParkScene: SKScene {
         }
 
         tileLayer.zPosition = 0
+        sceneryLayer.zPosition = 5
         buildingLayer.zPosition = 10
         overlayLayer.zPosition = 20
         guestLayer.zPosition = 30
@@ -253,6 +257,7 @@ final class ParkScene: SKScene {
         updateGestureModes()
         syncTiles(state: controller.state)
         syncLitter(state: controller.state)
+        syncScenery(state: controller.state)
         syncBuildings(state: controller.state)
         syncGuests(state: controller.state)
         syncStaff(state: controller.state)
@@ -339,6 +344,36 @@ final class ParkScene: SKScene {
         for (id, node) in buildingNodes where !seen.contains(id) {
             node.removeFromParent()
             buildingNodes.removeValue(forKey: id)
+        }
+    }
+
+    /// Scenery never changes once placed, so this only ever adds nodes for new
+    /// items and removes nodes for demolished ones.
+    private func syncScenery(state: GameState) {
+        var seen = Set<UUID>()
+
+        for item in state.scenery {
+            seen.insert(item.id)
+            guard sceneryNodes[item.id] == nil else { continue }
+
+            let appearance = item.definition?.appearance ?? .unknown
+            let pixelSize = CGSize(width: CGFloat(item.size.width) * Self.tileSide,
+                                   height: CGFloat(item.size.height) * Self.tileSide)
+            let node = BuildingNode(
+                texture: BuildingArtwork.bodyTexture(for: appearance, size: pixelSize),
+                size: pixelSize,
+                title: nil)
+            node.position = CGPoint(
+                x: (CGFloat(item.origin.x) + CGFloat(item.size.width) / 2) * Self.tileSide,
+                y: (CGFloat(item.origin.y) + CGFloat(item.size.height) / 2) * Self.tileSide)
+            node.configureMotion(appearance: appearance, buildingSize: pixelSize)
+            sceneryLayer.addChild(node)
+            sceneryNodes[item.id] = node
+        }
+
+        for (id, node) in sceneryNodes where !seen.contains(id) {
+            node.removeFromParent()
+            sceneryNodes.removeValue(forKey: id)
         }
     }
 

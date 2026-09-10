@@ -58,6 +58,14 @@ final class GuestAISystem {
             happinessDelta -= Balance.happinessQueueBoredomPerSecond * dt
         }
 
+        // Somewhere pleasant to stand lifts the mood a little every second.
+        // It is small per tick on purpose: decoration should reward a park
+        // that is pretty throughout, not one statue by the entrance.
+        let beauty = state.map.beauty(at: state.guests[index].tile)
+        if beauty > 0 {
+            happinessDelta += beauty / 100 * Balance.happinessBeautyPerSecond * dt
+        }
+
         state.guests[index].adjustHappiness(happinessDelta)
     }
 

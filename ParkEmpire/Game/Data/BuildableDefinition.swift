@@ -6,6 +6,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
     case attraction
     case shop
     case facility
+    case scenery
 
     var id: String { rawValue }
 
@@ -15,6 +16,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "Rides"
         case .shop: return "Food & Retail"
         case .facility: return "Guest Services"
+        case .scenery: return "Scenery"
         }
     }
 
@@ -24,6 +26,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "sparkles"
         case .shop: return "cart"
         case .facility: return "figure.stand"
+        case .scenery: return "tree.fill"
         }
     }
 }

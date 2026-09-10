@@ -224,6 +224,88 @@ enum GameContent {
         )
     ]
 
+    // MARK: - Scenery
+
+    static let scenery: [SceneryDefinition] = [
+        SceneryDefinition(
+            id: "scenery.tree",
+            displayName: "Shade Tree",
+            summary: "Cheap greenery. A row of them turns a bare walkway into somewhere pleasant.",
+            purchasePrice: 150,
+            beauty: 30,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.tree, .green, .lime, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.conifer",
+            displayName: "Pine",
+            summary: "Taller and darker than a shade tree, and reaches a little further.",
+            purchasePrice: 220,
+            beauty: 38,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.conifer, .teal, .green, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.flowerbed",
+            displayName: "Flower Bed",
+            summary: "Low colour beside a path. Best in clusters where guests queue.",
+            purchasePrice: 180,
+            beauty: 34,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.flowerBed, .pink, .yellow, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.lamp",
+            displayName: "Park Lamp",
+            summary: "Modest on its own, but it tidies up a long stretch of walkway.",
+            purchasePrice: 120,
+            beauty: 20,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.lamp, .amber, .cream, .charcoal)
+        ),
+        SceneryDefinition(
+            id: "scenery.topiary",
+            displayName: "Topiary",
+            summary: "Clipped hedging in a planter. Smart enough for a park entrance.",
+            purchasePrice: 320,
+            beauty: 46,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.topiary, .green, .lime, .sand)
+        ),
+        SceneryDefinition(
+            id: "scenery.statue",
+            displayName: "Statue",
+            summary: "A landmark. Expensive, and worth it where everybody walks past.",
+            purchasePrice: 1_400,
+            beauty: 70,
+            beautyRadius: 3,
+            footprint: GridSize(1, 1),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.statue, .cream, .amber, .slate)
+        ),
+        SceneryDefinition(
+            id: "scenery.fountain",
+            displayName: "Fountain",
+            summary: "The centrepiece. Nothing else lifts the look of a park this much.",
+            purchasePrice: 3_200,
+            beauty: 100,
+            beautyRadius: 4,
+            footprint: GridSize(2, 2),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.fountain, .cyan, .white, .slate)
+        )
+    ]
+
     // MARK: - Lookup
 
     private static let attractionsByID: [String: AttractionDefinition] =
@@ -232,14 +314,19 @@ enum GameContent {
     private static let facilitiesByID: [String: FacilityDefinition] =
         Dictionary(uniqueKeysWithValues: facilities.map { ($0.id, $0) })
 
+    private static let sceneryByID: [String: SceneryDefinition] =
+        Dictionary(uniqueKeysWithValues: scenery.map { ($0.id, $0) })
+
     static func attraction(_ id: String) -> AttractionDefinition? { attractionsByID[id] }
     static func facility(_ id: String) -> FacilityDefinition? { facilitiesByID[id] }
+    static func scenery(_ id: String) -> SceneryDefinition? { sceneryByID[id] }
 
     /// Everything placeable, in menu order.
     static var allBuildables: [BuildableDefinition] {
         var result: [BuildableDefinition] = [path]
         result.append(contentsOf: attractions as [BuildableDefinition])
         result.append(contentsOf: facilities as [BuildableDefinition])
+        result.append(contentsOf: scenery as [BuildableDefinition])
         return result
     }
 

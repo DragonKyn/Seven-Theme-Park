@@ -18,6 +18,9 @@ struct Tile: Codable {
     /// Rubbish on the ground, 0-100. Only ever non-zero on walkable tiles,
     /// because guests can only drop it where they can stand.
     var litter: Double = 0
+    /// Prettiness contributed by nearby scenery, 0-100. Recomputed whenever
+    /// scenery is placed or removed, never simulated per tick.
+    var beauty: Double = 0
 
     var isWalkable: Bool {
         buildingID == nil && terrain.isWalkableTerrain
@@ -34,5 +37,6 @@ extension Tile {
         terrain = container.value(.terrain, or: .grass)
         buildingID = container.optionalValue(.buildingID)
         litter = container.value(.litter, or: 0)
+        beauty = container.value(.beauty, or: 0)
     }
 }

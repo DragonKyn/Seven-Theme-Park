@@ -50,6 +50,20 @@ enum BuildingMotif: String, Codable {
     case bench
     /// Cylinder with a lid.
     case bin
+    /// Broad leafy canopy over a trunk.
+    case tree
+    /// Narrow cone, darker and taller than a tree.
+    case conifer
+    /// Low bed of massed flowers.
+    case flowerBed
+    /// Round basin with a jet in the middle.
+    case fountain
+    /// Slim post with a lit head.
+    case lamp
+    /// Clipped shrub on a square base.
+    case topiary
+    /// Carved figure on a plinth.
+    case statue
 
     /// What moves once the building is running. Rides that animate read as
     /// alive; a stopped animation is how a broken ride announces itself.
@@ -59,7 +73,10 @@ enum BuildingMotif: String, Codable {
         case .swingBoat: return .swing
         case .dropTower: return .rise
         case .coaster: return .circuit
-        case .stall, .kiosk, .shopFront, .restroom, .bench, .bin: return .none
+        case .fountain: return .bob
+        case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
+             .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
+            return .none
         }
     }
 }
@@ -71,6 +88,8 @@ enum BuildingMotion: String, Codable {
     case swing
     case rise
     case circuit
+    /// A small vertical pulse, for things that trickle rather than travel.
+    case bob
 }
 
 /// Named colours the park is drawn from. Naming them rather than storing raw
