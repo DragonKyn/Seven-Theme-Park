@@ -4,7 +4,7 @@ An original theme park management simulation for iPhone, built with Swift,
 SwiftUI and SpriteKit. Working title — the name lives in one place
 (`ParkEmpire/App/AppInfo.swift`) so it can be changed without touching the UI.
 
-## Status: Phase 4 in progress (guests, upgrades, more rides)
+## Status: Phase 5 in progress (transport, achievements, modes)
 
 Working today:
 
@@ -99,6 +99,27 @@ Added in Phase 4 so far:
 - **A lighter interface.** Panels are a lit blue-slate gradient rather than
   near-black, and cash has its own gold capsule with the day's profit under it.
 
+Added in Phase 5 so far:
+
+- **Two modes.** A park picks its rules when it is created and keeps them.
+  Free build never deducts anything but still records what everything would
+  have cost, so the finance screen still says whether the park could support
+  itself. It earns no achievements.
+- **Transport.** Track is terrain, dragged out like a walkway. A station has
+  to touch both a walkway and a track, and sets guests down at another station
+  on the same railway, which saves a long walk across a big park. The railway
+  is derived from the tiles whenever the map changes, so nothing can fall out
+  of step with what is on the ground.
+- **Trains that look like trains.** Track tiles are drawn from what they join
+  on to, so a straight run reads as a straight run. A locomotive and two
+  carriages run each route, each starting a tile further back, so the train
+  bends through corners instead of pivoting as one block.
+- **Achievements.** Seventeen of them, each a ladder of six tiers rather than a
+  single target, each paying out more steeply at every rung. Metrics are
+  counters the simulation already kept or values read straight off the park.
+  Earning one sets off a card and a confetti burst.
+- **A car park.** Outside the gate, below the sign. Nothing simulates it.
+
 Not yet built (later phases, by design): reputation tiers, unlock progression,
 objectives, sound, tutorial, custom coaster building.
 
@@ -153,7 +174,7 @@ ParkEmpire/
                   Cleanliness, Maintenance, Staff, Economy, Rating,
                   Pathfinding
       SimulationEngine.swift   fixed-tick loop
-    World/        GridCoord, Tile, ParkMap, placement rules
+    World/        GridCoord, Tile, ParkMap, TrackNetwork, placement rules
     Data/         Definitions and the content catalogue, Balance constants,
                   BuildingAppearance and GuestAppearance (what things look
                   like, as data), UpgradeDefinition
