@@ -32,7 +32,7 @@ struct BuildMenuView: View {
                             .foregroundStyle(isSelected(category) ? Color.black : Theme.textPrimary)
                             .background(
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(isSelected(category) ? Theme.accent : Color.white.opacity(0.10))
+                                    .fill(isSelected(category) ? Theme.accent : Theme.control)
                             )
                     }
                 }
@@ -54,7 +54,7 @@ struct BuildMenuView: View {
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                     .fill(controller.build.isDrawing
                                           ? Theme.accentWarm
-                                          : Color.white.opacity(0.10))
+                                          : Theme.control)
                             )
                     }
                 }
@@ -69,7 +69,7 @@ struct BuildMenuView: View {
                         .foregroundStyle(controller.build.isDemolishing ? Color.black : Theme.textPrimary)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(controller.build.isDemolishing ? Theme.danger : Color.white.opacity(0.10))
+                                .fill(controller.build.isDemolishing ? Theme.danger : Theme.control)
                         )
                 }
             }
@@ -156,7 +156,7 @@ private struct BuildItemCard: View {
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.08))
+                    .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.11))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)

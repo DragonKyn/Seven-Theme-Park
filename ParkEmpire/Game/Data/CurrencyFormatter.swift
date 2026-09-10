@@ -28,6 +28,13 @@ enum CurrencyFormatter {
         precise.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
+    /// Always signed, including a plus. For a running total the player is
+    /// watching move, where "400" and "+400" mean different things.
+    static func delta(_ value: Double) -> String {
+        let magnitude = short(abs(value))
+        return value < 0 ? "-\(magnitude)" : "+\(magnitude)"
+    }
+
     /// Signed, for profit and loss.
     static func signed(_ value: Double) -> String {
         let magnitude = short(abs(value))

@@ -47,7 +47,7 @@ struct UpgradeRowView: View {
                         .frame(height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(affordable ? Theme.accent : Color.white.opacity(0.10))
+                                .fill(affordable ? Theme.accent : Theme.control)
                         )
                         .foregroundStyle(affordable ? Color.black : Theme.danger)
                 }

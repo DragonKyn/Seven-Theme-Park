@@ -1,5 +1,46 @@
 import SwiftUI
 
+/// Cash on hand, with the day's profit under it.
+///
+/// Deliberately the loudest thing on the screen. Everything else the player
+/// does is in service of this number, and on a phone there is no room for a
+/// finance panel to be open all the time.
+struct MoneyPill: View {
+    let cash: Double
+    let todayProfit: Double
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "banknote.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.black.opacity(0.72))
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(CurrencyFormatter.short(cash))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text("\(CurrencyFormatter.delta(todayProfit)) today")
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(todayProfit < 0
+                                     ? Color(red: 0.52, green: 0.09, blue: 0.06)
+                                     : .black.opacity(0.62))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(Theme.moneyGradient)
+                .overlay(Capsule().strokeBorder(.white.opacity(0.45), lineWidth: 1))
+                .shadow(color: Theme.moneyDeep.opacity(0.45), radius: 5, y: 1)
+        )
+    }
+}
+
 /// Compact labelled value used across the HUD.
 struct StatPill: View {
     let symbol: String
@@ -20,7 +61,7 @@ struct StatPill: View {
         .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.10))
+                .fill(Theme.control)
         )
     }
 }
@@ -63,7 +104,7 @@ struct MeterBar: View {
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.12))
+                    Capsule().fill(Color.white.opacity(0.16))
                     Capsule()
                         .fill(tint)
                         .frame(width: max(2, geometry.size.width * value / 100))
@@ -109,7 +150,7 @@ struct SectionCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.white.opacity(0.09))
         )
     }
 }

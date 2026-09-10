@@ -133,7 +133,9 @@ private struct ControlBarView: View {
             }
 
             Button(action: onOpenFinance) {
-                ControlButtonLabel(symbol: "dollarsign.circle.fill", title: "Money")
+                ControlButtonLabel(symbol: "dollarsign.circle.fill",
+                                   title: "Money",
+                                   tint: Theme.money)
             }
 
             Spacer(minLength: 0)
@@ -171,11 +173,15 @@ private struct ControlButtonLabel: View {
     let symbol: String
     let title: String
     var highlighted = false
+    /// Colours the icon only, so one button can be picked out of the row
+    /// without turning the whole thing into a different kind of control.
+    var tint: Color?
 
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(highlighted ? Color.black : (tint ?? Theme.textPrimary))
             Text(title)
                 .font(.system(size: 8, weight: .semibold, design: .rounded))
                 .lineLimit(1)
@@ -184,7 +190,7 @@ private struct ControlButtonLabel: View {
         .foregroundStyle(highlighted ? Color.black : Theme.textPrimary)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(highlighted ? Theme.accentWarm : Color.white.opacity(0.10))
+                .fill(highlighted ? Theme.accentWarm : Theme.control)
         )
     }
 }

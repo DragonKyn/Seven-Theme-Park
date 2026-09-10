@@ -10,7 +10,7 @@ struct HUDView: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
-                StatPill(symbol: "banknote", value: CurrencyFormatter.short(hud.cash))
+                MoneyPill(cash: hud.cash, todayProfit: hud.todayProfit)
                 StatPill(symbol: "person.2.fill", value: "\(hud.guestCount)")
                 StatPill(symbol: "face.smiling",
                          value: "\(Int(hud.averageHappiness))%",
@@ -24,7 +24,7 @@ struct HUDView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.textPrimary)
                             .padding(7)
-                            .background(Circle().fill(Color.white.opacity(0.10)))
+                            .background(Circle().fill(Theme.control))
                         if alertCount > 0 {
                             Circle()
                                 .fill(Theme.danger)
@@ -39,7 +39,7 @@ struct HUDView: View {
                         .font(.footnote)
                         .foregroundStyle(Theme.textPrimary)
                         .padding(7)
-                        .background(Circle().fill(Color.white.opacity(0.10)))
+                        .background(Circle().fill(Theme.control))
                 }
             }
 

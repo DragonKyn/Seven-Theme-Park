@@ -84,7 +84,7 @@ struct AttractionInspectorView: View {
                         .padding(.vertical, 9)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white.opacity(0.12))
+                                .fill(Theme.control)
                         )
                         .foregroundStyle(Theme.textPrimary)
                 }

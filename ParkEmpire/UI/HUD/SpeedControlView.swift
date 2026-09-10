@@ -16,7 +16,7 @@ struct SpeedControlView: View {
                         .foregroundStyle(option == speed ? Color.black : Theme.textPrimary)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(option == speed ? Theme.accent : Color.white.opacity(0.10))
+                                .fill(option == speed ? Theme.accent : Theme.control)
                         )
                 }
             }
