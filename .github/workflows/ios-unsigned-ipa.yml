@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Select newest Xcode
         run: |
@@ -30,8 +30,10 @@ jobs:
           swift --version
 
       - name: Build for device (unsigned)
+        id: build
         run: |
-          set -euo pipefail
+          set -o pipefail
+          set +e
           xcodebuild \
             -project ParkEmpire.xcodeproj \
             -scheme ParkEmpire \
@@ -43,7 +45,57 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_ENTITLEMENTS="" \
-            clean build
+            clean build 2>&1 | tee xcodebuild.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit "${PIPESTATUS[0]}"
+
+      # Actions logs need a signed-in session even on a public repo, but the run
+      # summary page is readable by anyone. Mirroring the diagnostics there is
+      # what makes a failed build debuggable from outside GitHub.
+      - name: Publish diagnostics to the run summary
+        if: always()
+        run: |
+          set -uo pipefail
+          log=xcodebuild.log
+          {
+            echo "## Build diagnostics"
+            echo
+            echo "Build step exit code: \`${{ steps.build.outputs.exit_code || 'unknown' }}\`"
+            echo
+            if [ ! -f "$log" ]; then
+              echo "No \`xcodebuild.log\` was produced."
+              exit 0
+            fi
+            echo "Log lines: \`$(wc -l < "$log" | tr -d ' ')\`"
+            echo
+            echo "### Errors"
+            echo
+            echo '```'
+            grep -nE "(error:|fatal error:|\*\* BUILD FAILED|Command .* failed|The following build commands failed)" "$log" \
+              | head -300 || echo "(no lines matched the error pattern)"
+            echo '```'
+            echo
+            echo "### Warnings (first 60)"
+            echo
+            echo '```'
+            grep -nE "warning:" "$log" | head -60 || echo "(none)"
+            echo '```'
+            echo
+            echo "### Last 120 log lines"
+            echo
+            echo '```'
+            tail -120 "$log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Package into an IPA
         run: |
