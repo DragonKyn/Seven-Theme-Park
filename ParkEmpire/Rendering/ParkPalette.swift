@@ -25,6 +25,9 @@ enum ParkPalette {
     static let guestNeutral = UIColor(red: 0.97, green: 0.78, blue: 0.24, alpha: 1)
     static let guestUnhappy = UIColor(red: 0.90, green: 0.32, blue: 0.28, alpha: 1)
 
+    static let asphalt = UIColor(red: 0.34, green: 0.35, blue: 0.38, alpha: 1)
+    static let bayLine = UIColor(red: 0.86, green: 0.86, blue: 0.83, alpha: 0.85)
+
     static let signPost = UIColor(red: 0.47, green: 0.33, blue: 0.22, alpha: 1)
     static let signFace = UIColor(red: 0.98, green: 0.94, blue: 0.84, alpha: 1)
     static let signFrame = UIColor(red: 0.90, green: 0.55, blue: 0.20, alpha: 1)

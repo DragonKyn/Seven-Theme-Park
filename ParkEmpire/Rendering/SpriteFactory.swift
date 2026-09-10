@@ -118,6 +118,70 @@ enum SpriteFactory {
         }
     }
 
+    /// Asphalt with marked bays and a few cars left in them, drawn outside the
+    /// park below the sign. Nothing simulates it and nothing can be built on
+    /// it; it is there so the gate reads as somewhere people arrive at rather
+    /// than the edge of the world.
+    static func carParkTexture(size: CGSize) -> SKTexture {
+        texture(key: "car-park-\(Int(size.width))x\(Int(size.height))", size: size) { context, size in
+            let asphalt = CGRect(origin: .zero, size: size)
+            ParkPalette.asphalt.setFill()
+            UIBezierPath(roundedRect: asphalt, cornerRadius: size.height * 0.06).fill()
+
+            // Two banks of bays with an aisle between them.
+            let bays = 11
+            let bayWidth = size.width / CGFloat(bays)
+            let bankHeight = size.height * 0.36
+            let banks = [size.height * 0.06, size.height * 0.58]
+
+            ParkPalette.bayLine.setStroke()
+            for bankTop in banks {
+                for index in 0...bays {
+                    let line = UIBezierPath()
+                    let x = bayWidth * CGFloat(index)
+                    line.move(to: CGPoint(x: x, y: bankTop))
+                    line.addLine(to: CGPoint(x: x, y: bankTop + bankHeight))
+                    line.lineWidth = max(1, size.height * 0.008)
+                    line.stroke()
+                }
+            }
+
+            // Cars in some of the bays, and not the same ones in each bank, so
+            // it reads as a car park in use rather than a pattern.
+            let occupied: [(Int, Int)] = [
+                (0, 0), (0, 1), (0, 3), (0, 4), (0, 5), (0, 8), (0, 9),
+                (1, 1), (1, 2), (1, 4), (1, 7), (1, 8), (1, 10)
+            ]
+            let liveries: [ParkColour] = [.red, .blue, .cream, .slate, .green, .amber, .violet]
+
+            for (order, slot) in occupied.enumerated() {
+                let (bank, bay) = slot
+                let colour = ParkPalette.colour(liveries[order % liveries.count])
+                let body = CGRect(x: bayWidth * CGFloat(bay) + bayWidth * 0.18,
+                                  y: banks[bank] + bankHeight * 0.12,
+                                  width: bayWidth * 0.64,
+                                  height: bankHeight * 0.76)
+                colour.setFill()
+                UIBezierPath(roundedRect: body, cornerRadius: body.width * 0.3).fill()
+
+                // Windscreen, which is what stops each car reading as a brick.
+                let glass = body.insetBy(dx: body.width * 0.18, dy: body.height * 0.30)
+                UIColor.black.withAlphaComponent(0.28).setFill()
+                UIBezierPath(roundedRect: glass, cornerRadius: glass.width * 0.25).fill()
+            }
+
+            // Aisle markings down the middle.
+            let aisle = size.height * 0.50
+            let dash = UIBezierPath()
+            dash.move(to: CGPoint(x: 0, y: aisle))
+            dash.addLine(to: CGPoint(x: size.width, y: aisle))
+            dash.lineWidth = max(1, size.height * 0.012)
+            dash.setLineDash([size.width * 0.03, size.width * 0.03], count: 2, phase: 0)
+            ParkPalette.bayLine.setStroke()
+            dash.stroke()
+        }
+    }
+
     static func outlineTexture(colour: UIColor, size: CGSize, lineWidth: CGFloat = 3) -> SKTexture {
         texture(key: "outline-\(colour.hashValue)-\(size.width)x\(size.height)-\(lineWidth)", size: size) { context, size in
             let rect = CGRect(origin: .zero, size: size).insetBy(dx: lineWidth / 2, dy: lineWidth / 2)

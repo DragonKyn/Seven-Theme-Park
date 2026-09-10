@@ -182,14 +182,13 @@ final class BuildingNode: SKSpriteNode {
                                                .fadeAlpha(to: 1.0, duration: 1.3)])))
 
         case .circuit:
-            let path = Self.ovalPath(BuildingArtwork.trackRect(in: buildingSize),
-                                     in: buildingSize,
-                                     inset: 0,
-                                     startAngle: 0)
-            node.run(.repeatForever(.follow(path,
-                                            asOffset: false,
-                                            orientToPath: true,
-                                            duration: 5.5)))
+            Self.drive(node,
+                       around: Self.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
+                                               in: buildingSize,
+                                               inset: 0,
+                                               startAngle: 0,
+                                               steps: 36),
+                       duration: 5.5)
 
         case .race:
             applyRace(to: node, index: index, buildingSize: buildingSize)
@@ -211,15 +210,13 @@ final class BuildingNode: SKSpriteNode {
         let startAngles: [CGFloat] = [0, 1.9, 3.4, 4.9]
 
         let slot = index % lanes.count
-        let path = Self.ovalPath(BuildingArtwork.trackRect(in: buildingSize),
-                                 in: buildingSize,
-                                 inset: lanes[slot] * min(buildingSize.width, buildingSize.height),
-                                 startAngle: startAngles[slot])
+        let points = Self.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
+                                     in: buildingSize,
+                                     inset: lanes[slot] * min(buildingSize.width, buildingSize.height),
+                                     startAngle: startAngles[slot],
+                                     steps: 36)
 
-        node.run(.repeatForever(.follow(path,
-                                        asOffset: false,
-                                        orientToPath: true,
-                                        duration: lapTimes[slot])))
+        Self.drive(node, around: points, duration: lapTimes[slot])
     }
 
     /// Cars cross the arena on overlapping loops at different speeds, so they
@@ -229,8 +226,8 @@ final class BuildingNode: SKSpriteNode {
         let arena = CGSize(width: buildingSize.width * 0.62,
                            height: buildingSize.height * 0.52)
 
-        // Fixed figure-of-eight loops rather than random walks, so the same
-        // arena always looks the same and nothing has to be simulated.
+        // Fixed loops rather than random walks, so the same arena always looks
+        // the same and nothing has to be simulated.
         let loops: [[CGPoint]] = [
             [CGPoint(x: -0.5, y: -0.5), CGPoint(x: 0.4, y: 0.1), CGPoint(x: -0.2, y: 0.5), CGPoint(x: 0.5, y: -0.3)],
             [CGPoint(x: 0.5, y: 0.4), CGPoint(x: -0.4, y: -0.2), CGPoint(x: 0.1, y: -0.5), CGPoint(x: -0.5, y: 0.3)],
@@ -242,17 +239,9 @@ final class BuildingNode: SKSpriteNode {
         let slot = index % loops.count
 
         let points = loops[slot].map { CGPoint(x: $0.x * arena.width, y: $0.y * arena.height) }
-        node.position = points[0]
-
-        let path = CGMutablePath()
-        path.move(to: points[0])
-        for point in points.dropFirst() { path.addLine(to: point) }
-        path.closeSubpath()
-
-        node.run(.repeatForever(.follow(path,
-                                        asOffset: false,
-                                        orientToPath: true,
-                                        duration: lapTimes[slot])))
+        // A bumper car turns on the spot and then drives, rather than sweeping
+        // round the corner the way a kart does.
+        Self.drive(node, around: points, duration: lapTimes[slot], turnFraction: 0.25)
 
         // A short recoil on its own clock. Out of step with the driving, which
         // is what stops five cars jolting in unison.
@@ -310,16 +299,57 @@ final class BuildingNode: SKSpriteNode {
                                            .wait(forDuration: 1.2)])))
     }
 
-    /// An oval in node space, starting at `startAngle` so several sprites can
-    /// share one track without sharing a starting position.
+    // MARK: - Steering
+
+    /// Drives a sprite round a closed loop of points, turning it to face the
+    /// way it is going at every step.
     ///
-    /// Built from segments rather than `CGPath(ellipseIn:)` because that
-    /// always begins at the same point, which would park every kart on the
-    /// start line together.
-    private static func ovalPath(_ trackRect: CGRect,
-                                 in buildingSize: CGSize,
-                                 inset: CGFloat,
-                                 startAngle: CGFloat) -> CGPath {
+    /// `SKAction.follow(orientToPath:)` used to do the driving, and left the
+    /// karts side-on to the track. Steering explicitly costs a handful more
+    /// actions and takes SpriteKit's orientation convention out of the
+    /// argument: the artwork points along positive x, and so does the heading
+    /// this sets.
+    ///
+    /// `turnFraction` is how much of each leg is spent turning. A kart sweeps
+    /// through the whole leg; a bumper car snaps round and then drives.
+    static func drive(_ node: SKSpriteNode,
+                      around points: [CGPoint],
+                      duration: TimeInterval,
+                      turnFraction: Double = 1.0) {
+        guard points.count > 1 else { return }
+
+        let leg = duration / Double(points.count)
+        let turnTime = max(0.01, leg * min(1.0, max(0.05, turnFraction)))
+
+        node.position = points[0]
+        node.zRotation = heading(from: points[0], to: points[1])
+
+        var legs: [SKAction] = []
+        for index in points.indices {
+            let from = points[index]
+            let to = points[(index + 1) % points.count]
+            let move = SKAction.move(to: to, duration: leg)
+            move.timingMode = .linear
+            let turn = SKAction.rotate(toAngle: heading(from: from, to: to),
+                                       duration: turnTime,
+                                       shortestUnitArc: true)
+            legs.append(.group([move, turn]))
+        }
+
+        node.run(.repeatForever(.sequence(legs)))
+    }
+
+    private static func heading(from: CGPoint, to: CGPoint) -> CGFloat {
+        atan2(to.y - from.y, to.x - from.x)
+    }
+
+    /// Points around an oval, starting at `startAngle` so several vehicles can
+    /// share one track without sharing a starting position.
+    static func ovalPoints(_ trackRect: CGRect,
+                           in buildingSize: CGSize,
+                           inset: CGFloat,
+                           startAngle: CGFloat,
+                           steps: Int) -> [CGPoint] {
         let radiusX = max(1, trackRect.width / 2 - inset)
         let radiusY = max(1, trackRect.height / 2 - inset)
         // The track is drawn in texture space with y downward; the scene has y
@@ -327,20 +357,11 @@ final class BuildingNode: SKSpriteNode {
         let centre = CGPoint(x: trackRect.midX - buildingSize.width / 2,
                              y: trackRect.midY - buildingSize.height / 2)
 
-        let path = CGMutablePath()
-        let steps = 48
-        for step in 0...steps {
+        return (0..<steps).map { step in
             let angle = startAngle + CGFloat(step) / CGFloat(steps) * .pi * 2
-            let point = CGPoint(x: centre.x + cos(angle) * radiusX,
-                                y: centre.y + sin(angle) * radiusY)
-            if step == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
+            return CGPoint(x: centre.x + cos(angle) * radiusX,
+                           y: centre.y + sin(angle) * radiusY)
         }
-        path.closeSubpath()
-        return path
     }
 
     /// Freezes every moving part. A ride that has stopped moving is the
