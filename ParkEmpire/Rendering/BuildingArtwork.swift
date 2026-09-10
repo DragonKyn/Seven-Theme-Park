@@ -1099,7 +1099,6 @@ enum BuildingArtwork {
 
     // MARK: - Sky gliders and the maze
 
-    /// Two towers with a cable between them and chairs hanging off it.
     /// The two cables a chairlift runs, out along one and back along the
     /// other. Shared with the motion, so the chairs hang off the wire that is
     /// actually drawn.
@@ -1109,12 +1108,17 @@ enum BuildingArtwork {
             let start = CGPoint(x: size.width * from, y: head)
             let end = CGPoint(x: size.width * to, y: head)
             let control = CGPoint(x: size.width * 0.50, y: head + size.height * sag)
-            return (0..<18).map { step in
-                let t = CGFloat(step) / 18
-                let inverse = 1 - t
-                return CGPoint(
-                    x: inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
-                    y: inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y)
+            // Broken into named weights rather than one expression per axis:
+            // the type checker gives up on the long form.
+            return (0..<18).map { step -> CGPoint in
+                let t = CGFloat(step) / CGFloat(18)
+                let inverse: CGFloat = 1 - t
+                let startWeight: CGFloat = inverse * inverse
+                let controlWeight: CGFloat = 2 * inverse * t
+                let endWeight: CGFloat = t * t
+                let x: CGFloat = startWeight * start.x + controlWeight * control.x + endWeight * end.x
+                let y: CGFloat = startWeight * start.y + controlWeight * control.y + endWeight * end.y
+                return CGPoint(x: x, y: y)
             }
         }
         return (curve(sag: 0.30, from: 0.14, to: 0.86),
@@ -1286,10 +1290,13 @@ enum BuildingArtwork {
         func curve(_ from: CGPoint, _ control: CGPoint, to: CGPoint, steps: Int) {
             for step in 0..<steps {
                 let t = CGFloat(step) / CGFloat(steps)
-                let inverse = 1 - t
-                points.append(CGPoint(
-                    x: inverse * inverse * from.x + 2 * inverse * t * control.x + t * t * to.x,
-                    y: inverse * inverse * from.y + 2 * inverse * t * control.y + t * t * to.y))
+                let inverse: CGFloat = 1 - t
+                let startWeight: CGFloat = inverse * inverse
+                let controlWeight: CGFloat = 2 * inverse * t
+                let endWeight: CGFloat = t * t
+                let x: CGFloat = startWeight * from.x + controlWeight * control.x + endWeight * to.x
+                let y: CGFloat = startWeight * from.y + controlWeight * control.y + endWeight * to.y
+                points.append(CGPoint(x: x, y: y))
             }
         }
 
@@ -1655,10 +1662,13 @@ enum BuildingArtwork {
         func curve(_ from: CGPoint, _ control: CGPoint, to: CGPoint, steps: Int) {
             for step in 0..<steps {
                 let t = CGFloat(step) / CGFloat(steps)
-                let inverse = 1 - t
-                points.append(CGPoint(
-                    x: inverse * inverse * from.x + 2 * inverse * t * control.x + t * t * to.x,
-                    y: inverse * inverse * from.y + 2 * inverse * t * control.y + t * t * to.y))
+                let inverse: CGFloat = 1 - t
+                let startWeight: CGFloat = inverse * inverse
+                let controlWeight: CGFloat = 2 * inverse * t
+                let endWeight: CGFloat = t * t
+                let x: CGFloat = startWeight * from.x + controlWeight * control.x + endWeight * to.x
+                let y: CGFloat = startWeight * from.y + controlWeight * control.y + endWeight * to.y
+                points.append(CGPoint(x: x, y: y))
             }
         }
 

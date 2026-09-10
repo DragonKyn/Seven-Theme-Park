@@ -434,6 +434,29 @@ final class ParkScene: SKScene {
         }
     }
 
+    /// Which of the four neighbours are the same kind of track, as north,
+    /// east, south and west bits. Zero for anything that is not track.
+    private func trackConnections(at coord: GridCoord, map: ParkMap) -> Int {
+        guard let terrain = map.tile(at: coord)?.terrain,
+              terrain == .track || terrain.isCoasterTrack else { return 0 }
+        let offsets: [(Int, GridCoord)] = [
+            (1, GridCoord(coord.x, coord.y + 1)),
+            (2, GridCoord(coord.x + 1, coord.y)),
+            (4, GridCoord(coord.x, coord.y - 1)),
+            (8, GridCoord(coord.x - 1, coord.y))
+        ]
+        var connections = 0
+        // Every kind of coaster piece joins every other, so a loop bolted
+        // between two straights reads as connected to both.
+        for (bit, neighbour) in offsets {
+            guard let other = map.tile(at: neighbour)?.terrain else { continue }
+            let joins = terrain.isCoasterTrack ? other.isCoasterTrack : other == terrain
+            guard joins else { continue }
+            connections |= bit
+        }
+        return connections
+    }
+
     /// Ground is drawn per tile rather than as a flat colour: grass has tufts
     /// on it, paving has joints, water has a shore, and track is drawn from
     /// what it joins on to.
