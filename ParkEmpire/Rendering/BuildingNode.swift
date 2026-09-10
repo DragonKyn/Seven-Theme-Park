@@ -263,13 +263,23 @@ final class BuildingNode: SKSpriteNode {
 
             PathMotion.drive(node,
                              around: ordered,
-                             duration: motif == .megaCoaster ? 8.5 : 5.5)
+                             duration: Self.circuitDuration(for: motif))
 
         case .race:
             applyRace(to: node, index: index, buildingSize: buildingSize)
 
         case .bumper:
             applyBumper(to: node, index: index, buildingSize: buildingSize)
+        }
+    }
+
+    /// How long one lap takes. A flume is a slow ride and a coaster is not,
+    /// and the same number for both made one of them look wrong.
+    private static func circuitDuration(for motif: BuildingMotif) -> TimeInterval {
+        switch motif {
+        case .megaCoaster: return 8.5
+        case .logFlume: return 11.0
+        default: return 5.5
         }
     }
 

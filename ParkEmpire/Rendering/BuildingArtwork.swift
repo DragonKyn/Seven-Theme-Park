@@ -93,6 +93,9 @@ enum BuildingArtwork {
         // is a maintenance vehicle.
         case .megaCoaster: return 4
         case .coaster: return 3
+        // Two logs on the circuit, so there is always one on the drop or
+        // climbing towards it.
+        case .logFlume: return 2
         default: return 1
         }
     }
@@ -160,7 +163,8 @@ enum BuildingArtwork {
         case .bumperCars:
             return CGSize(width: shortest * 0.22, height: shortest * 0.18)
         case .logFlume:
-            return CGSize(width: shortest * 0.28, height: shortest * 0.15)
+            return CGSize(width: buildingSize.width * 0.115,
+                          height: buildingSize.height * 0.085)
         case .slingshot:
             return CGSize(width: shortest * 0.26, height: shortest * 0.26)
         case .carpetSlide:
@@ -436,6 +440,8 @@ enum BuildingArtwork {
         switch motif {
         case .megaCoaster:
             texturePoints = megaCoasterPoints(in: buildingSize)
+        case .logFlume:
+            texturePoints = logFlumePoints(in: buildingSize)
         default:
             let track = trackRect(in: buildingSize)
             texturePoints = (0..<36).map { step in
@@ -696,49 +702,159 @@ enum BuildingArtwork {
              ParkPalette.colour(.amber))
     }
 
+    // MARK: - Log flume
+
+    /// The channel a log runs, in texture space.
+    ///
+    /// Like the big coaster, one list of points is both the trough that gets
+    /// drawn and the path the log follows. A flume is a lift, a long run at
+    /// height, one big drop into water, and a slow return, and it should read
+    /// as all four rather than as a blue oval.
+    static func logFlumePoints(in size: CGSize) -> [CGPoint] {
+        func at(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: x * size.width, y: y * size.height)
+        }
+
+        var points: [CGPoint] = []
+
+        func line(_ from: CGPoint, _ to: CGPoint, steps: Int) {
+            for step in 0..<steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                points.append(CGPoint(x: from.x + (to.x - from.x) * t,
+                                      y: from.y + (to.y - from.y) * t))
+            }
+        }
+
+        func curve(_ from: CGPoint, _ control: CGPoint, to: CGPoint, steps: Int) {
+            for step in 0..<steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                let inverse = 1 - t
+                points.append(CGPoint(
+                    x: inverse * inverse * from.x + 2 * inverse * t * control.x + t * t * to.x,
+                    y: inverse * inverse * from.y + 2 * inverse * t * control.y + t * t * to.y))
+            }
+        }
+
+        // Out of the loading trough and up the lift.
+        line(at(0.07, 0.88), at(0.24, 0.88), steps: 5)
+        line(at(0.24, 0.88), at(0.33, 0.17), steps: 13)
+        // A gentle run along the top, which is where the queue watches from.
+        curve(at(0.33, 0.17), at(0.42, 0.11), to: at(0.56, 0.15), steps: 8)
+        // The drop. Steep, and straight into the water.
+        curve(at(0.56, 0.15), at(0.70, 0.28), to: at(0.73, 0.74), steps: 12)
+        // Out of the splash and round the bottom back to the start.
+        curve(at(0.73, 0.74), at(0.80, 0.84), to: at(0.90, 0.82), steps: 6)
+        curve(at(0.90, 0.82), at(0.95, 0.86), to: at(0.93, 0.94), steps: 4)
+        line(at(0.93, 0.94), at(0.11, 0.94), steps: 16)
+        curve(at(0.11, 0.94), at(0.04, 0.94), to: at(0.07, 0.88), steps: 4)
+
+        return points
+    }
+
+    /// Where the drop lands, so the pool and the channel agree.
+    private static func flumeSplash(in size: CGSize) -> CGRect {
+        CGRect(x: size.width * 0.60, y: size.height * 0.66,
+               width: size.width * 0.30, height: size.height * 0.22)
+    }
+
     private static func drawLogFlumeBase(_ context: CGContext,
                                          _ size: CGSize,
                                          _ primary: UIColor,
                                          _ secondary: UIColor,
                                          _ accent: UIColor) {
         let ground = CGRect(origin: .zero, size: size)
-            .insetBy(dx: size.width * 0.04, dy: size.height * 0.05)
+            .insetBy(dx: size.width * 0.03, dy: size.height * 0.04)
         withShadow(context) {
-            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.12), secondary)
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.10), secondary)
         }
 
-        // The channel itself: water inside a timber lip.
-        let channel = trackRect(in: size)
-        stroke(UIBezierPath(ovalIn: channel), ParkPalette.colour(.brown),
-               width: max(3, size.height * 0.12))
-        stroke(UIBezierPath(ovalIn: channel), ParkPalette.water,
-               width: max(1.5, size.height * 0.07))
-
-        // Splash pool in the middle, which is what the ride is remembered for.
-        let pool = CGRect(x: channel.midX - channel.width * 0.20,
-                          y: channel.midY - channel.height * 0.16,
-                          width: channel.width * 0.40, height: channel.height * 0.32)
+        // The splash pool goes down before the channel, so the trough passes
+        // over the water rather than stopping at it.
+        let pool = flumeSplash(in: size)
         fill(UIBezierPath(ovalIn: pool), ParkPalette.water)
-        stroke(UIBezierPath(ovalIn: pool), ParkPalette.colour(.white),
-               width: max(1, size.height * 0.015))
+        stroke(UIBezierPath(ovalIn: pool.insetBy(dx: pool.width * 0.10, dy: pool.height * 0.14)),
+               ParkPalette.colour(.white).withAlphaComponent(0.55),
+               width: max(1, size.height * 0.010))
 
-        let lift = CGRect(x: channel.minX - size.width * 0.02,
-                          y: channel.minY - size.height * 0.02,
-                          width: size.width * 0.16, height: size.height * 0.20)
-        fill(UIBezierPath(roundedRect: lift, cornerRadius: lift.height * 0.25), primary)
+        let points = logFlumePoints(in: size)
+        guard points.count > 2 else { return }
+
+        // Trestles under the raised sections, which is what makes the height
+        // read as height.
+        let deck = size.height * 0.95
+        let trestles = UIBezierPath()
+        for (index, point) in points.enumerated() where index % 4 == 0 && point.y < deck - 6 {
+            trestles.move(to: point)
+            trestles.addLine(to: CGPoint(x: point.x, y: deck))
+        }
+        stroke(trestles, ParkPalette.colour(.brown).withAlphaComponent(0.5),
+               width: max(1, size.width * 0.009))
+
+        let channel = UIBezierPath()
+        channel.move(to: points[0])
+        for point in points.dropFirst() { channel.addLine(to: point) }
+        channel.close()
+
+        // Timber trough, then the water sitting in it.
+        stroke(channel, ParkPalette.colour(.brown), width: max(3, size.height * 0.055))
+        stroke(channel, ParkPalette.water, width: max(1.5, size.height * 0.030))
+
+        // Spray where the drop meets the pool.
+        let spray = UIBezierPath()
+        for step in 0..<5 {
+            let spread = CGFloat(step) / 4 - 0.5
+            let origin = CGPoint(x: pool.midX + spread * pool.width * 0.55,
+                                 y: pool.minY + pool.height * 0.35)
+            spray.move(to: origin)
+            spray.addLine(to: CGPoint(x: origin.x + spread * size.width * 0.06,
+                                      y: origin.y - size.height * 0.11))
+        }
+        stroke(spray, ParkPalette.colour(.white).withAlphaComponent(0.8),
+               width: max(1, size.width * 0.012))
+
+        // Loading station over the bottom-left straight.
+        let station = CGRect(x: size.width * 0.05, y: size.height * 0.80,
+                             width: size.width * 0.22, height: size.height * 0.13)
+        fill(UIBezierPath(roundedRect: station, cornerRadius: station.height * 0.3), primary)
+        fill(UIBezierPath(rect: CGRect(x: station.minX, y: station.minY,
+                                       width: station.width, height: station.height * 0.32)),
+             accent)
     }
 
+    /// A hollowed log with riders in it, prow to the right.
     private static func drawLog(_ context: CGContext,
                                 _ size: CGSize,
                                 _ primary: UIColor,
                                 _ secondary: UIColor,
                                 _ accent: UIColor) {
-        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
-        fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.5),
-             ParkPalette.colour(.brown))
-        let riders = CGRect(x: body.minX + body.width * 0.22, y: body.minY + body.height * 0.18,
-                            width: body.width * 0.52, height: body.height * 0.46)
-        fill(UIBezierPath(roundedRect: riders, cornerRadius: riders.height * 0.4), primary)
+        let hull = UIBezierPath()
+        let top = size.height * 0.16
+        let bottom = size.height * 0.84
+        hull.move(to: CGPoint(x: size.width * 0.04, y: top))
+        hull.addLine(to: CGPoint(x: size.width * 0.72, y: top))
+        // Rounded prow at the leading end.
+        hull.addQuadCurve(to: CGPoint(x: size.width * 0.72, y: bottom),
+                          controlPoint: CGPoint(x: size.width * 1.06, y: size.height * 0.5))
+        hull.addLine(to: CGPoint(x: size.width * 0.04, y: bottom))
+        hull.addQuadCurve(to: CGPoint(x: size.width * 0.04, y: top),
+                          controlPoint: CGPoint(x: size.width * -0.10, y: size.height * 0.5))
+        hull.close()
+        fill(hull, ParkPalette.colour(.brown))
+
+        // Hollow, so it reads as something you sit in.
+        let well = CGRect(x: size.width * 0.14, y: size.height * 0.30,
+                          width: size.width * 0.62, height: size.height * 0.40)
+        fill(UIBezierPath(roundedRect: well, cornerRadius: well.height * 0.45),
+             ParkPalette.colour(.charcoal).withAlphaComponent(0.55))
+
+        // Two riders.
+        let head = size.height * 0.30
+        for offset in [CGFloat(0.20), CGFloat(0.48)] {
+            fill(UIBezierPath(ovalIn: CGRect(x: size.width * offset,
+                                             y: size.height * 0.5 - head / 2,
+                                             width: head, height: head)),
+                 ParkPalette.colour(.cream))
+        }
     }
 
     // MARK: - Towers and slides
