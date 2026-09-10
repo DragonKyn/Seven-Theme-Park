@@ -416,21 +416,33 @@ final class ParkScene: SKScene {
         for node in trainNodes { node.removeFromParent() }
         trainNodes.removeAll()
 
+        let network = state.trackNetwork
+        let stations = state.attractions.filter { $0.definition?.kind == .transport }
         let carSize = CGSize(width: Self.tileSide * 0.86, height: Self.tileSide * 0.46)
 
-        for route in state.trackNetwork.routes where route.tiles.count > 2 {
+        for (index, route) in network.routes.enumerated() where route.tiles.count > 2 {
+            // A train only runs where there is something for it to do. Laying
+            // a tile of track should not put a locomotive on the map.
+            let served = stations.filter { network.routeIndex(touching: $0.rect) == index }
+            guard served.count >= 2 else { continue }
+
             let points = route.tiles.map {
                 CGPoint(x: (CGFloat($0.x) + 0.5) * Self.tileSide,
                         y: (CGFloat($0.y) + 0.5) * Self.tileSide)
             }
             // A tile a second or so, which reads as a park train rather than
-            // as something anybody would want to ride for the speed.
+            // as something anybody would ride for the speed.
             let duration = Double(points.count) * 0.85
 
-            // A locomotive and two carriages, each starting one tile further
-            // back round the same route, so the train bends through corners
-            // instead of pivoting as one rigid block.
-            for carriage in 0..<3 {
+            // On a loop, a locomotive and two carriages, each starting a tile
+            // further back, so the train bends through corners rather than
+            // pivoting as one block. A dead-ended line is driven out and back
+            // over the same rails, so it runs as a single railcar: carriages
+            // trailing round that path would meet themselves coming the other
+            // way.
+            let cars = route.isLoop ? 3 : 1
+
+            for carriage in 0..<cars {
                 let offset = (points.count - carriage) % points.count
                 let ordered = Array(points[offset...] + points[..<offset])
 

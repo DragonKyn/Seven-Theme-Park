@@ -289,7 +289,7 @@ enum GameContent {
             operatingCostPerCycle: 34,
             footprint: GridSize(9, 6),
             unlockLevel: 4,
-            appearance: BuildingAppearance(.coaster, .red, .charcoal, .amber)
+            appearance: BuildingAppearance(.megaCoaster, .red, .charcoal, .amber)
         ),
         AttractionDefinition(
             id: "transport.station",

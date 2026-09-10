@@ -38,6 +38,8 @@ enum BuildingMotif: String, Codable {
     case dropTower
     /// Oval of track over a base, with a train running it.
     case coaster
+    /// A full-size coaster: lift hill, first drop, vertical loop, return run.
+    case megaCoaster
     /// Upright wheel hung with cabins.
     case ferrisWheel
     /// Round floor carrying a cluster of cups.
@@ -90,7 +92,7 @@ enum BuildingMotif: String, Codable {
         case .carousel, .ferrisWheel, .teacups: return .spin
         case .swingBoat: return .swing
         case .dropTower: return .rise
-        case .coaster, .logFlume: return .circuit
+        case .coaster, .megaCoaster, .logFlume: return .circuit
         case .goKarts: return .race
         case .bumperCars: return .bumper
         case .slingshot: return .launch

@@ -55,6 +55,7 @@ enum BuildingArtwork {
         case .swingBoat: drawSwingBoatBase(context, size, primary, secondary, accent)
         case .dropTower: drawDropTowerBase(context, size, primary, secondary, accent)
         case .coaster:   drawCoasterBase(context, size, primary, secondary, accent)
+        case .megaCoaster: drawMegaCoasterBase(context, size, primary, secondary, accent)
         case .ferrisWheel: drawFerrisWheelBase(context, size, primary, secondary, accent)
         case .teacups:   drawTeacupsBase(context, size, primary, secondary, accent)
         case .bumperCars: drawBumperCarsBase(context, size, primary, secondary, accent)
@@ -113,7 +114,7 @@ enum BuildingArtwork {
             case .carousel:  drawCanopy(context, size, primary, secondary, accent)
             case .swingBoat: drawBoat(context, size, primary, secondary, accent)
             case .dropTower: drawTowerCar(context, size, primary, secondary, accent)
-            case .coaster:   drawTrain(context, size, primary, secondary, accent)
+            case .coaster, .megaCoaster: drawTrain(context, size, primary, secondary, accent)
             case .ferrisWheel: drawWheel(context, size, primary, secondary, accent)
             case .teacups:   drawCups(context, size, primary, secondary, accent)
             case .goKarts: drawKart(context, size, variant)
@@ -140,6 +141,8 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.30, height: shortest * 0.18)
         case .coaster:
             return CGSize(width: shortest * 0.26, height: shortest * 0.16)
+        case .megaCoaster:
+            return CGSize(width: shortest * 0.30, height: shortest * 0.17)
         case .ferrisWheel:
             return CGSize(width: shortest * 0.82, height: shortest * 0.82)
         case .teacups:
@@ -384,6 +387,33 @@ enum BuildingArtwork {
                           width: body.width * 0.28, height: body.height)
         fill(UIBezierPath(roundedRect: nose, cornerRadius: body.height * 0.4),
              ParkPalette.colour(.cream))
+    }
+
+    /// The path a vehicle on a circuit follows, in node space: origin at the
+    /// middle of the building and y upward, ready to drive a sprite along.
+    ///
+    /// Most circuits are the oval below. A full-size coaster has a shape of
+    /// its own, which is the point of it.
+    static func motionPath(for motif: BuildingMotif, buildingSize: CGSize) -> [CGPoint] {
+        let texturePoints: [CGPoint]
+        switch motif {
+        case .megaCoaster:
+            texturePoints = megaCoasterPoints(in: buildingSize)
+        default:
+            let track = trackRect(in: buildingSize)
+            texturePoints = (0..<36).map { step in
+                let angle = CGFloat(step) / 36 * .pi * 2
+                return CGPoint(x: track.midX + cos(angle) * track.width / 2,
+                               y: track.midY + sin(angle) * track.height / 2)
+            }
+        }
+
+        // Texture space runs y downward from the top-left; the scene runs y
+        // upward from the middle.
+        return texturePoints.map {
+            CGPoint(x: $0.x - buildingSize.width / 2,
+                    y: buildingSize.height / 2 - $0.y)
+        }
     }
 
     /// The oval the coaster train runs, in texture coordinates. Shared so the
@@ -864,6 +894,117 @@ enum BuildingArtwork {
                                              width: eye, height: eye)),
                  ParkPalette.colour(.charcoal))
         }
+    }
+
+    // MARK: - Mega coaster
+
+    /// The circuit a big coaster's train runs, in texture space.
+    ///
+    /// One list of points serves as both the track that gets drawn and the
+    /// path the train follows, so the two can never disagree about where the
+    /// rails are. A lift hill, a drop, a vertical loop and a run back to the
+    /// station, which is what makes it read as a coaster rather than an oval.
+    static func megaCoasterPoints(in size: CGSize) -> [CGPoint] {
+        func at(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: x * size.width, y: y * size.height)
+        }
+
+        var points: [CGPoint] = []
+
+        func line(_ from: CGPoint, _ to: CGPoint, steps: Int) {
+            for step in 0..<steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                points.append(CGPoint(x: from.x + (to.x - from.x) * t,
+                                      y: from.y + (to.y - from.y) * t))
+            }
+        }
+
+        func curve(_ from: CGPoint, _ control: CGPoint, to: CGPoint, steps: Int) {
+            for step in 0..<steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                let inverse = 1 - t
+                points.append(CGPoint(
+                    x: inverse * inverse * from.x + 2 * inverse * t * control.x + t * t * to.x,
+                    y: inverse * inverse * from.y + 2 * inverse * t * control.y + t * t * to.y))
+            }
+        }
+
+        func loop(centre: CGPoint, radius: CGFloat, steps: Int) {
+            // Entered and left at the bottom of the circle, which in texture
+            // space is the largest y.
+            for step in 0..<steps {
+                let angle = CGFloat.pi / 2 + CGFloat(step) / CGFloat(steps) * .pi * 2
+                points.append(CGPoint(x: centre.x + cos(angle) * radius,
+                                      y: centre.y + sin(angle) * radius))
+            }
+        }
+
+        let loopCentre = at(0.70, 0.50)
+        let loopRadius = size.height * 0.19
+
+        // Out of the station and up the lift hill.
+        line(at(0.08, 0.90), at(0.30, 0.90), steps: 6)
+        line(at(0.30, 0.90), at(0.40, 0.12), steps: 14)
+        // Over the crest and down the first drop.
+        curve(at(0.40, 0.12), at(0.48, 0.10), to: at(0.50, 0.22), steps: 6)
+        curve(at(0.50, 0.22), at(0.54, 0.62), to: at(0.56, 0.84), steps: 10)
+        // Into the loop, round it, and out the far side.
+        curve(at(0.56, 0.84), at(0.63, 0.80), to: CGPoint(x: loopCentre.x, y: loopCentre.y + loopRadius), steps: 5)
+        loop(centre: loopCentre, radius: loopRadius, steps: 24)
+        curve(CGPoint(x: loopCentre.x, y: loopCentre.y + loopRadius), at(0.84, 0.78), to: at(0.93, 0.90), steps: 7)
+        // Back along the bottom to the station.
+        line(at(0.93, 0.90), at(0.93, 0.96), steps: 2)
+        line(at(0.93, 0.96), at(0.11, 0.96), steps: 16)
+        curve(at(0.11, 0.96), at(0.06, 0.96), to: at(0.08, 0.90), steps: 3)
+
+        return points
+    }
+
+    private static func drawMegaCoasterBase(_ context: CGContext,
+                                            _ size: CGSize,
+                                            _ primary: UIColor,
+                                            _ secondary: UIColor,
+                                            _ accent: UIColor) {
+        let ground = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.02, dy: size.height * 0.03)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.10), secondary)
+        }
+
+        let points = megaCoasterPoints(in: size)
+        guard points.count > 2 else { return }
+
+        // Supports first, so the track sits on top of them. Every few points
+        // is enough to read as a structure without becoming a fence.
+        let deck = size.height * 0.97
+        let supports = UIBezierPath()
+        for (index, point) in points.enumerated() where index % 5 == 0 && point.y < deck - 4 {
+            supports.move(to: point)
+            supports.addLine(to: CGPoint(x: point.x, y: deck))
+        }
+        stroke(supports, ParkPalette.colour(.slate).withAlphaComponent(0.55),
+               width: max(1, size.width * 0.008))
+
+        let track = UIBezierPath()
+        track.move(to: points[0])
+        for point in points.dropFirst() { track.addLine(to: point) }
+        track.close()
+
+        // Ties, then the rail on top, the same way the railway tiles are drawn.
+        stroke(track, ParkPalette.colour(.charcoal), width: max(2.5, size.height * 0.030))
+        stroke(track, accent, width: max(1, size.height * 0.013))
+
+        // Station shed over the bottom-left straight, where the train boards.
+        let station = CGRect(x: size.width * 0.05, y: size.height * 0.84,
+                             width: size.width * 0.26, height: size.height * 0.12)
+        fill(UIBezierPath(roundedRect: station, cornerRadius: station.height * 0.3), primary)
+
+        // Chain marks up the lift hill, which is the bit everyone recognises.
+        let chain = UIBezierPath()
+        chain.move(to: CGPoint(x: size.width * 0.30, y: size.height * 0.90))
+        chain.addLine(to: CGPoint(x: size.width * 0.40, y: size.height * 0.12))
+        stroke(chain, ParkPalette.colour(.cream).withAlphaComponent(0.75),
+               width: max(1, size.height * 0.008))
     }
 
     // MARK: - Shops and services

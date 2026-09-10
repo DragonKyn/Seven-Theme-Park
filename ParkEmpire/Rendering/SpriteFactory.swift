@@ -90,9 +90,12 @@ enum SpriteFactory {
     }
 
     /// One tile of railway, drawn to match the track it is actually connected
-    /// to. `connections` is a bitmask of north, east, south and west, so a
-    /// straight run reads as a straight run and a corner as a corner rather
-    /// than every tile being a crossroads.
+    /// to. `connections` is a bitmask of north, east, south and west.
+    ///
+    /// A tile with two opposite neighbours is drawn straight through, and one
+    /// with two neighbours at right angles is drawn as a proper curve. Drawing
+    /// a corner as two straight stubs meeting in the middle is what made a
+    /// bend look like two pieces overlapping.
     static func trackTileTexture(connections: Int, side: CGFloat) -> SKTexture {
         texture(key: "track-\(connections)-\(side)",
                 size: CGSize(width: side, height: side)) { _, size in
@@ -100,49 +103,80 @@ enum SpriteFactory {
             UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
 
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
-            let gauge = size.width * 0.22
-            let sleeperWidth = size.width * 0.52
+            let gauge = size.width * 0.24
+            let tieWidth = max(2, size.width * 0.30)
+            let railWidth = max(1, size.width * 0.055)
 
-            // Texture space runs y downward while the grid runs y upward, so
-            // north is the top of the image.
-            let directions: [(bit: Int, dx: CGFloat, dy: CGFloat)] = [
-                (1, 0, -1), (2, 1, 0), (4, 0, 1), (8, -1, 0)
+            // Texture space runs y downward, so north is the top of the image.
+            let directions: [(bit: Int, vector: CGPoint)] = [
+                (1, CGPoint(x: 0, y: -1)),
+                (2, CGPoint(x: 1, y: 0)),
+                (4, CGPoint(x: 0, y: 1)),
+                (8, CGPoint(x: -1, y: 0))
             ]
-            // A tile with nothing attached still shows a short stub, so a
-            // half-drawn line does not look like bare gravel.
             let live = directions.filter { connections & $0.bit != 0 }
-            let arms = live.isEmpty ? [directions[1], directions[3]] : live
 
-            for arm in arms {
-                let end = CGPoint(x: centre.x + arm.dx * size.width / 2,
-                                  y: centre.y + arm.dy * size.height / 2)
+            func edgePoint(_ vector: CGPoint) -> CGPoint {
+                CGPoint(x: centre.x + vector.x * size.width / 2,
+                        y: centre.y + vector.y * size.height / 2)
+            }
 
-                // Sleepers first, laid across the direction of travel.
-                ParkPalette.sleeper.setFill()
-                for step in stride(from: 0.18, through: 0.92, by: 0.30) {
-                    let point = CGPoint(x: centre.x + (end.x - centre.x) * step,
-                                        y: centre.y + (end.y - centre.y) * step)
-                    let sleeper = arm.dx == 0
-                        ? CGRect(x: point.x - sleeperWidth / 2, y: point.y - size.height * 0.045,
-                                 width: sleeperWidth, height: size.height * 0.09)
-                        : CGRect(x: point.x - size.width * 0.045, y: point.y - sleeperWidth / 2,
-                                 width: size.width * 0.09, height: sleeperWidth)
-                    UIBezierPath(rect: sleeper).fill()
-                }
+            /// Ties first as one thick dark stroke, then the pair of rails on
+            /// top, so the rails read continuous across the whole tile.
+            func layTrack(_ build: (UIBezierPath, CGFloat) -> Void) {
+                let ties = UIBezierPath()
+                build(ties, 0)
+                ParkPalette.sleeper.setStroke()
+                ties.lineWidth = tieWidth
+                ties.stroke()
 
-                // Then the pair of rails on top, so they read continuous.
                 ParkPalette.rail.setStroke()
                 for offset in [-gauge / 2, gauge / 2] {
                     let rail = UIBezierPath()
-                    if arm.dx == 0 {
-                        rail.move(to: CGPoint(x: centre.x + offset, y: centre.y))
-                        rail.addLine(to: CGPoint(x: centre.x + offset, y: end.y))
-                    } else {
-                        rail.move(to: CGPoint(x: centre.x, y: centre.y + offset))
-                        rail.addLine(to: CGPoint(x: end.x, y: centre.y + offset))
-                    }
-                    rail.lineWidth = max(1, size.width * 0.055)
+                    build(rail, offset)
+                    rail.lineWidth = railWidth
                     rail.stroke()
+                }
+            }
+
+            // Two neighbours at right angles: a curve about the tile corner
+            // they share.
+            if live.count == 2,
+               live[0].vector.x != -live[1].vector.x || live[0].vector.y != -live[1].vector.y {
+                let first = live[0].vector
+                let second = live[1].vector
+                let corner = CGPoint(x: centre.x + (first.x + second.x) * size.width / 2,
+                                     y: centre.y + (first.y + second.y) * size.height / 2)
+                let radius = size.width / 2
+                let start = atan2(-second.y, -second.x)
+                var sweep = atan2(-first.y, -first.x) - start
+                while sweep > .pi { sweep -= .pi * 2 }
+                while sweep < -.pi { sweep += .pi * 2 }
+
+                layTrack { path, offset in
+                    let arcRadius = radius + offset
+                    let steps = 12
+                    for step in 0...steps {
+                        let angle = start + sweep * CGFloat(step) / CGFloat(steps)
+                        let point = CGPoint(x: corner.x + cos(angle) * arcRadius,
+                                            y: corner.y + sin(angle) * arcRadius)
+                        if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                    }
+                }
+                return
+            }
+
+            // Everything else is straight arms out of the middle: a through
+            // run, a junction, a dead end, or a lone tile showing a stub both
+            // ways so a half-drawn line does not look like bare gravel.
+            let arms = live.isEmpty ? [directions[1], directions[3]] : live
+            for arm in arms {
+                let end = edgePoint(arm.vector)
+                layTrack { path, offset in
+                    // Offset across the direction of travel.
+                    let across = CGPoint(x: -arm.vector.y * offset, y: arm.vector.x * offset)
+                    path.move(to: CGPoint(x: centre.x + across.x, y: centre.y + across.y))
+                    path.addLine(to: CGPoint(x: end.x + across.x, y: end.y + across.y))
                 }
             }
         }

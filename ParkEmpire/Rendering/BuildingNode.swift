@@ -161,13 +161,18 @@ final class BuildingNode: SKSpriteNode {
             let node = SKSpriteNode(texture: texture)
             node.size = partSize
             node.zPosition = 1
-            apply(motion, to: node, index: index, buildingSize: buildingSize)
+            apply(motion,
+                  motif: appearance.motif,
+                  to: node,
+                  index: index,
+                  buildingSize: buildingSize)
             addChild(node)
             motionNodes.append(node)
         }
     }
 
     private func apply(_ motion: BuildingMotion,
+                       motif: BuildingMotif,
                        to node: SKSpriteNode,
                        index: Int,
                        buildingSize: CGSize) {
@@ -244,12 +249,9 @@ final class BuildingNode: SKSpriteNode {
 
         case .circuit:
             PathMotion.drive(node,
-                       around: PathMotion.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
-                                               in: buildingSize,
-                                               inset: 0,
-                                               startAngle: 0,
-                                               steps: 36),
-                       duration: 5.5)
+                             around: BuildingArtwork.motionPath(for: motif,
+                                                                buildingSize: buildingSize),
+                             duration: motif == .megaCoaster ? 8.5 : 5.5)
 
         case .race:
             applyRace(to: node, index: index, buildingSize: buildingSize)
