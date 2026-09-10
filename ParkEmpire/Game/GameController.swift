@@ -94,6 +94,13 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    /// Colours every employee in the park. Cheap and instant: it changes how
+    /// staff are drawn and nothing else.
+    func setUniformColour(_ colour: ParkColour) {
+        state.uniformColour = colour
+        refreshUI()
+    }
+
     // MARK: - Building
 
     var selectedDefinition: BuildableDefinition? {

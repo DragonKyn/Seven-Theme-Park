@@ -27,6 +27,9 @@ final class GameState: Codable {
     var statistics = ParkStatistics()
     var alerts: [ParkAlert] = []
     var admissionPrice: Double = Balance.defaultAdmissionPrice
+    /// The colour every employee's uniform is drawn in. Park-wide rather than
+    /// per-employee: it is a decision about the park, not about a person.
+    var uniformColour: ParkColour = .teal
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -73,6 +76,7 @@ final class GameState: Codable {
         statistics = container.value(.statistics, or: ParkStatistics())
         alerts = container.value(.alerts, or: [])
         admissionPrice = container.value(.admissionPrice, or: Balance.defaultAdmissionPrice)
+        uniformColour = container.value(.uniformColour, or: .teal)
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())

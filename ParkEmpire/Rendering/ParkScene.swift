@@ -42,6 +42,11 @@ final class ParkScene: SKScene {
     private static let maxBubbles = 10
     private var staffNodes: [UUID: SKSpriteNode] = [:]
     private var staffTextures: [StaffRole: SKTexture] = [:]
+    /// The uniform the cached staff textures were drawn in.
+    private var renderedUniform: ParkColour?
+    private var entranceSign: SKSpriteNode?
+    private var entranceSignLabel: SKLabelNode?
+    private var renderedParkName: String?
     private var litterNodes: [GridCoord: SKSpriteNode] = [:]
     private var litterIntensity: [GridCoord: Int] = [:]
     private var renderedLitterGeneration = -1
@@ -291,6 +296,7 @@ final class ParkScene: SKScene {
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
         syncBuildings(state: controller.state)
+        syncEntranceSign(state: controller.state)
         syncGuests(state: controller.state)
         syncStaff(state: controller.state)
         if isInteractive {
@@ -572,7 +578,20 @@ final class ParkScene: SKScene {
     // MARK: - Staff
 
     private func syncStaff(state: GameState) {
-        let diameter = Self.tileSide * 0.5
+        let height = Self.tileSide * 0.66
+        let staffSize = CGSize(width: height * StaffArtwork.aspect, height: height)
+
+        // Changing the uniform changes every employee at once, so the cached
+        // textures and the sprites using them are both thrown away and rebuilt
+        // by the loop below. Cheaper to write than to re-pair each node with
+        // its role, and it happens only when the player picks a new colour.
+        if renderedUniform != state.uniformColour {
+            renderedUniform = state.uniformColour
+            staffTextures.removeAll()
+            for node in staffNodes.values { node.removeFromParent() }
+            staffNodes.removeAll()
+        }
+
         var seen = Set<UUID>()
 
         for member in state.staff {
@@ -582,8 +601,10 @@ final class ParkScene: SKScene {
             if let existing = staffNodes[member.id] {
                 node = existing
             } else {
-                node = SKSpriteNode(texture: staffTexture(for: member.role, diameter: diameter))
-                node.size = CGSize(width: diameter, height: diameter)
+                node = SKSpriteNode(texture: staffTexture(for: member.role,
+                                                          uniform: state.uniformColour,
+                                                          height: height))
+                node.size = staffSize
                 node.zPosition = 2
                 guestLayer.addChild(node)
                 staffNodes[member.id] = node
@@ -599,12 +620,58 @@ final class ParkScene: SKScene {
         }
     }
 
-    private func staffTexture(for role: StaffRole, diameter: CGFloat) -> SKTexture {
+    private func staffTexture(for role: StaffRole,
+                              uniform: ParkColour,
+                              height: CGFloat) -> SKTexture {
         if let cached = staffTextures[role] { return cached }
-        let texture = SpriteFactory.circleTexture(colour: ParkPalette.colour(for: role),
-                                                  diameter: diameter)
+        let texture = StaffArtwork.texture(for: role, uniform: uniform, height: height)
         staffTextures[role] = texture
         return texture
+    }
+
+    // MARK: - Entrance sign
+
+    /// A board on two posts standing outside the gate with the park's name on
+    /// it, facing the way an arriving guest would be walking in from.
+    private func syncEntranceSign(state: GameState) {
+        let width = Self.tileSide * 5.4
+        let height = Self.tileSide * 1.5
+
+        let board: SKSpriteNode
+        if let existing = entranceSign {
+            board = existing
+        } else {
+            board = SKSpriteNode(texture: SpriteFactory.entranceSignTexture(
+                size: CGSize(width: width, height: height)))
+            board.size = CGSize(width: width, height: height)
+            board.zPosition = 1
+
+            let label = SKLabelNode(fontNamed: "HelveticaNeue-Bold")
+            label.fontColor = ParkPalette.signText
+            label.verticalAlignmentMode = .center
+            label.horizontalAlignmentMode = .center
+            // Sits on the board face, which is the upper part of the artwork;
+            // the lower part is the posts.
+            label.position = CGPoint(x: 0, y: height * 0.13)
+            label.zPosition = 1
+            board.addChild(label)
+            entranceSignLabel = label
+
+            buildingLayer.addChild(board)
+            entranceSign = board
+        }
+
+        let entrance = state.map.entranceCoord
+        board.position = CGPoint(x: (CGFloat(entrance.x) + 0.5) * Self.tileSide,
+                                 y: (CGFloat(entrance.y) - 0.85) * Self.tileSide)
+
+        guard renderedParkName != state.parkName else { return }
+        renderedParkName = state.parkName
+        entranceSignLabel?.text = state.parkName
+        // Long names shrink rather than overflow the board.
+        let face = width * 0.86
+        entranceSignLabel?.fontSize = min(height * 0.40,
+                                          face * 1.5 / CGFloat(max(1, state.parkName.count)))
     }
 
     // MARK: - Build preview

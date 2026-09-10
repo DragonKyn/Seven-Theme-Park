@@ -89,6 +89,35 @@ enum SpriteFactory {
         }
     }
 
+    /// The board and posts of the park's entrance sign. The name itself is a
+    /// label node on top, because it changes and the texture cache should not
+    /// grow a new entry every time the player renames the park.
+    static func entranceSignTexture(size: CGSize) -> SKTexture {
+        texture(key: "entrance-sign-\(Int(size.width))x\(Int(size.height))", size: size) { context, size in
+            // Posts first, so the board covers where they meet it.
+            let postWidth = size.width * 0.05
+            for x in [size.width * 0.22, size.width * 0.78 - postWidth] {
+                let post = CGRect(x: x, y: size.height * 0.45,
+                                  width: postWidth, height: size.height * 0.55)
+                ParkPalette.signPost.setFill()
+                UIBezierPath(rect: post).fill()
+            }
+
+            let board = CGRect(x: size.width * 0.04, y: size.height * 0.06,
+                               width: size.width * 0.92, height: size.height * 0.62)
+            context.setShadow(offset: CGSize(width: 0, height: size.height * 0.04),
+                              blur: size.height * 0.09,
+                              color: UIColor.black.withAlphaComponent(0.30).cgColor)
+            ParkPalette.signFrame.setFill()
+            UIBezierPath(roundedRect: board, cornerRadius: board.height * 0.24).fill()
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+
+            let face = board.insetBy(dx: board.width * 0.025, dy: board.height * 0.11)
+            ParkPalette.signFace.setFill()
+            UIBezierPath(roundedRect: face, cornerRadius: face.height * 0.22).fill()
+        }
+    }
+
     static func outlineTexture(colour: UIColor, size: CGSize, lineWidth: CGFloat = 3) -> SKTexture {
         texture(key: "outline-\(colour.hashValue)-\(size.width)x\(size.height)-\(lineWidth)", size: size) { context, size in
             let rect = CGRect(origin: .zero, size: size).insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
