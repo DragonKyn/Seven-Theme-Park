@@ -30,7 +30,8 @@ enum GameContent {
             maintenanceRate: 0.010,
             operatingCostPerCycle: 4,
             footprint: GridSize(3, 3),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.carousel, .pink, .cream, .amber)
         ),
         AttractionDefinition(
             id: "ride.pirateship",
@@ -45,7 +46,8 @@ enum GameContent {
             maintenanceRate: 0.020,
             operatingCostPerCycle: 8,
             footprint: GridSize(4, 3),
-            unlockLevel: 2
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.swingBoat, .red, .sand, .brown)
         ),
         AttractionDefinition(
             id: "ride.droptower",
@@ -60,7 +62,8 @@ enum GameContent {
             maintenanceRate: 0.032,
             operatingCostPerCycle: 12,
             footprint: GridSize(3, 3),
-            unlockLevel: 3
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.dropTower, .amber, .sand, .slate)
         ),
         AttractionDefinition(
             id: "ride.minicoaster",
@@ -75,7 +78,8 @@ enum GameContent {
             maintenanceRate: 0.035,
             operatingCostPerCycle: 18,
             footprint: GridSize(6, 4),
-            unlockLevel: 4
+            unlockLevel: 4,
+            appearance: BuildingAppearance(.coaster, .yellow, .lime, .blue)
         )
     ]
 
@@ -96,7 +100,8 @@ enum GameContent {
             queueCapacity: 10,
             relief: NeedRelief(hunger: 55, thirst: -10, bathroom: -12, happiness: 4),
             footprint: GridSize(2, 2),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.stall, .red, .amber, .brown)
         ),
         FacilityDefinition(
             id: "shop.drinks",
@@ -112,7 +117,8 @@ enum GameContent {
             queueCapacity: 10,
             relief: NeedRelief(thirst: 65, bathroom: -20, happiness: 3),
             footprint: GridSize(2, 2),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.kiosk, .cyan, .blue, .cream)
         ),
         FacilityDefinition(
             id: "shop.pizza",
@@ -128,7 +134,8 @@ enum GameContent {
             queueCapacity: 10,
             relief: NeedRelief(hunger: 62, thirst: -14, bathroom: -14, happiness: 5),
             footprint: GridSize(2, 2),
-            unlockLevel: 2
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.stall, .green, .red, .brown)
         ),
         FacilityDefinition(
             id: "shop.icecream",
@@ -144,7 +151,8 @@ enum GameContent {
             queueCapacity: 10,
             relief: NeedRelief(hunger: 22, thirst: 12, bathroom: -6, happiness: 11),
             footprint: GridSize(2, 2),
-            unlockLevel: 2
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.kiosk, .pink, .cream, .violet)
         ),
         FacilityDefinition(
             id: "shop.souvenir",
@@ -160,7 +168,8 @@ enum GameContent {
             queueCapacity: 8,
             relief: NeedRelief(happiness: 9),
             footprint: GridSize(2, 2),
-            unlockLevel: 3
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.shopFront, .violet, .indigo, .amber)
         ),
         FacilityDefinition(
             id: "facility.bathroom",
@@ -176,7 +185,8 @@ enum GameContent {
             queueCapacity: 12,
             relief: NeedRelief(bathroom: 100, happiness: 3),
             footprint: GridSize(2, 2),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.restroom, .cream, .teal, .slate)
         ),
         FacilityDefinition(
             id: "facility.bench",
@@ -192,7 +202,8 @@ enum GameContent {
             queueCapacity: 2,
             relief: NeedRelief(energy: 45, happiness: 2, nausea: 25),
             footprint: GridSize(1, 1),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.bench, .brown, .sand, .charcoal)
         ),
         FacilityDefinition(
             id: "facility.bin",
@@ -208,7 +219,8 @@ enum GameContent {
             queueCapacity: 4,
             relief: NeedRelief(),
             footprint: GridSize(1, 1),
-            unlockLevel: 1
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.bin, .slate, .charcoal, .amber)
         )
     ]
 

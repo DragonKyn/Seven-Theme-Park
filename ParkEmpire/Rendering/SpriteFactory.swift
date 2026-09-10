@@ -102,9 +102,11 @@ enum SpriteFactory {
 
     // MARK: - Rendering helper
 
-    private static func texture(key: String,
-                                size: CGSize,
-                                draw: (CGContext, CGSize) -> Void) -> SKTexture {
+    /// Draws once and caches by key. Internal rather than private so the
+    /// motif artwork in `BuildingArtwork` shares one cache with everything else.
+    static func texture(key: String,
+                        size: CGSize,
+                        draw: (CGContext, CGSize) -> Void) -> SKTexture {
         if let cached = cache[key] { return cached }
 
         let renderer = UIGraphicsImageRenderer(size: size)

@@ -59,4 +59,32 @@ enum ParkPalette {
         default: return guestHappy
         }
     }
+
+    // MARK: - Named content colours
+
+    /// Resolves the colour names used by the content catalogue. This is the
+    /// only place a `ParkColour` becomes pixels, so the whole park can be
+    /// retinted from here.
+    static func colour(_ colour: ParkColour) -> UIColor {
+        switch colour {
+        case .red:      return UIColor(red: 0.89, green: 0.29, blue: 0.28, alpha: 1)
+        case .orange:   return UIColor(red: 0.95, green: 0.53, blue: 0.26, alpha: 1)
+        case .amber:    return UIColor(red: 0.96, green: 0.70, blue: 0.24, alpha: 1)
+        case .yellow:   return UIColor(red: 0.98, green: 0.84, blue: 0.33, alpha: 1)
+        case .lime:     return UIColor(red: 0.66, green: 0.83, blue: 0.36, alpha: 1)
+        case .green:    return UIColor(red: 0.32, green: 0.71, blue: 0.42, alpha: 1)
+        case .teal:     return UIColor(red: 0.25, green: 0.70, blue: 0.64, alpha: 1)
+        case .cyan:     return UIColor(red: 0.38, green: 0.78, blue: 0.85, alpha: 1)
+        case .blue:     return UIColor(red: 0.33, green: 0.55, blue: 0.90, alpha: 1)
+        case .indigo:   return UIColor(red: 0.36, green: 0.40, blue: 0.78, alpha: 1)
+        case .violet:   return UIColor(red: 0.60, green: 0.45, blue: 0.85, alpha: 1)
+        case .pink:     return UIColor(red: 0.93, green: 0.55, blue: 0.74, alpha: 1)
+        case .cream:    return UIColor(red: 0.98, green: 0.95, blue: 0.87, alpha: 1)
+        case .sand:     return UIColor(red: 0.88, green: 0.80, blue: 0.64, alpha: 1)
+        case .brown:    return UIColor(red: 0.60, green: 0.44, blue: 0.31, alpha: 1)
+        case .slate:    return UIColor(red: 0.47, green: 0.53, blue: 0.60, alpha: 1)
+        case .charcoal: return UIColor(red: 0.24, green: 0.26, blue: 0.31, alpha: 1)
+        case .white:    return UIColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1)
+        }
+    }
 }

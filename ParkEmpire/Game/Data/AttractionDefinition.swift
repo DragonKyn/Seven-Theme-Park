@@ -25,6 +25,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     let operatingCostPerCycle: Double
     let footprint: GridSize
     let unlockLevel: Int
+    /// How the placed building is drawn.
+    let appearance: BuildingAppearance
 
     var category: BuildCategory { .attraction }
 

@@ -9,6 +9,8 @@ final class BuildingNode: SKSpriteNode {
     private let badgeLabel = SKLabelNode(fontNamed: "HelveticaNeue-Bold")
     private let badgeBackground = SKSpriteNode()
     private var badgeColour: UIColor = ParkPalette.badge
+    /// The one part of the building that moves, if it has one.
+    private var motionNode: SKSpriteNode?
 
     init(texture: SKTexture, size: CGSize, title: String) {
         super.init(texture: texture, color: .clear, size: size)
@@ -67,6 +69,81 @@ final class BuildingNode: SKSpriteNode {
         let target: CGFloat = dimmed ? 0.45 : 1.0
         if abs(alpha - target) > 0.01 {
             alpha = target
+        }
+    }
+
+    // MARK: - Motion
+
+    /// Adds the moving part for this motif and starts it. Called once, when
+    /// the node is created.
+    func configureMotion(appearance: BuildingAppearance, buildingSize: CGSize) {
+        guard motionNode == nil,
+              let texture = BuildingArtwork.motionTexture(for: appearance, size: buildingSize)
+        else { return }
+
+        let partSize = BuildingArtwork.motionPartSize(for: appearance.motif,
+                                                      buildingSize: buildingSize)
+        let node = SKSpriteNode(texture: texture)
+        node.size = partSize
+        node.zPosition = 1
+
+        switch appearance.motif.motion {
+        case .none:
+            return
+
+        case .spin:
+            node.position = .zero
+            node.run(.repeatForever(.rotate(byAngle: .pi * 2, duration: 7)))
+
+        case .swing:
+            // Pivot at the A-frame apex, so the hull swings from its arms
+            // rather than spinning about its own middle.
+            node.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+            node.position = CGPoint(x: 0, y: buildingSize.height * 0.36)
+            let left = SKAction.rotate(toAngle: 0.5, duration: 1.6)
+            let right = SKAction.rotate(toAngle: -0.5, duration: 1.6)
+            left.timingMode = .easeInEaseOut
+            right.timingMode = .easeInEaseOut
+            node.run(.repeatForever(.sequence([left, right])))
+
+        case .rise:
+            let low = -buildingSize.height * 0.20
+            let high = buildingSize.height * 0.34
+            node.position = CGPoint(x: 0, y: low)
+            let climb = SKAction.moveTo(y: high, duration: 3.4)
+            climb.timingMode = .easeOut
+            let plunge = SKAction.moveTo(y: low, duration: 0.55)
+            plunge.timingMode = .easeIn
+            node.run(.repeatForever(.sequence([climb,
+                                               .wait(forDuration: 1.1),
+                                               plunge,
+                                               .wait(forDuration: 1.4)])))
+
+        case .circuit:
+            // The track is drawn in texture space with y downward; the scene
+            // has y upward, so the oval is rebuilt here rather than reused.
+            let track = BuildingArtwork.trackRect(in: buildingSize)
+            let path = CGPath(ellipseIn: CGRect(x: track.minX - buildingSize.width / 2,
+                                                y: track.minY - buildingSize.height / 2,
+                                                width: track.width,
+                                                height: track.height),
+                              transform: nil)
+            node.run(.repeatForever(.follow(path,
+                                            asOffset: false,
+                                            orientToPath: true,
+                                            duration: 5.5)))
+        }
+
+        addChild(node)
+        motionNode = node
+    }
+
+    /// Freezes the moving part. A ride that has stopped moving is the clearest
+    /// signal that it is closed or broken.
+    func setMotionRunning(_ running: Bool) {
+        guard let motionNode else { return }
+        if motionNode.isPaused == running {
+            motionNode.isPaused = !running
         }
     }
 }

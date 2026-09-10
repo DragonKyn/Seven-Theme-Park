@@ -58,6 +58,8 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     let relief: NeedRelief
     let footprint: GridSize
     let unlockLevel: Int
+    /// How the placed building is drawn.
+    let appearance: BuildingAppearance
 
     var category: BuildCategory {
         kind.sellsGoods ? .shop : .facility

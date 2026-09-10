@@ -310,8 +310,9 @@ final class ParkScene: SKScene {
             let node = buildingNode(for: attraction.id,
                                     size: attraction.size,
                                     origin: attraction.origin,
-                                    colour: ParkPalette.ride,
+                                    appearance: attraction.definition?.appearance ?? .unknown,
                                     title: attraction.name)
+            node.setMotionRunning(attraction.isOperational)
             if attraction.isBroken {
                 node.setBadge("!", colour: ParkPalette.broken)
             } else {
@@ -322,11 +323,10 @@ final class ParkScene: SKScene {
 
         for facility in state.facilities {
             seen.insert(facility.id)
-            let kind = facility.definition?.kind ?? .bench
             let node = buildingNode(for: facility.id,
                                     size: facility.size,
                                     origin: facility.origin,
-                                    colour: ParkPalette.colour(for: kind),
+                                    appearance: facility.definition?.appearance ?? .unknown,
                                     title: facility.name)
             if facility.isUnusable {
                 node.setBadge("!", colour: ParkPalette.broken)
@@ -345,7 +345,7 @@ final class ParkScene: SKScene {
     private func buildingNode(for id: UUID,
                               size: GridSize,
                               origin: GridCoord,
-                              colour: UIColor,
+                              appearance: BuildingAppearance,
                               title: String) -> BuildingNode {
         if let existing = buildingNodes[id] {
             existing.setTitle(title)
@@ -354,9 +354,10 @@ final class ParkScene: SKScene {
 
         let pixelSize = CGSize(width: CGFloat(size.width) * Self.tileSide,
                                height: CGFloat(size.height) * Self.tileSide)
-        let node = BuildingNode(texture: SpriteFactory.buildingTexture(colour: colour, size: pixelSize),
+        let node = BuildingNode(texture: BuildingArtwork.bodyTexture(for: appearance, size: pixelSize),
                                 size: pixelSize,
                                 title: title)
+        node.configureMotion(appearance: appearance, buildingSize: pixelSize)
         node.position = CGPoint(x: (CGFloat(origin.x) + CGFloat(size.width) / 2) * Self.tileSide,
                                 y: (CGFloat(origin.y) + CGFloat(size.height) / 2) * Self.tileSide)
         buildingLayer.addChild(node)
