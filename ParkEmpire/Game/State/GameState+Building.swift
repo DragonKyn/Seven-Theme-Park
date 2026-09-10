@@ -8,7 +8,7 @@ extension GameState {
         PlacementValidator.check(definition: definition,
                                  origin: origin,
                                  map: map,
-                                 cash: ledger.cash)
+                                 cash: ledger.spendableCash)
     }
 
     @discardableResult

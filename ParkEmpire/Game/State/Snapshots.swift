@@ -20,6 +20,7 @@ struct HUDSnapshot {
     var admissionPrice: Double = Balance.defaultAdmissionPrice
     var arrivalsPerMinute: Double = 0
     var todayProfit: Double = 0
+    var mode: GameMode = .normal
 
     init() {}
 
@@ -36,6 +37,7 @@ struct HUDSnapshot {
         admissionPrice = state.admissionPrice
         arrivalsPerMinute = state.currentArrivalsPerMinute
         todayProfit = state.ledger.today.profit
+        mode = state.mode
     }
 }
 

@@ -10,8 +10,25 @@ struct SaveSlotSummary: Codable, Identifiable, Equatable {
     var guestCount: Int
     var parkRating: Double
     var day: Int
+    var mode: GameMode = .normal
 
     var id: Int { slot }
+}
+
+extension SaveSlotSummary {
+    /// Lenient decoding so a sidecar written before free build existed still
+    /// lists on the menu.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        slot = container.value(.slot, or: 0)
+        parkName = container.value(.parkName, or: "Park")
+        savedAt = container.value(.savedAt, or: Date())
+        cash = container.value(.cash, or: 0)
+        guestCount = container.value(.guestCount, or: 0)
+        parkRating = container.value(.parkRating, or: 0)
+        day = container.value(.day, or: 1)
+        mode = container.value(.mode, or: .normal)
+    }
 }
 
 /// Versioned envelope around `GameState`.
@@ -24,7 +41,7 @@ struct SaveGame: Codable {
     ///    gained fields decodes leniently, so a version 1 save still loads.
     /// 3: Phase 3 adds scenery and per-tile beauty. Older saves load with an
     ///    empty scenery list, and the beauty field is rebuilt from it on load.
-    static let currentVersion = 4
+    static let currentVersion = 5
 
     var version: Int
     var savedAt: Date
@@ -43,7 +60,8 @@ struct SaveGame: Codable {
                         cash: state.ledger.cash,
                         guestCount: state.guestCount,
                         parkRating: state.parkRating,
-                        day: state.clock.day)
+                        day: state.clock.day,
+                        mode: state.mode)
     }
 }
 

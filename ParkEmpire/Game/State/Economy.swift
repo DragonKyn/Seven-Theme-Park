@@ -48,6 +48,9 @@ struct LedgerPeriod: Codable {
 /// the finance screen can never disagree with the balance.
 struct Ledger: Codable {
     var cash: Double
+    /// Free build. Costs are still recorded, so the finance screen still shows
+    /// what the park would have cost to run, but nothing is ever deducted.
+    var isUnlimited = false
     var today = LedgerPeriod()
     var yesterday: LedgerPeriod?
     var lifetime = LedgerPeriod()
@@ -56,7 +59,10 @@ struct Ledger: Codable {
         self.cash = startingCash
     }
 
-    func canAfford(_ amount: Double) -> Bool { cash >= amount }
+    func canAfford(_ amount: Double) -> Bool { isUnlimited || cash >= amount }
+
+    /// What the placement rules should measure a price against.
+    var spendableCash: Double { isUnlimited ? .greatestFiniteMagnitude : cash }
 
     mutating func receive(_ amount: Double, as category: RevenueCategory) {
         guard amount > 0 else { return }
@@ -67,7 +73,7 @@ struct Ledger: Codable {
 
     mutating func spend(_ amount: Double, on category: ExpenseCategory) {
         guard amount > 0 else { return }
-        cash -= amount
+        if !isUnlimited { cash -= amount }
         today.add(expense: category, amount)
         lifetime.add(expense: category, amount)
     }
@@ -75,5 +81,18 @@ struct Ledger: Codable {
     mutating func rollOverDay() {
         yesterday = today
         today = LedgerPeriod()
+    }
+}
+
+extension Ledger {
+    /// Lenient decoding so a save written before free build existed still
+    /// loads, as a normal game.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        cash = container.value(.cash, or: Balance.startingCash)
+        isUnlimited = container.value(.isUnlimited, or: false)
+        today = container.value(.today, or: LedgerPeriod())
+        yesterday = container.optionalValue(.yesterday)
+        lifetime = container.value(.lifetime, or: LedgerPeriod())
     }
 }

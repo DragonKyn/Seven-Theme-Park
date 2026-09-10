@@ -27,10 +27,13 @@ final class AppRouter: ObservableObject {
         saveService.mostRecentSlot
     }
 
-    func startNewGame(named name: String, in slot: Int) {
+    func startNewGame(named name: String, mode: GameMode, in slot: Int) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let parkName = trimmed.isEmpty ? "New Park" : trimmed
-        let controller = GameController(newParkNamed: parkName, slot: slot, saveService: saveService)
+        let controller = GameController(newParkNamed: parkName,
+                                        mode: mode,
+                                        slot: slot,
+                                        saveService: saveService)
         controller.save()
         refreshSlots()
         screen = .game(controller)

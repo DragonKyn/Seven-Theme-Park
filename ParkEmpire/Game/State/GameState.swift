@@ -10,6 +10,10 @@ final class GameState: Codable {
     // MARK: - Identity
 
     var parkName: String
+    /// Which rules the park runs under. Fixed when the park is created: a
+    /// free-build park cannot be turned into a normal one, because a park
+    /// built for nothing would make nonsense of the achievements.
+    var mode: GameMode = .normal
 
     // MARK: - World and entities
 
@@ -49,11 +53,15 @@ final class GameState: Codable {
 
     // MARK: - Init
 
-    init(parkName: String, seed: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)) {
+    init(parkName: String,
+         mode: GameMode = .normal,
+         seed: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)) {
         self.parkName = parkName
+        self.mode = mode
         self.map = ParkMap(width: Balance.mapWidth, height: Balance.mapHeight)
         self.ledger = Ledger(startingCash: Balance.startingCash)
         self.rng = SeededGenerator(seed: seed)
+        self.ledger.isUnlimited = mode.hasUnlimitedMoney
         self.map.applyStartingLayout(pathLength: Balance.startingPathLength)
     }
 
@@ -65,6 +73,7 @@ final class GameState: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         parkName = container.value(.parkName, or: "Park")
+        mode = container.value(.mode, or: .normal)
         map = container.value(.map, or: ParkMap(width: Balance.mapWidth, height: Balance.mapHeight))
         guests = container.value(.guests, or: [])
         attractions = container.value(.attractions, or: [])
@@ -85,6 +94,9 @@ final class GameState: Codable {
         nextRatingUpdate = container.value(.nextRatingUpdate, or: 0)
         ratingComponents = container.value(.ratingComponents, or: [:])
         lastAlertTimes = container.value(.lastAlertTimes, or: [:])
+        // The mode is the authority; the ledger flag follows it, so a save
+        // that predates free build cannot end up half in it.
+        ledger.isUnlimited = mode.hasUnlimitedMoney
     }
 
     // MARK: - Lookup

@@ -51,8 +51,13 @@ final class GameController: ObservableObject {
         GameController(state: DemoPark.makeState(), slot: -1, isDemo: true)
     }
 
-    convenience init(newParkNamed name: String, slot: Int, saveService: SaveGameService = SaveGameService()) {
-        self.init(state: GameState(parkName: name), slot: slot, saveService: saveService)
+    convenience init(newParkNamed name: String,
+                     mode: GameMode,
+                     slot: Int,
+                     saveService: SaveGameService = SaveGameService()) {
+        self.init(state: GameState(parkName: name, mode: mode),
+                  slot: slot,
+                  saveService: saveService)
     }
 
     // MARK: - Frame driving

@@ -8,21 +8,26 @@ import SwiftUI
 struct MoneyPill: View {
     let cash: Double
     let todayProfit: Double
+    /// Free build has no balance to report, so the pill says so rather than
+    /// showing a number that never moves.
+    var isUnlimited = false
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "banknote.fill")
+            Image(systemName: isUnlimited ? "infinity" : "banknote.fill")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.black.opacity(0.72))
 
             VStack(alignment: .leading, spacing: 0) {
-                Text(CurrencyFormatter.short(cash))
+                Text(isUnlimited ? "Unlimited" : CurrencyFormatter.short(cash))
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundStyle(.black)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                Text("\(CurrencyFormatter.delta(todayProfit)) today")
+                Text(isUnlimited
+                     ? "Free build"
+                     : "\(CurrencyFormatter.delta(todayProfit)) today")
                     .font(.system(size: 9, weight: .bold, design: .rounded))
                     .foregroundStyle(todayProfit < 0
                                      ? Color(red: 0.52, green: 0.09, blue: 0.06)

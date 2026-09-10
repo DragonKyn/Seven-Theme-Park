@@ -10,7 +10,9 @@ struct HUDView: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
-                MoneyPill(cash: hud.cash, todayProfit: hud.todayProfit)
+                MoneyPill(cash: hud.cash,
+                          todayProfit: hud.todayProfit,
+                          isUnlimited: hud.mode.hasUnlimitedMoney)
                 StatPill(symbol: "person.2.fill", value: "\(hud.guestCount)")
                 StatPill(symbol: "face.smiling",
                          value: "\(Int(hud.averageHappiness))%",
