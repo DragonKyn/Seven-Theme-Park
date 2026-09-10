@@ -116,10 +116,11 @@ struct BuildMenuView: View {
             return reason
         }
         if controller.build.isDrawing {
-            return "Drawing: drag one finger to lay a run of walkway. Two fingers move the map."
+            return "Drawing: drag one finger to lay a run. Two fingers move the map."
         }
         if controller.canDraw {
-            return "Tap to place a walkway. Drag moves the map. Turn on Draw to lay a run."
+            let name = controller.selectedDefinition?.displayName.lowercased() ?? "this"
+            return "Tap to place \(name). Drag moves the map. Turn on Draw to lay a run."
         }
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
@@ -175,10 +176,14 @@ private struct BuildItemCard: View {
                              height: BuildItemCard.thumbnailSide)))
                 .resizable()
                 .frame(width: 38, height: 38)
-        } else {
-            // Walkways have no artwork; show the terrain colour instead.
+        } else if let terrain = definition as? TerrainDefinition {
+            // Terrain has no artwork of its own; show the colour it paints.
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color(red: 0.87, green: 0.84, blue: 0.76))
+                .fill(Color(ParkPalette.colour(for: terrain.terrain, alternate: false)))
+                .frame(width: 38, height: 38)
+        } else {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.white.opacity(0.2))
                 .frame(width: 38, height: 38)
         }
     }

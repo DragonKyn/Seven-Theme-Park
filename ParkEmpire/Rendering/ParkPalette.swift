@@ -8,6 +8,8 @@ enum ParkPalette {
     static let grassAlt = UIColor(red: 0.51, green: 0.74, blue: 0.42, alpha: 1)
     static let path = UIColor(red: 0.87, green: 0.84, blue: 0.76, alpha: 1)
     static let entrance = UIColor(red: 0.96, green: 0.74, blue: 0.30, alpha: 1)
+    static let water = UIColor(red: 0.35, green: 0.63, blue: 0.86, alpha: 1)
+    static let waterAlt = UIColor(red: 0.31, green: 0.58, blue: 0.83, alpha: 1)
 
     static let ride = UIColor(red: 0.36, green: 0.55, blue: 0.92, alpha: 1)
     static let food = UIColor(red: 0.94, green: 0.51, blue: 0.35, alpha: 1)
@@ -49,6 +51,17 @@ enum ParkPalette {
         case .bench: return bench
         case .souvenir: return shop
         case .bin: return bin
+        }
+    }
+
+    /// The flat colour of one terrain tile. Checkerboarded terrains take a
+    /// second shade so a large expanse of them does not read as a solid slab.
+    static func colour(for terrain: TerrainType, alternate: Bool) -> UIColor {
+        switch terrain {
+        case .path: return path
+        case .entrance: return entrance
+        case .water: return alternate ? waterAlt : water
+        case .grass: return alternate ? grassAlt : grass
         }
     }
 

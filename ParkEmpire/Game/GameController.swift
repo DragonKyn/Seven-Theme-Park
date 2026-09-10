@@ -121,10 +121,10 @@ final class GameController: ObservableObject {
         if !canDraw { build.isDrawing = false }
     }
 
-    /// Only walkways are worth dragging out in a run; everything else is
-    /// placed one tap at a time.
+    /// Only terrain is worth dragging out in a run: a walkway or the edge of
+    /// a pond. Everything else is placed one tap at a time.
     var canDraw: Bool {
-        build.isActive && !build.isDemolishing && selectedDefinition?.category == .path
+        build.isActive && !build.isDemolishing && selectedDefinition is TerrainDefinition
     }
 
     func toggleDrawing() {
@@ -203,7 +203,7 @@ final class GameController: ObservableObject {
     func paint(at coord: GridCoord) {
         guard build.isActive, build.isDrawing, !build.isDemolishing,
               let definition = selectedDefinition,
-              definition.category == .path else { return }
+              definition is TerrainDefinition else { return }
         _ = state.place(definition, at: coord)
         refreshUI()
     }

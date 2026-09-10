@@ -24,10 +24,15 @@ enum PlacementValidator {
             return .invalid("Outside the park")
         }
 
-        if definition.category == .path {
+        if let terrainDefinition = definition as? TerrainDefinition {
+            // Terrain is only ever painted onto bare grass, so paving over a
+            // pond or flooding a walkway both need the old tile cleared first.
             guard let tile = map.tile(at: origin) else { return .invalid("Outside the park") }
-            if tile.terrain == .path { return .invalid("Already a walkway") }
+            if tile.terrain == terrainDefinition.terrain {
+                return .invalid("Already \(terrainDefinition.displayName.lowercased())")
+            }
             if tile.terrain == .entrance { return .invalid("That is the entrance") }
+            if tile.terrain != .grass { return .invalid("Clear the ground here first") }
             if tile.buildingID != nil { return .invalid("Something is in the way") }
         } else {
             guard map.isAreaBuildable(rect) else {

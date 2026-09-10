@@ -4,6 +4,9 @@ enum TerrainType: String, Codable {
     case grass
     case path
     case entrance
+    /// Decorative water. Guests cannot walk on it and nothing can be built
+    /// over it, which is the price of how good it looks.
+    case water
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {

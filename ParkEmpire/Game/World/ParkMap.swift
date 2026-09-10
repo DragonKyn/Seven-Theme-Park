@@ -190,17 +190,35 @@ struct ParkMap: Codable {
         return SimMath.clamp(total / Double(count) / 100, 0, 1)
     }
 
-    /// Rebuilds the whole beauty field from the scenery that is currently
-    /// placed. Cheap enough to redo wholesale: it only runs when the player
-    /// places or removes something, never per tick, and doing it this way
-    /// means the field can never drift out of step with the scenery list.
-    mutating func recomputeBeauty(from sources: [(rect: GridRect, definition: SceneryDefinition)]) {
+    /// One thing that makes the ground around it prettier: a piece of
+    /// scenery, or a tile of water.
+    struct BeautySource {
+        let rect: GridRect
+        /// Prettiness on its own tile, 0-100.
+        let beauty: Double
+        /// How many tiles away the effect still reaches.
+        let radius: Int
+
+        /// Linear falloff is enough: the player needs to see that closer is
+        /// better, not to have light modelled.
+        func beauty(atDistance distance: Int) -> Double {
+            guard distance <= radius else { return 0 }
+            guard radius > 0 else { return beauty }
+            return beauty * (1 - Double(distance) / Double(radius + 1))
+        }
+    }
+
+    /// Rebuilds the whole beauty field from what is currently placed. Cheap
+    /// enough to redo wholesale: it only runs when the player places or
+    /// removes something, never per tick, and doing it this way means the
+    /// field can never drift out of step with what is on the map.
+    mutating func recomputeBeauty(from sources: [BeautySource]) {
         for index in tiles.indices {
             tiles[index].beauty = 0
         }
 
         for source in sources {
-            let radius = source.definition.beautyRadius
+            let radius = source.radius
             let area = source.rect
             let minX = area.origin.x - radius
             let maxX = area.origin.x + area.size.width - 1 + radius
@@ -212,10 +230,10 @@ struct ParkMap: Codable {
                     let coord = GridCoord(x, y)
                     guard isInside(coord) else { continue }
                     let distance = area.chebyshevDistance(to: coord)
-                    let contribution = source.definition.beauty(atDistance: distance)
+                    let contribution = source.beauty(atDistance: distance)
                     guard contribution > 0 else { continue }
 
-                    // Overlapping scenery stacks with diminishing returns, so
+                    // Overlapping sources stack with diminishing returns, so
                     // a wall of trees is worth less than spreading them out.
                     let index = linearIndex(of: coord)
                     let current = tiles[index].beauty
@@ -223,6 +241,16 @@ struct ParkMap: Codable {
                 }
             }
         }
+    }
+
+    /// Every tile of the given terrain. Used to fold water into the beauty
+    /// field, and small enough to scan on demand rather than index.
+    func coords(ofTerrain terrain: TerrainType) -> [GridCoord] {
+        var result: [GridCoord] = []
+        for index in tiles.indices where tiles[index].terrain == terrain {
+            result.append(GridCoord(index % width, index / width))
+        }
+        return result
     }
 }
 

@@ -17,8 +17,9 @@ extension GameState {
 
         // Money only moves once we know the definition is one we can build.
         switch definition {
-        case is PathDefinition:
-            map.setTerrain(.path, at: origin)
+        case let terrainDefinition as TerrainDefinition:
+            map.setTerrain(terrainDefinition.terrain, at: origin)
+            if terrainDefinition.beauty > 0 { refreshBeauty() }
 
         case let attractionDefinition as AttractionDefinition:
             let attraction = Attraction(
@@ -62,14 +63,27 @@ extension GameState {
         return true
     }
 
-    /// Rebuilds the tile beauty field from the scenery currently placed.
-    /// Called on every scenery change rather than tracked incrementally,
-    /// because removing one item can uncover overlap from several others.
+    /// Rebuilds the tile beauty field from everything currently placed.
+    /// Called on every change rather than tracked incrementally, because
+    /// removing one item can uncover overlap from several others.
     func refreshBeauty() {
-        let sources = scenery.compactMap { item -> (rect: GridRect, definition: SceneryDefinition)? in
+        var sources = scenery.compactMap { item -> ParkMap.BeautySource? in
             guard let definition = item.definition else { return nil }
-            return (rect: item.rect, definition: definition)
+            return ParkMap.BeautySource(rect: item.rect,
+                                        beauty: definition.beauty,
+                                        radius: definition.beautyRadius)
         }
+
+        // Water is terrain rather than an object, so it has no entity to hang
+        // its prettiness on and is folded in a tile at a time instead.
+        for definition in GameContent.terrains where definition.beauty > 0 {
+            for coord in map.coords(ofTerrain: definition.terrain) {
+                sources.append(ParkMap.BeautySource(rect: GridRect(origin: coord, size: .single),
+                                                    beauty: definition.beauty,
+                                                    radius: definition.beautyRadius))
+            }
+        }
+
         map.recomputeBeauty(from: sources)
     }
 
@@ -99,8 +113,9 @@ extension GameState {
         if let item = sceneryItem(at: coord) {
             return (item.definition?.purchasePrice ?? 0) * 0.5
         }
-        if map.tile(at: coord)?.terrain == .path {
-            return GameContent.path.refundValue
+        if let terrain = map.tile(at: coord)?.terrain,
+           let definition = GameContent.terrains.first(where: { $0.terrain == terrain }) {
+            return definition.refundValue
         }
         return 0
     }
@@ -147,13 +162,14 @@ extension GameState {
             return true
         }
 
-        guard let tile = map.tile(at: coord) else { return false }
-        if tile.terrain == .path {
-            map.setTerrain(.grass, at: coord)
-            ledger.receive(GameContent.path.refundValue, as: .other)
-            return true
-        }
-        return false
+        guard let tile = map.tile(at: coord),
+              let definition = GameContent.terrains.first(where: { $0.terrain == tile.terrain })
+        else { return false }
+
+        map.setTerrain(.grass, at: coord)
+        if definition.beauty > 0 { refreshBeauty() }
+        ledger.receive(definition.refundValue, as: .other)
+        return true
     }
 
     private func demolitionRefundValue(for definition: BuildableDefinition?) -> Double {

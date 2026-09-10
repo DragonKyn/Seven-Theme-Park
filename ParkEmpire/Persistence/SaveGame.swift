@@ -24,7 +24,7 @@ struct SaveGame: Codable {
     ///    gained fields decodes leniently, so a version 1 save still loads.
     /// 3: Phase 3 adds scenery and per-tile beauty. Older saves load with an
     ///    empty scenery list, and the beauty field is rebuilt from it on load.
-    static let currentVersion = 3
+    static let currentVersion = 4
 
     var version: Int
     var savedAt: Date

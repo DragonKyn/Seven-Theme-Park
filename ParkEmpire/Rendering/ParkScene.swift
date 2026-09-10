@@ -325,11 +325,7 @@ final class ParkScene: SKScene {
     }
 
     private func colour(for tile: Tile, at coord: GridCoord) -> UIColor {
-        switch tile.terrain {
-        case .path: return ParkPalette.path
-        case .entrance: return ParkPalette.entrance
-        case .grass: return (coord.x + coord.y) % 2 == 0 ? ParkPalette.grass : ParkPalette.grassAlt
-        }
+        ParkPalette.colour(for: tile.terrain, alternate: (coord.x + coord.y) % 2 != 0)
     }
 
     // MARK: - Buildings

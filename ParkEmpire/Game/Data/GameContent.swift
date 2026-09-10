@@ -4,15 +4,35 @@ import Foundation
 /// means adding an entry here, not editing a simulation system.
 enum GameContent {
 
-    // MARK: - Paths
+    // MARK: - Terrain
 
-    static let path = PathDefinition(
+    static let path = TerrainDefinition(
         id: "path.concrete",
         displayName: "Walkway",
         summary: "Guests can only travel on walkways.",
         purchasePrice: 25,
-        refundValue: 10
+        refundValue: 10,
+        terrain: .path,
+        category: .path,
+        beauty: 0,
+        beautyRadius: 0
     )
+
+    static let water = TerrainDefinition(
+        id: "terrain.water",
+        displayName: "Water",
+        summary: "A pond. Nothing can cross it or be built on it, and nothing else this cheap looks as good.",
+        purchasePrice: 90,
+        refundValue: 20,
+        terrain: .water,
+        category: .scenery,
+        beauty: 52,
+        beautyRadius: 2
+    )
+
+    /// Terrain in build-menu order. Both are drawn by dragging, so they share
+    /// the same handling everywhere the player paints a run of tiles.
+    static let terrains: [TerrainDefinition] = [path, water]
 
     // MARK: - Attractions
 
@@ -323,7 +343,7 @@ enum GameContent {
 
     /// Everything placeable, in menu order.
     static var allBuildables: [BuildableDefinition] {
-        var result: [BuildableDefinition] = [path]
+        var result: [BuildableDefinition] = terrains as [BuildableDefinition]
         result.append(contentsOf: attractions as [BuildableDefinition])
         result.append(contentsOf: facilities as [BuildableDefinition])
         result.append(contentsOf: scenery as [BuildableDefinition])

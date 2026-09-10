@@ -53,15 +53,22 @@ extension BuildableDefinition {
     var previewAppearance: BuildingAppearance? { nil }
 }
 
-/// Paths are their own tiny definition: they change terrain rather than
-/// creating an entity.
-struct PathDefinition: BuildableDefinition {
+/// Terrain rather than an object: placing one repaints a tile instead of
+/// creating an entity. Walkways and water are both this.
+struct TerrainDefinition: BuildableDefinition {
     let id: String
     let displayName: String
     let summary: String
     let purchasePrice: Double
     let refundValue: Double
-    var category: BuildCategory { .path }
+    /// What the tile becomes.
+    let terrain: TerrainType
+    let category: BuildCategory
+    /// Prettiness this terrain lends the tiles around it, on the same 0-100
+    /// scale scenery uses. Walkways add none; water adds a lot.
+    let beauty: Double
+    let beautyRadius: Int
+
     var footprint: GridSize { .single }
     var unlockLevel: Int { 1 }
     var requiresPathAccess: Bool { false }
