@@ -17,6 +17,11 @@ final class ParkScene: SKScene {
 
     /// Points per tile at 1:1 zoom.
     static let tileSide: CGFloat = 32
+    /// Drawn height of a guest and of an employee, in points at 1:1 zoom.
+    /// Shared so the selection marker can be sized to the figure it is
+    /// drawn around rather than guessing at it.
+    private static let guestHeight = tileSide * 0.58
+    private static let staffHeight = tileSide * 0.66
 
     private let worldNode = SKNode()
     private let tileLayer = SKNode()
@@ -449,8 +454,23 @@ final class ParkScene: SKScene {
 
     // MARK: - Guests
 
+    /// Where a guest's sprite actually sits, which is not always the middle
+    /// of their tile: guests in a queue are fanned out into slots so a line
+    /// of them is countable. The selection marker reads this too, so the box
+    /// lands on the figure rather than beside it.
+    private func drawPosition(of guest: Guest) -> CGPoint {
+        var offset = CGPoint.zero
+        if case .queueing = guest.activity {
+            let slot = guest.queueSlot
+            offset = CGPoint(x: CGFloat(slot % 3 - 1) * 0.24,
+                             y: CGFloat(slot / 3) * -0.22)
+        }
+        return CGPoint(x: (guest.position.x + offset.x) * Self.tileSide,
+                       y: (guest.position.y + offset.y) * Self.tileSide)
+    }
+
     private func syncGuests(state: GameState) {
-        let height = Self.tileSide * 0.58
+        let height = Self.guestHeight
         let guestSize = CGSize(width: height * GuestArtwork.aspect, height: height)
         let now = state.clock.simTime
 
@@ -489,15 +509,7 @@ final class ParkScene: SKScene {
                                                     height: height)
             }
 
-            var offset = CGPoint.zero
-            if case .queueing = guest.activity {
-                let slot = guest.queueSlot
-                offset = CGPoint(x: CGFloat(slot % 3 - 1) * 0.24,
-                                 y: CGFloat(slot / 3) * -0.22)
-            }
-
-            node.position = CGPoint(x: (guest.position.x + offset.x) * Self.tileSide,
-                                    y: (guest.position.y + offset.y) * Self.tileSide)
+            node.position = drawPosition(of: guest)
 
             showBubbleIfNeeded(for: guest, on: node, now: now)
         }
@@ -589,7 +601,7 @@ final class ParkScene: SKScene {
     // MARK: - Staff
 
     private func syncStaff(state: GameState) {
-        let height = Self.tileSide * 0.66
+        let height = Self.staffHeight
         let staffSize = CGSize(width: height * StaffArtwork.aspect, height: height)
 
         // Changing the uniform changes every employee at once, so the cached
@@ -732,9 +744,12 @@ final class ParkScene: SKScene {
 
         switch selection {
         case .guest(let detail):
-            if let guest = controller.state.guest(id: detail.id) {
-                centre = CGPoint(x: guest.position.x * Self.tileSide, y: guest.position.y * Self.tileSide)
-                size = CGSize(width: Self.tileSide * 0.7, height: Self.tileSide * 0.7)
+            // A guest on a ride is not drawn, so the marker goes with them
+            // rather than hanging over the spot they left. The selection
+            // itself is untouched: their panel stays open throughout.
+            if let guest = controller.state.guest(id: detail.id), !isInside(guest) {
+                centre = drawPosition(of: guest)
+                size = markerSize(around: Self.guestHeight, aspect: GuestArtwork.aspect)
             }
         case .attraction(let detail):
             if let attraction = controller.state.attraction(id: detail.id) {
@@ -750,7 +765,7 @@ final class ParkScene: SKScene {
             if let member = controller.state.staffMember(id: detail.id) {
                 centre = CGPoint(x: member.position.x * Self.tileSide,
                                  y: member.position.y * Self.tileSide)
-                size = CGSize(width: Self.tileSide * 0.8, height: Self.tileSide * 0.8)
+                size = markerSize(around: Self.staffHeight, aspect: StaffArtwork.aspect)
             }
         }
 
@@ -773,6 +788,20 @@ final class ParkScene: SKScene {
         node.texture = SpriteFactory.outlineTexture(colour: ParkPalette.selection, size: size)
         node.size = size
         node.position = centre
+    }
+
+    /// True while a guest is inside a ride or a building, where they are not
+    /// drawn.
+    private func isInside(_ guest: Guest) -> Bool {
+        if case .engaged = guest.activity { return true }
+        return false
+    }
+
+    /// A box drawn a little outside the figure it marks, rather than a square
+    /// the size of a tile, so it reads as being around that person.
+    private func markerSize(around height: CGFloat, aspect: CGFloat) -> CGSize {
+        let margin = Self.tileSide * 0.16
+        return CGSize(width: height * aspect + margin, height: height + margin)
     }
 
     private func rectCentre(origin: GridCoord, size: GridSize) -> CGPoint {
