@@ -84,11 +84,18 @@ Added in Phase 4 so far:
   the job, and dearer to keep.
 - **Guests who look like people.** Shirt, hair, skin tone and headwear combine
   into far more variety than a set of fixed sprites would, and lean on age.
-  Mood moved to a coloured ring behind the figure so it still reads when a
-  guest is six pixels tall.
+  Mood shows as a coloured pad on the ground under them, which still reads
+  when a guest is six pixels tall without sitting behind the figure.
 - **Thought bubbles.** A fresh thought pops a bubble showing what it is about,
   tinted by mood. Only recent thoughts qualify and ten show at once, so a park
   full of complaints reads as trouble without becoming noise.
+- **Staff you can tell apart.** Guests and employees share one drawn figure,
+  so the body lives in one place and each caller adds what makes it
+  recognisable. Employees wear the park's uniform colour, which is a single
+  park-wide setting, and stay distinguishable by their hat and what they
+  carry: a broom, a spanner, or two balloons.
+- **A sign at the gate.** A board on two posts outside the entrance carrying
+  the park's name, facing the way an arriving guest walks in.
 - **A lighter interface.** Panels are a lit blue-slate gradient rather than
   near-black, and cash has its own gold capsule with the day's profit under it.
 
