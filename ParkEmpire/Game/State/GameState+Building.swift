@@ -68,7 +68,7 @@ extension GameState {
     func refreshBeauty() {
         let sources = scenery.compactMap { item -> (rect: GridRect, definition: SceneryDefinition)? in
             guard let definition = item.definition else { return nil }
-            return (item.rect, definition)
+            return (rect: item.rect, definition: definition)
         }
         map.recomputeBeauty(from: sources)
     }

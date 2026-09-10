@@ -4,14 +4,16 @@ An original theme park management simulation for iPhone, built with Swift,
 SwiftUI and SpriteKit. Working title — the name lives in one place
 (`ParkEmpire/App/AppInfo.swift`) so it can be changed without touching the UI.
 
-## Status: Phase 2 (staff, maintenance and cleanliness)
+## Status: Phase 3 in progress (artwork, animation and scenery)
 
 Working today:
 
-- Main menu with three save slots, new game, continue, load, delete
+- Main menu with three save slots, new game, continue, load, delete, over a
+  live demo park that runs the real simulation behind it
 - 30×30 tile park with an entrance and a short starting walkway
 - SpriteKit map with pinch-to-zoom, drag-to-pan, tap-to-inspect
-- Build menu: walkways, four rides, six shops and stalls, restroom, bench, bin
+- Build menu: walkways, four rides, six shops and stalls, restroom, bench,
+  bin, and seven pieces of scenery, each with a thumbnail of its real artwork
 - Placement preview with valid/invalid feedback, path painting, demolition
   (with a confirmation for anything expensive)
 - Guests that arrive based on real demand, pathfind, queue, ride, eat, drink,
@@ -40,9 +42,31 @@ Added in Phase 2:
 - **Full park rating.** All eight weighted components now have real data,
   including cleanliness, ride reliability and park appearance.
 
+Added in Phase 3 so far:
+
+- **Distinct artwork.** Every building names a motif and three colour roles;
+  the renderer turns that into bezier artwork, so a Carousel and a Sky Plunge
+  no longer look alike. Still procedural, still cached, still no image assets.
+  Adding a ride is one entry in `GameContent`, which now describes how it
+  looks as well as how it plays.
+- **Rides that move.** The carousel turns, the galleon swings, the tower car
+  climbs and drops, a train runs the coaster loop. The moving part is its own
+  sprite, so it can be frozen: a ride standing still is closed or broken.
+- **Scenery.** Trees, pines, flower beds, lamps, topiary, statues and a
+  fountain. Each names how much prettiness it adds and how far that reaches.
+  Placing or removing any of them rebuilds a per-tile beauty field, with
+  overlapping pieces stacking at diminishing returns, so spreading decoration
+  out beats piling it in one corner.
+- **Appearance you can change.** Guests gain happiness a little faster on
+  pretty ground, and the appearance score now reads mostly from decoration
+  rather than from how much grass is left. It rises from a twentieth of the
+  park rating to about an eighth.
+- **Safer map gestures.** One finger always moves the camera. Laying a run of
+  walkway is behind an explicit Draw toggle, so dragging to look around can
+  never place anything by accident.
+
 Not yet built (later phases, by design): reputation tiers, unlock progression,
-objectives, decorations and landscaping, sound, tutorial, custom coaster
-building.
+objectives, sound, tutorial, custom coaster building.
 
 ## Opening the project
 
@@ -90,16 +114,18 @@ ParkEmpire/
   App/            App entry, router, naming
   Game/
     Simulation/
-      Entities/   Guest, Attraction, Facility
+      Entities/   Guest, Attraction, Facility, Staff, SceneryItem
       Systems/    Demand, GuestAI, Movement, Attraction, Facility,
                   Cleanliness, Maintenance, Staff, Economy, Rating,
                   Pathfinding
       SimulationEngine.swift   fixed-tick loop
     World/        GridCoord, Tile, ParkMap, placement rules
-    Data/         Definitions and the content catalogue, Balance constants
+    Data/         Definitions and the content catalogue, Balance constants,
+                  BuildingAppearance (what a thing looks like, as data)
     State/        GameState, ledger, clock, alerts, UI snapshots
     GameController.swift       the only thing the UI talks to
-  Rendering/      SpriteKit scene, nodes, programmatic textures
+    DemoPark.swift             the park that runs behind the main menu
+  Rendering/      SpriteKit scene, nodes, programmatic artwork
   Persistence/    Versioned Codable saves
   UI/             SwiftUI menus, HUD, build menu, inspectors, dashboards
 ```
@@ -108,6 +134,9 @@ Rules the code follows:
 
 - Game rules are data (`GameContent`, `Balance`), not switch statements. Adding
   a ride is a new `AttractionDefinition`, not new simulation code.
+- Appearance is data too. A definition names a motif and three colour roles;
+  only the rendering layer knows what those mean in pixels, so the content
+  catalogue never imports UIKit.
 - The simulation runs on a fixed 0.1s tick; rendering runs at the display rate.
   Game speed multiplies ticks, so behaviour is identical at 1x and 4x.
 - SwiftUI observes snapshot structs published ~5 times a second, never the
