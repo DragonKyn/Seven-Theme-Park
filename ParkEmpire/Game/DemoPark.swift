@@ -20,6 +20,7 @@ enum DemoPark {
         layOutPaths(state)
         placeBuildings(state)
         placeScenery(state)
+        hireStaff(state)
 
         // Free entry and a good reputation, so the park fills quickly and
         // stays full while somebody sits on the menu.
@@ -112,6 +113,20 @@ enum DemoPark {
             for y in 1...3 {
                 place(state, "terrain.water", at: GridCoord(x, y))
             }
+        }
+    }
+
+    /// Three employees, one of each role, so the menu shows what staff look
+    /// like as well as what the park does. Appended directly rather than hired
+    /// through the controller: there is nobody to charge.
+    private static func hireStaff(_ state: GameState) {
+        let entrance = state.map.entranceCoord
+        for role in StaffRole.allCases {
+            state.staff.append(Staff(id: UUID(),
+                                     name: GuestNames.random(using: &state.rng),
+                                     role: role,
+                                     position: entrance.centre,
+                                     tile: entrance))
         }
     }
 
