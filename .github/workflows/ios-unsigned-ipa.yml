@@ -73,25 +73,6 @@ jobs:
           } > build-report.txt 2>&1
           cat build-report.txt
 
-      # Actions logs and job summaries both need a signed-in session, even on a
-      # public repository. Committing the log to a branch makes it readable
-      # through raw.githubusercontent.com instead.
-      - name: Publish log to the ci-logs branch
-        if: always()
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/logs && cp xcodebuild.log build-report.txt /tmp/logs/ 2>/dev/null || true
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan ci-logs
-          git rm -rf --cached . >/dev/null 2>&1 || true
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + 2>/dev/null || true
-          cp /tmp/logs/* . 2>/dev/null || true
-          echo "run ${{ github.run_number }} · commit ${{ github.sha }} · $(date -u)" > README.md
-          git add -A
-          git commit -m "CI log for run ${{ github.run_number }}" --allow-empty
-          git push -f origin ci-logs
-
       - name: Package into an IPA
         run: |
           set -euo pipefail
@@ -111,3 +92,23 @@ jobs:
           path: ParkEmpire.ipa
           if-no-files-found: error
           retention-days: 30
+
+      # Actions logs, job summaries and artifact downloads all need a signed-in
+      # session, even on a public repository. Committing the log to a branch
+      # makes it readable through the contents API instead. This runs in a
+      # throwaway clone so it can never disturb the build products.
+      - name: Publish log to the ci-logs branch
+        if: always()
+        run: |
+          set -euo pipefail
+          workdir=$(mktemp -d)
+          cp xcodebuild.log build-report.txt "$workdir/" 2>/dev/null || true
+          cd "$workdir"
+          echo "run ${{ github.run_number }} · commit ${{ github.sha }} · $(date -u)" > README.md
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "CI log for run ${{ github.run_number }}" --allow-empty
+          git branch -M ci-logs
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-logs
