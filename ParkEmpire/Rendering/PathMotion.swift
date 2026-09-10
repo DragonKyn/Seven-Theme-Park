@@ -89,6 +89,41 @@ enum PathMotion {
         }
     }
 
+    /// Rounds the corners off a polyline by repeatedly cutting them.
+    ///
+    /// A route built from tile centres turns through a right angle at a bend,
+    /// so a vehicle following it pivots on the spot at the corner instead of
+    /// curving through it. Chaikin's cut takes each leg and replaces its ends
+    /// with points a quarter and three quarters along, which after two passes
+    /// is close to the arc the rails are actually drawn as.
+    static func smoothed(_ points: [CGPoint], closed: Bool, iterations: Int = 2) -> [CGPoint] {
+        guard points.count > 2, iterations > 0 else { return points }
+
+        var current = points
+        for _ in 0..<iterations {
+            var next: [CGPoint] = []
+            next.reserveCapacity(current.count * 2)
+
+            // An open line keeps its ends, or the train would stop short of
+            // the buffers a little further every pass.
+            if !closed { next.append(current[0]) }
+
+            let lastIndex = closed ? current.count - 1 : current.count - 2
+            for index in 0...lastIndex {
+                let from = current[index]
+                let to = current[(index + 1) % current.count]
+                next.append(CGPoint(x: from.x * 0.75 + to.x * 0.25,
+                                    y: from.y * 0.75 + to.y * 0.25))
+                next.append(CGPoint(x: from.x * 0.25 + to.x * 0.75,
+                                    y: from.y * 0.25 + to.y * 0.75))
+            }
+
+            if !closed { next.append(current[current.count - 1]) }
+            current = next
+        }
+        return current
+    }
+
     // MARK: - Shuttles
 
     /// Positions for one vehicle of a train running out and back along a

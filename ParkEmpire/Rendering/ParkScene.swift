@@ -466,16 +466,20 @@ final class ParkScene: SKScene {
             let served = stations.filter { network.routeIndex(touching: $0.rect) == index }
             guard served.count >= 2 else { continue }
 
-            let points = route.tiles.map {
+            // Tile centres turn through a right angle at a bend. Rounding
+            // them off makes the train curve through a corner the way the
+            // rails are drawn, rather than pivoting on the spot at the end of
+            // the turn.
+            let points = PathMotion.smoothed(route.tiles.map {
                 CGPoint(x: (CGFloat($0.x) + 0.5) * Self.tileSide,
                         y: (CGFloat($0.y) + 0.5) * Self.tileSide)
-            }
+            }, closed: route.isLoop)
             // A tile a second or so, which reads as a park train rather than
             // as something anybody would ride for the speed.
             let isLoop = route.isLoop
             // A line is stored one way, and the train covers it twice a cycle,
             // so it needs twice as long to run at the same speed as a loop.
-            let duration = Double(points.count) * (isLoop ? 0.85 : 1.7)
+            let duration = Double(route.tiles.count) * (isLoop ? 0.85 : 1.7)
 
             // Three cars either way. On a loop it is a locomotive pulling two
             // carriages, each starting a tile further back round the ring. On
@@ -499,7 +503,11 @@ final class ParkScene: SKScene {
                 trainLayer.addChild(node)
 
                 if isLoop {
-                    let offset = (points.count - carriage) % points.count
+                    // Smoothing multiplied the points, so a carriage sits a
+                    // tile back in points rather than one array step back.
+                    let perTile = max(1, points.count / max(route.tiles.count, 1))
+                    let back = (carriage * perTile) % points.count
+                    let offset = (points.count - back) % points.count
                     let carPath = Array(points[offset...] + points[..<offset])
                     PathMotion.drive(node, around: carPath, duration: duration)
                 } else {

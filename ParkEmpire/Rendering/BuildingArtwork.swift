@@ -96,6 +96,9 @@ enum BuildingArtwork {
         // Two logs on the circuit, so there is always one on the drop or
         // climbing towards it.
         case .logFlume: return 2
+        // Four lanes, four mats. One mat on a four-lane slide looks like the
+        // other three are shut.
+        case .carpetSlide: return 4
         default: return 1
         }
     }

@@ -222,18 +222,26 @@ final class BuildingNode: SKSpriteNode {
             applyLaunch(to: node, buildingSize: buildingSize)
 
         case .slide:
-            // Down one lane and straight back to the top, because there is
-            // always another rider waiting.
+            // One mat per lane, each starting at its own moment, because four
+            // mats leaving together is a start line rather than a slide.
+            let lanes: [CGFloat] = [-0.30, -0.10, 0.10, 0.30]
+            let starts: [TimeInterval] = [0, 0.85, 1.7, 2.45]
+            let descents: [TimeInterval] = [1.5, 1.35, 1.6, 1.45]
+            let slot = index % lanes.count
+
             let top = buildingSize.height * 0.30
             let bottom = -buildingSize.height * 0.30
-            let lane = -buildingSize.width * 0.24
-            node.position = CGPoint(x: lane, y: top)
-            let descend = SKAction.moveTo(y: bottom, duration: 1.5)
+            node.position = CGPoint(x: buildingSize.width * lanes[slot], y: top)
+
+            let descend = SKAction.moveTo(y: bottom, duration: descents[slot])
             descend.timingMode = .easeIn
-            node.run(.repeatForever(.sequence([descend,
-                                               .wait(forDuration: 0.5),
-                                               .moveTo(y: top, duration: 0.01),
-                                               .wait(forDuration: 0.8)])))
+            node.run(.sequence([
+                .wait(forDuration: starts[slot]),
+                .repeatForever(.sequence([descend,
+                                          .wait(forDuration: 0.5),
+                                          .moveTo(y: top, duration: 0.01),
+                                          .wait(forDuration: 1.1)]))
+            ]))
 
         case .hover:
             // Drifts around the porch without ever settling.

@@ -76,7 +76,10 @@ enum Balance {
     // MARK: - Economy
 
     static let defaultAdmissionPrice: Double = 25
-    static let admissionPriceMax: Double = 120
+    /// A maxed-out park will happily take several hundred at the gate, so the
+    /// slider has to go somewhere worth going. What guests will actually pay
+    /// is decided by `GuestEconomics`, not by this.
+    static let admissionPriceMax: Double = 500
     /// Fixed park overhead charged per sim-second (utilities and upkeep).
     static let utilitiesPerSecond: Double = 0.35
 
@@ -87,7 +90,7 @@ enum Balance {
     /// Arrivals a brand-new park with one gentle ride can expect.
     static let baseArrivalsPerMinute: Double = 1.6
     /// How much admission guests tolerate before demand collapses, per ride.
-    static let acceptablePricePerAttraction: Double = 10
+    static let acceptablePricePerAttraction: Double = 12
     static let acceptablePriceFloor: Double = 15
 
     // MARK: - Rating
