@@ -213,10 +213,16 @@ final class ParkScene: SKScene {
         guard let coord = tileCoord(atViewPoint: location) else { return }
 
         let scenePoint = convertPoint(fromView: location)
-        let guestID = controller.build.isActive ? nil : nearestGuest(to: scenePoint)
-        let staffID = (controller.build.isActive || guestID != nil)
-            ? nil
-            : nearestStaff(to: scenePoint)
+        let person = controller.build.isActive ? nil : nearestPerson(to: scenePoint)
+
+        var guestID: UUID?
+        var staffID: UUID?
+        switch person {
+        case .guest(let id): guestID = id
+        case .staff(let id): staffID = id
+        case nil: break
+        }
+
         controller.handleTap(at: coord, guestID: guestID, staffID: staffID)
     }
 
@@ -229,41 +235,46 @@ final class ParkScene: SKScene {
         return state.map.isInside(coord) ? coord : nil
     }
 
-    /// Guests are small; allow a generous touch radius before falling through
-    /// to whatever is underneath them.
-    private func nearestGuest(to scenePoint: CGPoint) -> UUID? {
+    private enum TappedPerson {
+        case guest(UUID)
+        case staff(UUID)
+    }
+
+    /// Whoever the tap actually landed nearest to, guest or employee.
+    ///
+    /// Both are checked against one another rather than guests first. Staff
+    /// walk the same paths as guests, so an employee nearly always has a guest
+    /// within the touch radius as well, and checking guests first meant
+    /// tapping an employee opened a visitor's inspector instead.
+    ///
+    /// People are small; the radius is generous, and a tap that finds nobody
+    /// falls through to whatever is underneath them.
+    private func nearestPerson(to scenePoint: CGPoint) -> TappedPerson? {
         guard let state = controller?.state else { return nil }
         let world = worldNode.convert(scenePoint, from: self)
         let target = CGPoint(x: world.x / Self.tileSide, y: world.y / Self.tileSide)
 
-        var best: UUID?
-        var bestDistance = 0.75
+        var best: TappedPerson?
+        var bestDistance = 0.8
 
         for guest in state.guests where guest.isActive {
+            // A guest inside a ride is not drawn, so it cannot be tapped.
+            if case .engaged = guest.activity { continue }
             let distance = SimMath.distance(guest.position, target)
             if distance < bestDistance {
                 bestDistance = distance
-                best = guest.id
+                best = .guest(guest.id)
             }
         }
-        return best
-    }
-
-    private func nearestStaff(to scenePoint: CGPoint) -> UUID? {
-        guard let state = controller?.state else { return nil }
-        let world = worldNode.convert(scenePoint, from: self)
-        let target = CGPoint(x: world.x / Self.tileSide, y: world.y / Self.tileSide)
-
-        var best: UUID?
-        var bestDistance = 0.8
 
         for member in state.staff {
             let distance = SimMath.distance(member.position, target)
             if distance < bestDistance {
                 bestDistance = distance
-                best = member.id
+                best = .staff(member.id)
             }
         }
+
         return best
     }
 

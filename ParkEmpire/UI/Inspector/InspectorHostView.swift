@@ -39,7 +39,9 @@ struct InspectorHostView: View {
         case .guest(let detail): return detail.name
         case .attraction(let detail): return detail.name
         case .facility(let detail): return detail.name
-        case .staff(let detail): return detail.name
+        // Employees say so in the header, because a name on its own reads
+        // exactly like a visitor's.
+        case .staff(let detail): return "\(detail.name), \(detail.roleName)"
         }
     }
 
