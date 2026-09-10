@@ -147,8 +147,18 @@ struct AttractionDetail: Identifiable {
     let satisfaction: Double?
     let operatingCostPerCycle: Double
     let upgrades: [UpgradeLine]
+    /// Set for a ride the player laid their own track for, which is the only
+    /// kind that can be repainted.
+    let isCustomCoaster: Bool
+    let livery: ParkColour
+    let carStyle: CoasterCarStyle
+    let trackLength: Int
 
     init(attraction: Attraction) {
+        isCustomCoaster = attraction.baseDefinition?.kind == .custom
+        livery = attraction.livery
+        carStyle = attraction.carStyle
+        trackLength = attraction.trackLength
         let ridePrice = attraction.baseDefinition?.purchasePrice ?? 0
         upgrades = UpgradeContent.rideUpgrades.map { upgrade in
             let level = attraction.upgradeLevel(upgrade.kind)

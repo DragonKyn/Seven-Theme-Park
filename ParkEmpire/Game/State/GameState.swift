@@ -134,6 +134,13 @@ final class GameState: Codable {
     /// Called when the map changes rather than every tick. A station with no
     /// circuit reads as zero, which leaves it as the dull shuttle its base
     /// numbers describe until somebody lays it some track.
+    /// Nudges the map generation so the renderer rebuilds things derived from
+    /// it. Repainting a coaster changes nothing about the park, but the train
+    /// is built from the track and has to be made again to pick it up.
+    func bumpDecor() {
+        map.touch()
+    }
+
     func refreshTrackedRides() {
         guard attractions.contains(where: { $0.baseDefinition?.kind == .custom }) else { return }
         let network = coasterNetwork

@@ -95,6 +95,12 @@ struct ParkMap: Codable {
         }
     }
 
+    /// Marks the map as changed without changing it, for the renderer's
+    /// benefit when something it derives from the map has moved on.
+    mutating func touch() {
+        generation += 1
+    }
+
     mutating func setBuilding(_ id: UUID?, on coords: [GridCoord]) {
         var changed = false
         for coord in coords where isInside(coord) {

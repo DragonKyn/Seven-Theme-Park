@@ -472,6 +472,12 @@ enum BuildingArtwork {
             texturePoints = megaCoasterPoints(in: buildingSize)
         case .logFlume:
             texturePoints = logFlumePoints(in: buildingSize)
+        case .skyGliders:
+            // Out along the upper wire and back along the lower one. Still a
+            // loop, but a flat one hugging the cables rather than an orbit of
+            // the whole building.
+            let cables = skyGliderCables(in: buildingSize)
+            texturePoints = cables.out + cables.back
         default:
             let track = trackRect(in: buildingSize)
             texturePoints = (0..<36).map { step in
@@ -819,7 +825,10 @@ enum BuildingArtwork {
         cup.addLine(to: CGPoint(x: board.midX + halfBottom, y: bottom))
         cup.addLine(to: CGPoint(x: board.midX - halfBottom, y: bottom))
         cup.close()
-        fill(cup, ParkPalette.colour(.cream))
+        // Not cream: the board behind it is cream, and a cream cup on a cream
+        // board is an outline of nothing.
+        fill(cup, ParkPalette.colour(.cyan))
+        stroke(cup, ParkPalette.colour(.charcoal), width: max(1, board.width * 0.035))
 
         fill(UIBezierPath(roundedRect: CGRect(x: board.midX - halfTop * 1.15,
                                               y: top - board.height * 0.10,
@@ -1091,6 +1100,27 @@ enum BuildingArtwork {
     // MARK: - Sky gliders and the maze
 
     /// Two towers with a cable between them and chairs hanging off it.
+    /// The two cables a chairlift runs, out along one and back along the
+    /// other. Shared with the motion, so the chairs hang off the wire that is
+    /// actually drawn.
+    static func skyGliderCables(in size: CGSize) -> (out: [CGPoint], back: [CGPoint]) {
+        func curve(sag: CGFloat, from: CGFloat, to: CGFloat) -> [CGPoint] {
+            let head = size.height * 0.30
+            let start = CGPoint(x: size.width * from, y: head)
+            let end = CGPoint(x: size.width * to, y: head)
+            let control = CGPoint(x: size.width * 0.50, y: head + size.height * sag)
+            return (0..<18).map { step in
+                let t = CGFloat(step) / 18
+                let inverse = 1 - t
+                return CGPoint(
+                    x: inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
+                    y: inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y)
+            }
+        }
+        return (curve(sag: 0.30, from: 0.14, to: 0.86),
+                curve(sag: 0.52, from: 0.86, to: 0.14))
+    }
+
     private static func drawSkyGlidersBase(_ context: CGContext,
                                            _ size: CGSize,
                                            _ primary: UIColor,
@@ -1102,13 +1132,16 @@ enum BuildingArtwork {
             fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.16), secondary)
         }
 
-        // The cable, slack between the two tower heads.
+        // Two cables between the tower heads: chairs go out along one and come
+        // back along the other, the way a chairlift actually works.
         let head = size.height * 0.30
-        let cable = UIBezierPath()
-        cable.move(to: CGPoint(x: size.width * 0.14, y: head))
-        cable.addQuadCurve(to: CGPoint(x: size.width * 0.86, y: head),
-                           controlPoint: CGPoint(x: size.width * 0.50, y: head + size.height * 0.34))
-        stroke(cable, ParkPalette.colour(.charcoal), width: max(1, size.height * 0.022))
+        let cables = skyGliderCables(in: size)
+        for wire in [cables.out, cables.back] {
+            let path = UIBezierPath()
+            path.move(to: wire[0])
+            for point in wire.dropFirst() { path.addLine(to: point) }
+            stroke(path, ParkPalette.colour(.charcoal), width: max(1, size.height * 0.020))
+        }
 
         // Towers, with a boarding platform under each.
         for x in [CGFloat(0.14), CGFloat(0.86)] {

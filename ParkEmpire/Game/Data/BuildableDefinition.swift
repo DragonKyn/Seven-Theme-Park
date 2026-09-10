@@ -6,6 +6,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
     case attraction
     case shop
     case facility
+    case coaster
     case transport
     case scenery
 
@@ -17,7 +18,8 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "Rides"
         case .shop: return "Food & Retail"
         case .facility: return "Guest Services"
-        case .transport: return "Track & Rides"
+        case .coaster: return "Coasters"
+        case .transport: return "Transport"
         case .scenery: return "Scenery"
         }
     }
@@ -28,6 +30,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "sparkles"
         case .shop: return "cart"
         case .facility: return "figure.stand"
+        case .coaster: return "figure.rolling"
         case .transport: return "tram.fill"
         case .scenery: return "tree.fill"
         }

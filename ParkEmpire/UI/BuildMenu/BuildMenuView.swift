@@ -32,23 +32,29 @@ struct BuildMenuView: View {
     private var catalogue: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                ForEach(BuildCategory.allCases) { category in
-                    Button {
-                        controller.enterBuildMode(category: category)
-                    } label: {
-                        Label(category.displayName, systemImage: category.symbolName)
-                            .labelStyle(.iconOnly)
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 40, height: 32)
-                            .foregroundStyle(isSelected(category) ? Color.black : Theme.textPrimary)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(isSelected(category) ? Theme.accent : Theme.control)
-                            )
+                // The tabs scroll. There are six of them now and there will be
+                // more, and a fixed row of them plus the two toggles is wider
+                // than a phone.
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(BuildCategory.allCases) { category in
+                            Button {
+                                controller.enterBuildMode(category: category)
+                            } label: {
+                                Label(category.displayName, systemImage: category.symbolName)
+                                    .labelStyle(.iconOnly)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .frame(width: 40, height: 32)
+                                    .foregroundStyle(isSelected(category) ? Color.black : Theme.textPrimary)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .fill(isSelected(category) ? Theme.accent : Theme.control)
+                                    )
+                            }
+                        }
                     }
+                    .padding(.trailing, 2)
                 }
-
-                Spacer(minLength: 0)
 
                 if controller.canDraw {
                     Button {

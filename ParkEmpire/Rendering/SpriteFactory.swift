@@ -145,6 +145,38 @@ enum SpriteFactory {
                 hump.lineWidth = max(1, size.width * 0.055)
                 hump.stroke()
 
+            case .coasterJump:
+                // Two ramps with nothing between them. The gap is the point,
+                // so the rails stop short and kick upward at each lip.
+                let lip = size.width * 0.30
+                for direction in [CGFloat(-1), CGFloat(1)] {
+                    let ramp = UIBezierPath()
+                    let outer = CGPoint(x: centre.x + direction * size.width * 0.5,
+                                        y: centre.y)
+                    let inner = CGPoint(x: centre.x + direction * lip * 0.5,
+                                        y: centre.y - size.height * 0.26)
+                    ramp.move(to: outer)
+                    ramp.addQuadCurve(to: inner,
+                                      controlPoint: CGPoint(x: centre.x + direction * lip,
+                                                            y: centre.y))
+                    ParkPalette.coasterTie.setStroke()
+                    ramp.lineWidth = max(2, size.width * 0.13)
+                    ramp.stroke()
+                    ParkPalette.coasterRail.setStroke()
+                    ramp.lineWidth = max(1, size.width * 0.055)
+                    ramp.stroke()
+                }
+                // Chevrons in the gap, so it reads as a hazard rather than as
+                // a piece somebody forgot to finish.
+                ParkPalette.coasterRail.withAlphaComponent(0.5).setFill()
+                for step in 0..<2 {
+                    let mark = CGRect(x: centre.x - size.width * 0.05,
+                                      y: centre.y + size.height * (0.10 + 0.14 * CGFloat(step)),
+                                      width: size.width * 0.10,
+                                      height: size.height * 0.07)
+                    UIBezierPath(rect: mark).fill()
+                }
+
             case .coasterHelix:
                 // Two offset rings, which is as close as a flat tile gets to a
                 // corkscrew.
@@ -261,38 +293,91 @@ enum SpriteFactory {
 
     /// A coaster car, nose to the right. Smaller and lower than a railway
     /// carriage, with the riders showing over the sides.
-    static func coasterCarTexture(isLeading: Bool, size: CGSize) -> SKTexture {
-        texture(key: "coaster-car-\(isLeading ? "lead" : "follow")-\(Int(size.width))x\(Int(size.height))",
+    static func coasterCarTexture(isLeading: Bool,
+                                  style: CoasterCarStyle,
+                                  colour: ParkColour,
+                                  size: CGSize) -> SKTexture {
+        texture(key: "coaster-car-\(style.rawValue)-\(colour.rawValue)"
+                    + "-\(isLeading ? "lead" : "follow")-\(Int(size.width))x\(Int(size.height))",
                 size: size) { context, size in
             let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: size.height * 0.14)
+            let paint = ParkPalette.colour(colour)
 
             context.setShadow(offset: CGSize(width: 0, height: size.height * 0.12),
                               blur: size.height * 0.18,
                               color: UIColor.black.withAlphaComponent(0.30).cgColor)
+            paint.setFill()
 
-            if isLeading {
+            switch style {
+            case .classic:
+                if isLeading {
+                    let nose = UIBezierPath()
+                    nose.move(to: CGPoint(x: body.minX, y: body.minY))
+                    nose.addLine(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.minY))
+                    nose.addQuadCurve(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.maxY),
+                                      controlPoint: CGPoint(x: body.maxX + body.width * 0.18,
+                                                            y: body.midY))
+                    nose.addLine(to: CGPoint(x: body.minX, y: body.maxY))
+                    nose.close()
+                    nose.fill()
+                } else {
+                    UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.34).fill()
+                }
+
+            case .rocket:
+                // Long and pointed, with a fin off the back.
                 let nose = UIBezierPath()
-                nose.move(to: CGPoint(x: body.minX, y: body.minY))
-                nose.addLine(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.minY))
-                nose.addQuadCurve(to: CGPoint(x: body.maxX - body.width * 0.22, y: body.maxY),
-                                  controlPoint: CGPoint(x: body.maxX + body.width * 0.18,
+                nose.move(to: CGPoint(x: body.minX, y: body.minY + body.height * 0.18))
+                nose.addLine(to: CGPoint(x: body.maxX - body.width * 0.30, y: body.minY))
+                nose.addQuadCurve(to: CGPoint(x: body.maxX - body.width * 0.30, y: body.maxY),
+                                  controlPoint: CGPoint(x: body.maxX + body.width * 0.30,
                                                         y: body.midY))
-                nose.addLine(to: CGPoint(x: body.minX, y: body.maxY))
+                nose.addLine(to: CGPoint(x: body.minX, y: body.maxY - body.height * 0.18))
                 nose.close()
-                ParkPalette.colour(.red).setFill()
                 nose.fill()
-            } else {
-                ParkPalette.colour(.red).setFill()
-                UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.34).fill()
+
+                let fin = UIBezierPath()
+                fin.move(to: CGPoint(x: body.minX + body.width * 0.06, y: body.minY))
+                fin.addLine(to: CGPoint(x: body.minX + body.width * 0.28, y: body.minY - body.height * 0.30))
+                fin.addLine(to: CGPoint(x: body.minX + body.width * 0.30, y: body.minY))
+                fin.close()
+                ParkPalette.coasterTie.setFill()
+                fin.fill()
+                paint.setFill()
+
+            case .mineCart:
+                // Square, wooden, with a band round it.
+                UIBezierPath(rect: body).fill()
+                ParkPalette.colour(.brown).setFill()
+                UIBezierPath(rect: CGRect(x: body.minX, y: body.minY,
+                                          width: body.width, height: body.height * 0.16)).fill()
+                UIBezierPath(rect: CGRect(x: body.minX, y: body.maxY - body.height * 0.16,
+                                          width: body.width, height: body.height * 0.16)).fill()
+                paint.setFill()
+
+            case .bobsled:
+                // One smooth shell, no seams.
+                UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.5).fill()
+                if isLeading {
+                    ParkPalette.colour(.cream).setFill()
+                    UIBezierPath(ovalIn: CGRect(x: body.maxX - body.width * 0.24,
+                                                y: body.midY - body.height * 0.18,
+                                                width: body.width * 0.18,
+                                                height: body.height * 0.36)).fill()
+                    paint.setFill()
+                }
             }
             context.setShadow(offset: .zero, blur: 0, color: nil)
 
-            ParkPalette.colour(.cream).setFill()
-            let head = size.height * 0.40
-            for offset in [CGFloat(0.24), CGFloat(0.54)] {
-                UIBezierPath(ovalIn: CGRect(x: body.minX + body.width * offset,
-                                            y: body.midY - head / 2,
-                                            width: head, height: head)).fill()
+            // Riders, except in a bobsled where they are under the shell.
+            if style != .bobsled {
+                ParkPalette.colour(.cream).setFill()
+                let head = size.height * 0.40
+                for offset in [CGFloat(0.24), CGFloat(0.54)] {
+                    UIBezierPath(ovalIn: CGRect(x: body.minX + body.width * offset,
+                                                y: body.midY - head / 2,
+                                                width: head, height: head)).fill()
+                }
             }
 
             ParkPalette.coasterTie.setFill()

@@ -4,6 +4,33 @@ import Foundation
 ///
 /// Adding a ride should mean adding one of these to `GameContent` — the
 /// simulation systems never branch on a specific attraction id.
+/// What a coaster train is built out of. Cosmetic: it changes nothing about
+/// how the ride plays, and that is the point of it.
+enum CoasterCarStyle: String, Codable, CaseIterable, Identifiable {
+    case classic
+    case rocket
+    case mineCart
+    case bobsled
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .classic: return "Classic"
+        case .rocket: return "Rocket"
+        case .mineCart: return "Mine Cart"
+        case .bobsled: return "Bobsled"
+        }
+    }
+}
+
+/// Colours a coaster train can be painted.
+enum CoasterContent {
+    static let liveries: [ParkColour] = [
+        .red, .orange, .amber, .lime, .green, .teal, .cyan, .blue, .indigo, .violet, .pink, .charcoal
+    ]
+}
+
 /// How a ride is filed in the build menu.
 ///
 /// The list of rides only gets longer, and "everything with a queue" stops
@@ -79,7 +106,11 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     var needsWater = false
 
     var category: BuildCategory {
-        kind == .ride ? .attraction : .transport
+        switch kind {
+        case .ride: return .attraction
+        case .custom: return .coaster
+        case .transport: return .transport
+        }
     }
 
     /// A station with no track against it has nothing to run on.

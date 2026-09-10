@@ -42,6 +42,64 @@ struct AttractionInspectorView: View {
                 }
             }
 
+            if attraction.isCustomCoaster {
+                SectionCard(title: "Your coaster") {
+                    VStack(alignment: .leading, spacing: 9) {
+                        StatRow(label: "Track laid", value: "\(attraction.trackLength) tiles")
+
+                        Text("LIVERY")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 7) {
+                                ForEach(CoasterContent.liveries, id: \.rawValue) { colour in
+                                    Button {
+                                        controller.setCoasterLivery(colour, attractionID: attraction.id)
+                                    } label: {
+                                        Circle()
+                                            .fill(Color(ParkPalette.colour(colour)))
+                                            .frame(width: 24, height: 24)
+                                            .overlay(
+                                                Circle().strokeBorder(
+                                                    colour == attraction.livery
+                                                        ? Color.white
+                                                        : Color.black.opacity(0.25),
+                                                    lineWidth: colour == attraction.livery ? 3 : 1)
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+
+                        Text("CARS")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(CoasterCarStyle.allCases) { style in
+                                    Button {
+                                        controller.setCoasterCarStyle(style, attractionID: attraction.id)
+                                    } label: {
+                                        Text(style.displayName)
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                            .padding(.horizontal, 10)
+                                            .frame(height: 26)
+                                            .foregroundStyle(style == attraction.carStyle
+                                                             ? Color.black : Theme.textPrimary)
+                                            .background(
+                                                Capsule().fill(style == attraction.carStyle
+                                                               ? Theme.accent : Theme.control)
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+                    }
+                }
+            }
+
             SectionCard(title: "Upgrades") {
                 VStack(spacing: 10) {
                     ForEach(attraction.upgrades) { upgrade in

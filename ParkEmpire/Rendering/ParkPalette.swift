@@ -99,7 +99,8 @@ enum ParkPalette {
         case .track: return ballast
         // Every coaster piece shares the one bed colour; what tells them
         // apart is the element drawn on top.
-        case .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix: return coasterBed
+        case .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
+            return coasterBed
         case .grass: return alternate ? grassAlt : grass
         }
     }

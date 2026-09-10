@@ -383,6 +383,22 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    func setCoasterLivery(_ colour: ParkColour, attractionID: UUID) {
+        guard let index = state.attractionIndex(id: attractionID) else { return }
+        state.attractions[index].livery = colour
+        // The train is rebuilt from the map generation, so nudge it to make
+        // the scene notice a change that is not on the map at all.
+        state.bumpDecor()
+        refreshUI()
+    }
+
+    func setCoasterCarStyle(_ style: CoasterCarStyle, attractionID: UUID) {
+        guard let index = state.attractionIndex(id: attractionID) else { return }
+        state.attractions[index].carStyle = style
+        state.bumpDecor()
+        refreshUI()
+    }
+
     func rename(attractionID: UUID, to name: String) {
         guard let index = state.attractionIndex(id: attractionID) else { return }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

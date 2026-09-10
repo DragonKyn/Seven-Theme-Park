@@ -38,6 +38,10 @@ struct Attraction: Codable, Identifiable {
     var trackLength: Int = 0
     /// What the special pieces on that track are worth.
     var trackThrill: Double = 0
+    /// What the player painted the train, and what shape they chose for it.
+    /// Cosmetic, and only ever read for a custom ride.
+    var livery: ParkColour = .red
+    var carStyle: CoasterCarStyle = .classic
 
     var phase: RidePhase = .loading
     var phaseTimer: Double = 0
@@ -116,6 +120,8 @@ extension Attraction {
         upgrades = container.value(.upgrades, or: [:])
         trackLength = container.value(.trackLength, or: 0)
         trackThrill = container.value(.trackThrill, or: 0)
+        livery = container.value(.livery, or: .red)
+        carStyle = container.value(.carStyle, or: .classic)
         phase = container.value(.phase, or: .loading)
         phaseTimer = container.value(.phaseTimer, or: 0)
         queue = container.value(.queue, or: [])

@@ -19,6 +19,8 @@ enum TerrainType: String, Codable {
     case coasterHill
     /// A corkscrew.
     case coasterHelix
+    /// A gap the train is launched over, landing on the far side.
+    case coasterJump
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {
@@ -27,7 +29,7 @@ enum TerrainType: String, Codable {
 
     /// Every kind of coaster track, which all join to one another.
     static let coasterPieces: Set<TerrainType> = [
-        .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix
+        .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump
     ]
 
     var isCoasterTrack: Bool { TerrainType.coasterPieces.contains(self) }
@@ -37,6 +39,7 @@ enum TerrainType: String, Codable {
     /// actually paying for.
     var coasterThrill: Double {
         switch self {
+        case .coasterJump: return 11
         case .coasterLoop: return 9
         case .coasterHelix: return 7
         case .coasterHill: return 4

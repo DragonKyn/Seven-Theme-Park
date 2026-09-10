@@ -37,7 +37,7 @@ enum GameContent {
         purchasePrice: 120,
         refundValue: 40,
         terrain: .coasterTrack,
-        category: .transport,
+        category: .coaster,
         beauty: 0,
         beautyRadius: 0
     )
@@ -53,7 +53,7 @@ enum GameContent {
             purchasePrice: 900,
             refundValue: 300,
             terrain: .coasterLoop,
-            category: .transport,
+            category: .coaster,
             beauty: 0,
             beautyRadius: 0
         ),
@@ -64,7 +64,18 @@ enum GameContent {
             purchasePrice: 700,
             refundValue: 230,
             terrain: .coasterHelix,
-            category: .transport,
+            category: .coaster,
+            beauty: 0,
+            beautyRadius: 0
+        ),
+        TerrainDefinition(
+            id: "terrain.coasterjump",
+            displayName: "Jump",
+            summary: "A gap with a ramp each side. The train is launched over it and lands running.",
+            purchasePrice: 1_100,
+            refundValue: 360,
+            terrain: .coasterJump,
+            category: .coaster,
             beauty: 0,
             beautyRadius: 0
         ),
@@ -75,7 +86,7 @@ enum GameContent {
             purchasePrice: 380,
             refundValue: 120,
             terrain: .coasterHill,
-            category: .transport,
+            category: .coaster,
             beauty: 0,
             beautyRadius: 0
         )

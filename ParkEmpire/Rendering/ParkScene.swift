@@ -380,6 +380,7 @@ final class ParkScene: SKScene {
         case .coasterLoop: terrain = 6
         case .coasterHill: terrain = 7
         case .coasterHelix: terrain = 8
+        case .coasterJump: terrain = 9
         }
         let alternate = (coord.x + coord.y) % 2 != 0 ? 1 : 0
         return terrain * 100 + alternate * 50 + trackConnections(at: coord, map: map)
@@ -524,11 +525,21 @@ final class ParkScene: SKScene {
 
             // Which points sit on a loop, a hill or a corkscrew, so the train
             // can react as it crosses one.
-            var flair: [Bool]?
+            // How much the train reacts on each tile. A jump throws it much
+            // further than a hill does, so the flair is scaled by the piece.
+            var flair: [CGFloat]?
             if coaster && isLoop {
                 let perTile = max(1, points.count / max(route.tiles.count, 1))
-                let special = route.tiles.map { (map.tile(at: $0)?.terrain.coasterThrill ?? 0) > 0 }
-                flair = (0..<points.count).map { special[min($0 / perTile, special.count - 1)] }
+                let swell: [CGFloat] = route.tiles.map { tile in
+                    switch map.tile(at: tile)?.terrain {
+                    case .coasterJump: return 1.85
+                    case .coasterLoop: return 1.5
+                    case .coasterHelix: return 1.35
+                    case .coasterHill: return 1.22
+                    default: return 1
+                    }
+                }
+                flair = (0..<points.count).map { swell[min($0 / perTile, swell.count - 1)] }
             }
 
             // On a loop the lead car pulls the rest, each starting a tile
@@ -546,7 +557,10 @@ final class ParkScene: SKScene {
                 let isLeading = carriage == 0 || isTailLocomotive
 
                 let texture = coaster
-                    ? SpriteFactory.coasterCarTexture(isLeading: carriage == 0, size: carSize)
+                    ? SpriteFactory.coasterCarTexture(isLeading: carriage == 0,
+                                                      style: served.first?.carStyle ?? .classic,
+                                                      colour: served.first?.livery ?? .red,
+                                                      size: carSize)
                     : SpriteFactory.trainCarTexture(isLocomotive: isLeading, size: carSize)
 
                 let node = SKSpriteNode(texture: texture)
