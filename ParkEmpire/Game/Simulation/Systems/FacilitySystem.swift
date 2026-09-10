@@ -181,6 +181,12 @@ final class FacilitySystem {
         state.ledger.receive(price, as: revenueCategory(for: definition.kind))
         state.ledger.spend(definition.unitCost, on: .inventory)
         state.statistics.itemsSoldTotal += 1
+        switch definition.kind {
+        case .food: state.statistics.foodSoldTotal += 1
+        case .drink: state.statistics.drinksSoldTotal += 1
+        case .souvenir: state.statistics.souvenirsSoldTotal += 1
+        case .bathroom, .bench, .bin: break
+        }
 
         return true
     }

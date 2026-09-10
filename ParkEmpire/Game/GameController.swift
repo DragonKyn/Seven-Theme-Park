@@ -18,6 +18,10 @@ final class GameController: ObservableObject {
     @Published var build = BuildState()
     @Published var pendingDemolition: PendingDemolition?
     @Published private(set) var saveMessage: String?
+    /// The award currently being celebrated on screen, if any. Awards queue in
+    /// the park and are shown one at a time, because two party poppers at once
+    /// is not twice as good.
+    @Published private(set) var celebration: AchievementAward?
 
     // MARK: - Simulation
 
@@ -374,6 +378,7 @@ final class GameController: ObservableObject {
         state.ledger.spend(cost, on: .construction)
         let next = state.attractions[index].upgradeLevel(kind) + 1
         state.attractions[index].upgrades[kind.rawValue] = next
+        state.statistics.upgradesBoughtTotal += 1
 
         // Theming decorates the ground around the ride, so the beauty field
         // has to be rebuilt the same way placing scenery rebuilds it.
@@ -441,8 +446,21 @@ final class GameController: ObservableObject {
 
     // MARK: - UI snapshots
 
+    /// Dismissed by the celebration view once its animation has run.
+    func dismissCelebration() {
+        celebration = nil
+    }
+
+    func makeAchievementProgress() -> [AchievementProgress] {
+        AchievementSystem.progress(state: state)
+    }
+
     private func refreshUI() {
         hud = HUDSnapshot(state: state)
+
+        if celebration == nil, !state.pendingAwards.isEmpty {
+            celebration = state.pendingAwards.removeFirst()
+        }
         alerts = Array(state.alerts.suffix(12).reversed())
 
         if let current = selection?.identity {

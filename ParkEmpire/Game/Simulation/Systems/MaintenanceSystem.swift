@@ -96,6 +96,7 @@ final class MaintenanceSystem {
     // MARK: - Mechanic outcomes
 
     static func completeRepair(attractionIndex: Int, state: GameState) {
+        state.statistics.repairsCompletedTotal += 1
         state.attractions[attractionIndex].isBroken = false
         state.attractions[attractionIndex].condition = max(
             state.attractions[attractionIndex].condition, Balance.repairedCondition)

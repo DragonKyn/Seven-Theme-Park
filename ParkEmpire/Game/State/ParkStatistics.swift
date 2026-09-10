@@ -9,6 +9,14 @@ struct ParkStatistics: Codable {
     var itemsSoldTotal: Int = 0
     var breakdownsTotal: Int = 0
     var litterCleanedTotal: Int = 0
+    var repairsCompletedTotal: Int = 0
+    var upgradesBoughtTotal: Int = 0
+    /// Sales split by what was sold. The ledger already records the money;
+    /// these count the transactions, which is what achievements are about.
+    var foodSoldTotal: Int = 0
+    var drinksSoldTotal: Int = 0
+    var souvenirsSoldTotal: Int = 0
+    var transportTripsTotal: Int = 0
 
     /// Counts of the reason guests gave for leaving, used for "common complaint".
     var departureReasons: [String: Int] = [:]
@@ -43,6 +51,12 @@ extension ParkStatistics {
         itemsSoldTotal = container.value(.itemsSoldTotal, or: 0)
         breakdownsTotal = container.value(.breakdownsTotal, or: 0)
         litterCleanedTotal = container.value(.litterCleanedTotal, or: 0)
+        repairsCompletedTotal = container.value(.repairsCompletedTotal, or: 0)
+        upgradesBoughtTotal = container.value(.upgradesBoughtTotal, or: 0)
+        foodSoldTotal = container.value(.foodSoldTotal, or: 0)
+        drinksSoldTotal = container.value(.drinksSoldTotal, or: 0)
+        souvenirsSoldTotal = container.value(.souvenirsSoldTotal, or: 0)
+        transportTripsTotal = container.value(.transportTripsTotal, or: 0)
         departureReasons = container.value(.departureReasons, or: [:])
     }
 }

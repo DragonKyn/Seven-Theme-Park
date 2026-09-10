@@ -154,6 +154,12 @@ enum Balance {
     /// Maximum staff of all roles.
     static let maxStaff = 40
 
+    // MARK: - Achievements
+
+    /// Sim-seconds between achievement checks. Every metric is a running total
+    /// or a live reading, so nothing is missed by looking a few seconds later.
+    static let achievementCheckInterval: Double = 5
+
     // MARK: - Autosave
 
     static let autosaveInterval: Double = 60

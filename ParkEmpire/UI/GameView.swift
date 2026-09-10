@@ -12,6 +12,7 @@ struct GameView: View {
     @State private var showingSettings = false
     @State private var showingAlerts = false
     @State private var showingStaff = false
+    @State private var showingAchievements = false
 
     var body: some View {
         ZStack {
@@ -43,6 +44,7 @@ struct GameView: View {
                                    onOpenFinance: { showingFinance = true },
                                    onOpenManagement: { showingManagement = true },
                                    onOpenStaff: { showingStaff = true },
+                                   onOpenAchievements: { showingAchievements = true },
                                    onExit: { router.exitToMenu() })
                 }
                 .padding(.horizontal, 10)
@@ -50,6 +52,11 @@ struct GameView: View {
             }
             .animation(.easeInOut(duration: 0.18), value: controller.build.isActive)
             .animation(.easeInOut(duration: 0.18), value: controller.selection?.identity)
+
+            if let award = controller.celebration {
+                CelebrationView(award: award) { controller.dismissCelebration() }
+                    .transition(.opacity)
+            }
         }
         .onAppear(perform: prepareScene)
         .sheet(isPresented: $showingFinance) {
@@ -60,6 +67,9 @@ struct GameView: View {
         }
         .sheet(isPresented: $showingStaff) {
             StaffView(controller: controller)
+        }
+        .sheet(isPresented: $showingAchievements) {
+            AchievementsView(controller: controller)
         }
         .sheet(isPresented: $showingSettings) {
             ParkSettingsView(controller: controller)
@@ -108,6 +118,7 @@ private struct ControlBarView: View {
     let onOpenFinance: () -> Void
     let onOpenManagement: () -> Void
     let onOpenStaff: () -> Void
+    let onOpenAchievements: () -> Void
     let onExit: () -> Void
 
     var body: some View {
@@ -143,6 +154,7 @@ private struct ControlBarView: View {
             SpeedControlView(speed: controller.hud.speed) { controller.setSpeed($0) }
 
             Menu {
+                Button("Achievements", systemImage: "rosette", action: onOpenAchievements)
                 Button("Save park") { controller.save() }
                 Button("Save and exit", role: .destructive, action: onExit)
             } label: {

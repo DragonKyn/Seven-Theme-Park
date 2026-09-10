@@ -40,6 +40,11 @@ final class GameState: Codable {
     /// everything designed so far is available.
     var unlockLevel: Int = 4
     var rng: SeededGenerator
+    /// Highest tier earned for each achievement, keyed by definition id.
+    var achievements: [String: Int] = [:]
+    /// Tiers earned but not yet celebrated on screen. Persisted so an award
+    /// earned as the app goes to the background is not lost.
+    var pendingAwards: [AchievementAward] = []
 
     // MARK: - Scheduling scratch
 
@@ -47,6 +52,7 @@ final class GameState: Codable {
     var spawnAccumulator: Double = 0
     var currentArrivalsPerMinute: Double = 0
     var nextRatingUpdate: Double = 0
+    var nextAchievementCheck: Double = 0
     /// Last computed rating breakdown, for the management dashboard.
     var ratingComponents: [String: Double] = [:]
     var lastAlertTimes: [String: Double] = [:]
@@ -89,9 +95,12 @@ final class GameState: Codable {
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
+        achievements = container.value(.achievements, or: [:])
+        pendingAwards = container.value(.pendingAwards, or: [])
         spawnAccumulator = container.value(.spawnAccumulator, or: 0)
         currentArrivalsPerMinute = container.value(.currentArrivalsPerMinute, or: 0)
         nextRatingUpdate = container.value(.nextRatingUpdate, or: 0)
+        nextAchievementCheck = container.value(.nextAchievementCheck, or: 0)
         ratingComponents = container.value(.ratingComponents, or: [:])
         lastAlertTimes = container.value(.lastAlertTimes, or: [:])
         // The mode is the authority; the ledger flag follows it, so a save

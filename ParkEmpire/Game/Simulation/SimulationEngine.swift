@@ -20,6 +20,7 @@ final class SimulationEngine {
     private lazy var staffSystem = StaffSystem(pathfinder: pathfinder)
     private lazy var economy = EconomySystem()
     private lazy var rating = RatingSystem()
+    private lazy var achievements = AchievementSystem()
 
     private var accumulator: Double = 0
 
@@ -71,6 +72,7 @@ final class SimulationEngine {
         staffSystem.update(state: state, dt: dt)
         economy.update(state: state, dt: dt)
         rating.update(state: state)
+        achievements.update(state: state)
 
         purgeDepartedGuests(state: state)
     }
