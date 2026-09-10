@@ -66,33 +66,56 @@ enum DemoPark {
         place(state, "facility.bin", at: GridCoord(spine + 1, 13))
     }
 
+    /// Every coordinate here is a gap between the paths and the buildings
+    /// placed above. Scenery does not need path access, but it does need bare
+    /// grass, so these are chosen rather than generated.
     private static func placeScenery(_ state: GameState) {
         let spine = state.map.entranceCoord.x
 
-        place(state, "scenery.fountain", at: GridCoord(spine - 1, 9))
-
-        for y in [2, 4, 6, 10, 12, 16, 18] {
-            place(state, "scenery.tree", at: GridCoord(spine - 2, y))
-            place(state, "scenery.tree", at: GridCoord(spine + 2, y))
-        }
-        for x in [spine - 6, spine + 5] {
-            place(state, "scenery.conifer", at: GridCoord(x, 6))
-            place(state, "scenery.conifer", at: GridCoord(x, 13))
-        }
-        place(state, "scenery.flowerbed", at: GridCoord(spine - 1, 2))
-        place(state, "scenery.flowerbed", at: GridCoord(spine + 1, 2))
+        // Centrepiece, beside the main walkway where everyone passes it.
+        place(state, "scenery.fountain", at: GridCoord(spine - 2, 10))
         place(state, "scenery.statue", at: GridCoord(spine + 1, 11))
-        place(state, "scenery.lamp", at: GridCoord(spine - 1, 16))
-        place(state, "scenery.lamp", at: GridCoord(spine + 1, 16))
+
+        for coord in [GridCoord(spine - 2, 1), GridCoord(spine + 2, 1),
+                      GridCoord(spine - 2, 3), GridCoord(spine + 2, 3),
+                      GridCoord(spine - 6, 9), GridCoord(spine + 6, 9),
+                      GridCoord(spine - 6, 11), GridCoord(spine + 6, 11),
+                      GridCoord(spine - 2, 8), GridCoord(spine + 1, 8),
+                      GridCoord(spine - 2, 17), GridCoord(spine - 6, 17)] {
+            place(state, "scenery.tree", at: coord)
+        }
+
+        for coord in [GridCoord(spine - 6, 6), GridCoord(spine + 6, 6),
+                      GridCoord(spine - 6, 13), GridCoord(spine + 6, 13)] {
+            place(state, "scenery.conifer", at: coord)
+        }
+
+        for coord in [GridCoord(spine - 1, 1), GridCoord(spine + 1, 1),
+                      GridCoord(spine - 1, 3), GridCoord(spine + 1, 3)] {
+            place(state, "scenery.flowerbed", at: coord)
+        }
+
+        for coord in [GridCoord(spine - 1, 13), GridCoord(spine + 1, 12),
+                      GridCoord(spine - 1, 16), GridCoord(spine - 1, 18)] {
+            place(state, "scenery.lamp", at: coord)
+        }
+
+        place(state, "scenery.topiary", at: GridCoord(spine - 1, 5))
+        place(state, "scenery.topiary", at: GridCoord(spine + 1, 5))
     }
 
-    /// Places by definition id, ignoring anything that will not fit. The demo
-    /// layout is hand-written, so a piece that collides is a layout mistake
-    /// rather than something to report at runtime.
+    /// Places by definition id. The layout is hand-written against a known
+    /// empty map, so anything that fails to fit is a mistake in this file; the
+    /// assertion catches that in development and compiles out of the shipping
+    /// build, where a missing tree is not worth a crash.
     private static func place(_ state: GameState, _ definitionID: String, at coord: GridCoord) {
         guard let definition = GameContent.allBuildables.first(where: { $0.id == definitionID })
-        else { return }
-        state.place(definition, at: coord)
+        else {
+            assertionFailure("Demo park refers to unknown definition \(definitionID)")
+            return
+        }
+        let placed = state.place(definition, at: coord)
+        assert(placed, "Demo park could not place \(definitionID) at \(coord.x),\(coord.y)")
     }
 
     // MARK: - Warm-up
