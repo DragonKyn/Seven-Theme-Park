@@ -26,6 +26,121 @@ enum SpriteFactory {
         }
     }
 
+    // MARK: - Ground
+
+    /// Grass with a few tufts on it.
+    ///
+    /// Four variants, picked from the coordinate, so a field does not repeat
+    /// one tile three thousand times. Still four cached textures, because the
+    /// variety comes from which one goes where rather than from drawing each
+    /// tile separately.
+    static func grassTexture(variant: Int, side: CGFloat) -> SKTexture {
+        texture(key: "grass-\(variant)-\(side)", size: CGSize(width: side, height: side)) { _, size in
+            let base = variant % 2 == 0 ? ParkPalette.grass : ParkPalette.grassAlt
+            base.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+            // Fixed tuft positions per variant, so the same tile always looks
+            // the same between frames and between sessions.
+            let tufts: [[(CGFloat, CGFloat)]] = [
+                [(0.22, 0.34), (0.68, 0.62)],
+                [(0.48, 0.22), (0.16, 0.76), (0.80, 0.44)],
+                [(0.34, 0.68)],
+                [(0.72, 0.26), (0.30, 0.52), (0.58, 0.84)]
+            ]
+            ParkPalette.grassTuft.setStroke()
+            for (x, y) in tufts[variant % tufts.count] {
+                let blade = UIBezierPath()
+                let foot = CGPoint(x: size.width * x, y: size.height * y)
+                blade.move(to: foot)
+                blade.addLine(to: CGPoint(x: foot.x - size.width * 0.035,
+                                          y: foot.y - size.height * 0.11))
+                blade.move(to: foot)
+                blade.addLine(to: CGPoint(x: foot.x + size.width * 0.045,
+                                          y: foot.y - size.height * 0.09))
+                blade.lineWidth = max(1, size.width * 0.035)
+                blade.stroke()
+            }
+        }
+    }
+
+    /// Paving, with the slabs actually showing.
+    ///
+    /// Two variants offset from one another so a long walkway reads as laid
+    /// rather than as a painted stripe.
+    static func pathTexture(variant: Int, side: CGFloat) -> SKTexture {
+        texture(key: "paving-\(variant)-\(side)", size: CGSize(width: side, height: side)) { _, size in
+            ParkPalette.path.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+            ParkPalette.pathJoint.setStroke()
+            let joints = UIBezierPath()
+            // A course of slabs, with the vertical joint shifted every row so
+            // the courses interlock the way paving does.
+            let rows = 2
+            for row in 0...rows {
+                let y = size.height * CGFloat(row) / CGFloat(rows)
+                joints.move(to: CGPoint(x: 0, y: y))
+                joints.addLine(to: CGPoint(x: size.width, y: y))
+            }
+            for row in 0..<rows {
+                let y = size.height * CGFloat(row) / CGFloat(rows)
+                let offset: CGFloat = (row + variant) % 2 == 0 ? 0.5 : 0.25
+                joints.move(to: CGPoint(x: size.width * offset, y: y))
+                joints.addLine(to: CGPoint(x: size.width * offset,
+                                           y: y + size.height / CGFloat(rows)))
+            }
+            joints.lineWidth = max(0.5, size.width * 0.022)
+            joints.stroke()
+        }
+    }
+
+    /// Water, with a pale shore wherever it stops.
+    ///
+    /// `shores` is a bitmask of north, east, south and west sides that are not
+    /// water. A pond drawn without edges is a blue rectangle; the edge is what
+    /// makes it read as water in a bank.
+    static func waterTexture(shores: Int, variant: Int, side: CGFloat) -> SKTexture {
+        texture(key: "water-\(shores)-\(variant)-\(side)",
+                size: CGSize(width: side, height: side)) { _, size in
+            (variant % 2 == 0 ? ParkPalette.water : ParkPalette.waterAlt).setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+            // A ripple or two, offset by variant so the surface is not a grid.
+            ParkPalette.waterRipple.setStroke()
+            let ripples = UIBezierPath()
+            let lift = variant % 2 == 0 ? CGFloat(0.34) : CGFloat(0.62)
+            for step in 0..<2 {
+                let y = size.height * (lift + 0.24 * CGFloat(step))
+                ripples.move(to: CGPoint(x: size.width * 0.18, y: y))
+                ripples.addQuadCurve(to: CGPoint(x: size.width * 0.62, y: y),
+                                     controlPoint: CGPoint(x: size.width * 0.40,
+                                                           y: y - size.height * 0.07))
+            }
+            ripples.lineWidth = max(1, size.width * 0.030)
+            ripples.stroke()
+
+            // Shoreline on every side that is not more water.
+            guard shores != 0 else { return }
+            let band = size.width * 0.16
+            ParkPalette.waterShore.setFill()
+            if shores & 1 != 0 {
+                UIBezierPath(rect: CGRect(x: 0, y: 0, width: size.width, height: band)).fill()
+            }
+            if shores & 4 != 0 {
+                UIBezierPath(rect: CGRect(x: 0, y: size.height - band,
+                                          width: size.width, height: band)).fill()
+            }
+            if shores & 8 != 0 {
+                UIBezierPath(rect: CGRect(x: 0, y: 0, width: band, height: size.height)).fill()
+            }
+            if shores & 2 != 0 {
+                UIBezierPath(rect: CGRect(x: size.width - band, y: 0,
+                                          width: band, height: size.height)).fill()
+            }
+        }
+    }
+
     /// Rounded block used for rides, shops and facilities.
     static func buildingTexture(colour: UIColor, size: CGSize) -> SKTexture {
         texture(key: "building-\(colour.hashValue)-\(size.width)x\(size.height)", size: size) { context, size in

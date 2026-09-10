@@ -8,6 +8,11 @@ enum ParkPalette {
     static let grassAlt = UIColor(red: 0.51, green: 0.74, blue: 0.42, alpha: 1)
     static let path = UIColor(red: 0.87, green: 0.84, blue: 0.76, alpha: 1)
     static let entrance = UIColor(red: 0.96, green: 0.74, blue: 0.30, alpha: 1)
+    static let grassTuft = UIColor(red: 0.44, green: 0.68, blue: 0.36, alpha: 0.75)
+    static let pathJoint = UIColor(red: 0.72, green: 0.68, blue: 0.60, alpha: 0.55)
+    static let waterRipple = UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 0.20)
+    static let waterShore = UIColor(red: 0.62, green: 0.80, blue: 0.92, alpha: 0.55)
+
     static let water = UIColor(red: 0.35, green: 0.63, blue: 0.86, alpha: 1)
     static let waterAlt = UIColor(red: 0.31, green: 0.58, blue: 0.83, alpha: 1)
 

@@ -366,8 +366,8 @@ final class ParkScene: SKScene {
     }
 
     /// A cheap number standing for everything that decides how a tile is
-    /// drawn: its terrain, which square of the grass check it is on, and for
-    /// railway, which neighbours it joins.
+    /// drawn: its terrain, which of the repeating variants it uses, and for
+    /// track and water, which neighbours it joins or stops against.
     private func appearanceCode(for tile: Tile, at coord: GridCoord, map: ParkMap) -> Int {
         let terrain: Int
         switch tile.terrain {
@@ -382,8 +382,37 @@ final class ParkScene: SKScene {
         case .coasterHelix: terrain = 8
         case .coasterJump: terrain = 9
         }
-        let alternate = (coord.x + coord.y) % 2 != 0 ? 1 : 0
-        return terrain * 100 + alternate * 50 + trackConnections(at: coord, map: map)
+        return terrain * 1000 + tileVariant(at: coord) * 100 + neighbourMask(for: tile, at: coord, map: map)
+    }
+
+    /// Which repeat of a terrain a tile uses. Taken from the coordinate, so a
+    /// field of grass is varied without anything being stored per tile.
+    private func tileVariant(at coord: GridCoord) -> Int {
+        ((coord.x &* 7) &+ (coord.y &* 13)) & 3
+    }
+
+    /// Track connections, or for water the sides where it stops.
+    private func neighbourMask(for tile: Tile, at coord: GridCoord, map: ParkMap) -> Int {
+        switch tile.terrain {
+        case .water: return shoreMask(at: coord, map: map)
+        default: return trackConnections(at: coord, map: map)
+        }
+    }
+
+    /// Sides of a water tile that are not more water, as north, east, south
+    /// and west bits.
+    private func shoreMask(at coord: GridCoord, map: ParkMap) -> Int {
+        let offsets: [(Int, GridCoord)] = [
+            (1, GridCoord(coord.x, coord.y + 1)),
+            (2, GridCoord(coord.x + 1, coord.y)),
+            (4, GridCoord(coord.x, coord.y - 1)),
+            (8, GridCoord(coord.x - 1, coord.y))
+        ]
+        var shores = 0
+        for (bit, neighbour) in offsets where map.tile(at: neighbour)?.terrain != .water {
+            shores |= bit
+        }
+        return shores
     }
 
     private func buildTileNodes(state: GameState) {
@@ -405,50 +434,34 @@ final class ParkScene: SKScene {
         }
     }
 
-    /// Railway is drawn from what it joins on to, so a straight run reads as
-    /// a straight run. Everything else is a flat colour.
+    /// Ground is drawn per tile rather than as a flat colour: grass has tufts
+    /// on it, paving has joints, water has a shore, and track is drawn from
+    /// what it joins on to.
     private func texture(for tile: Tile, at coord: GridCoord, map: ParkMap) -> SKTexture {
-        guard tile.terrain == .track || tile.terrain.isCoasterTrack else {
-            return SpriteFactory.tileTexture(colour: colour(for: tile, at: coord),
-                                             side: Self.tileSide)
-        }
+        let variant = tileVariant(at: coord)
 
-        let connections = trackConnections(at: coord, map: map)
-        if tile.terrain.coasterThrill > 0 {
-            return SpriteFactory.coasterElementTexture(connections: connections,
-                                                       side: Self.tileSide,
-                                                       element: tile.terrain)
+        switch tile.terrain {
+        case .grass:
+            return SpriteFactory.grassTexture(variant: variant, side: Self.tileSide)
+        case .path:
+            return SpriteFactory.pathTexture(variant: variant, side: Self.tileSide)
+        case .water:
+            return SpriteFactory.waterTexture(shores: shoreMask(at: coord, map: map),
+                                              variant: variant,
+                                              side: Self.tileSide)
+        case .entrance:
+            return SpriteFactory.tileTexture(colour: ParkPalette.entrance, side: Self.tileSide)
+        case .track, .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
+            let connections = trackConnections(at: coord, map: map)
+            if tile.terrain.coasterThrill > 0 {
+                return SpriteFactory.coasterElementTexture(connections: connections,
+                                                           side: Self.tileSide,
+                                                           element: tile.terrain)
+            }
+            return SpriteFactory.trackTileTexture(connections: connections,
+                                                  side: Self.tileSide,
+                                                  coaster: tile.terrain.isCoasterTrack)
         }
-        return SpriteFactory.trackTileTexture(connections: connections,
-                                              side: Self.tileSide,
-                                              coaster: tile.terrain.isCoasterTrack)
-    }
-
-    /// Which of the four neighbours are also railway, as north, east, south
-    /// and west bits. Zero for anything that is not railway itself.
-    private func trackConnections(at coord: GridCoord, map: ParkMap) -> Int {
-        guard let terrain = map.tile(at: coord)?.terrain,
-              terrain == .track || terrain.isCoasterTrack else { return 0 }
-        let offsets: [(Int, GridCoord)] = [
-            (1, GridCoord(coord.x, coord.y + 1)),
-            (2, GridCoord(coord.x + 1, coord.y)),
-            (4, GridCoord(coord.x, coord.y - 1)),
-            (8, GridCoord(coord.x - 1, coord.y))
-        ]
-        var connections = 0
-        // Every kind of coaster piece joins every other, so a loop bolted
-        // between two straights reads as connected to both.
-        for (bit, neighbour) in offsets {
-            guard let other = map.tile(at: neighbour)?.terrain else { continue }
-            let joins = terrain.isCoasterTrack ? other.isCoasterTrack : other == terrain
-            guard joins else { continue }
-            connections |= bit
-        }
-        return connections
-    }
-
-    private func colour(for tile: Tile, at coord: GridCoord) -> UIColor {
-        ParkPalette.colour(for: tile.terrain, alternate: (coord.x + coord.y) % 2 != 0)
     }
 
     /// Names are dropped once the park is zoomed out far enough that they
