@@ -147,6 +147,9 @@ extension GameState {
                 evictGuests(from: target)
                 map.setBuilding(nil, on: attraction.rect.coords)
                 attractions.remove(at: index)
+                // A themed ride decorated the ground around it, so taking it
+                // away has to take that with it.
+                if attraction.upgradeLevel(.theming) > 0 { refreshBeauty() }
                 ledger.receive(demolitionRefundValue(for: attraction.definition), as: .other)
                 return true
 
