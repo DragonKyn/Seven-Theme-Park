@@ -106,15 +106,13 @@ enum SpriteFactory {
         let base = trackTileTexture(connections: connections, side: side, coaster: true)
         return texture(key: "coaster-\(element.rawValue)-\(connections)-\(side)",
                        size: CGSize(width: side, height: side)) { context, size in
-            base.cgImage().flatMap { image in
-                context.saveGState()
-                // Core Graphics draws images bottom-up; the tile is square and
-                // the track pattern is symmetric, so only the flip matters.
-                context.translateBy(x: 0, y: size.height)
-                context.scaleBy(x: 1, y: -1)
-                context.draw(image, in: CGRect(origin: .zero, size: size))
-                context.restoreGState()
-            }
+            context.saveGState()
+            // Core Graphics draws images bottom-up; the tile is square and the
+            // track pattern is symmetric, so only the flip matters.
+            context.translateBy(x: 0, y: size.height)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(base.cgImage(), in: CGRect(origin: .zero, size: size))
+            context.restoreGState()
 
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
             ParkPalette.coasterRail.setStroke()
