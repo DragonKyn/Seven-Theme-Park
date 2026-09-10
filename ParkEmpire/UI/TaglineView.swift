@@ -2,10 +2,10 @@ import SwiftUI
 
 /// The rotating tagline under the title, laid down by a coaster car.
 ///
-/// A little car runs the crest of a hill from left to right and each letter
-/// drops into place just behind it, so the line reads as track being laid
-/// rather than as text fading in. When the line has been up long enough the
-/// whole thing lifts away and the next one is run out.
+/// A car runs the crest of a hill from left to right and each letter drops
+/// into place just behind it, so the line reads as track being laid rather
+/// than as text fading in. When the line has been up long enough the whole
+/// thing lifts away and the next one is run out.
 struct TaglineView: View {
     let taglines: [String]
 
@@ -20,6 +20,8 @@ struct TaglineView: View {
     private static let dwell: TimeInterval = 4.6
     /// How far the crest of the hill rises above the ends of the line.
     private static let arc: CGFloat = 7
+    private static let carLength: CGFloat = 26
+    private static let carHeight: CGFloat = 15
 
     private var characters: [(id: Int, value: Character)] {
         Array(taglines[index].enumerated()).map { (id: $0.offset, value: $0.element) }
@@ -31,29 +33,28 @@ struct TaglineView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            letters
-            car
-        }
-        .frame(height: 26)
-        .id(index)
-        .task(id: index) {
-            laid = false
-            withAnimation(.easeOut(duration: 0.28)) { laid = true }
-            try? await Task.sleep(nanoseconds: UInt64((Self.dwell + runDuration) * 1_000_000_000))
-            withAnimation(.easeIn(duration: 0.22)) { laid = false }
-            try? await Task.sleep(nanoseconds: 240_000_000)
-            index = (index + 1) % max(taglines.count, 1)
-        }
+        // The letters size themselves and the car is laid over them, so the
+        // car runs exactly the width of the line and the whole thing centres
+        // as one block. Measuring the car against the full screen width was
+        // what pushed the line off to the left.
+        letters
+            .overlay { car }
+            .frame(height: 30)
+            .id(index)
+            .task(id: index) {
+                laid = false
+                withAnimation(.easeOut(duration: 0.28)) { laid = true }
+                try? await Task.sleep(nanoseconds: UInt64((Self.dwell + runDuration) * 1_000_000_000))
+                withAnimation(.easeIn(duration: 0.22)) { laid = false }
+                try? await Task.sleep(nanoseconds: 240_000_000)
+                index = (index + 1) % max(taglines.count, 1)
+            }
     }
 
     private var letters: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 0.6) {
             ForEach(characters, id: \.id) { character in
-                Text(String(character.value))
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .tracking(1.4)
-                    .foregroundStyle(.white.opacity(0.88))
+                letter(character.value)
                     .offset(y: height(for: character.id) + (laid ? 0 : 14))
                     .opacity(laid ? 1 : 0)
                     .animation(.spring(response: 0.34, dampingFraction: 0.7)
@@ -61,27 +62,55 @@ struct TaglineView: View {
                                value: laid)
             }
         }
+        .fixedSize()
     }
 
-    /// The car itself: a stubby two-tone body that runs the crest once, ahead
-    /// of the letters, and is gone by the time the line is finished.
+    /// Spaces are drawn as a fixed gap rather than as a space character, so
+    /// the line's width does not depend on how the font treats whitespace.
+    @ViewBuilder
+    private func letter(_ value: Character) -> some View {
+        if value == " " {
+            Color.clear.frame(width: 4, height: 1)
+        } else {
+            Text(String(value))
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.9))
+        }
+    }
+
+    /// A stubby coaster car: nosed body, a rider, and a dark chassis. It runs
+    /// the crest once, ahead of the letters, and is gone by the time the line
+    /// has finished landing.
     private var car: some View {
         GeometryReader { geometry in
-            let travel = geometry.size.width
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Theme.accentWarm)
-                .frame(width: 14, height: 8)
-                .overlay(alignment: .trailing) {
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(Theme.danger)
-                        .frame(width: 5, height: 8)
-                }
-                .offset(x: laid ? travel : -18,
-                        y: geometry.size.height / 2 - 14)
+            coasterCar
+                .offset(x: laid ? geometry.size.width + 4 : -Self.carLength,
+                        y: geometry.size.height / 2 - Self.arc - Self.carHeight)
                 .opacity(laid ? 0 : 1)
                 .animation(.easeInOut(duration: runDuration + 0.3), value: laid)
         }
         .allowsHitTesting(false)
+    }
+
+    private var coasterCar: some View {
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Theme.accentWarm)
+                .frame(width: Self.carLength, height: Self.carHeight)
+
+            // Nose at the front, so it reads as pointing where it is going.
+            Circle()
+                .fill(Theme.danger)
+                .frame(width: Self.carHeight, height: Self.carHeight)
+                .offset(x: Self.carLength - Self.carHeight)
+
+            Circle()
+                .fill(.white.opacity(0.9))
+                .frame(width: Self.carHeight * 0.42, height: Self.carHeight * 0.42)
+                .offset(x: Self.carLength * 0.24, y: -1)
+        }
+        .frame(width: Self.carLength, height: Self.carHeight, alignment: .leading)
+        .shadow(color: .black.opacity(0.4), radius: 3, y: 1)
     }
 
     /// Letters sit on a shallow hill: highest in the middle, lowest at the

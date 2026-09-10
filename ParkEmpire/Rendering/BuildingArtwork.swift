@@ -967,32 +967,40 @@ enum BuildingArtwork {
         }
 
         func loop(centre: CGPoint, radius: CGFloat, steps: Int) {
-            // Entered and left at the bottom of the circle, which in texture
+            // Entered and left at the foot of the circle, which in texture
             // space is the largest y.
             for step in 0..<steps {
-                let angle = CGFloat.pi / 2 + CGFloat(step) / CGFloat(steps) * .pi * 2
+                // Sweeping downwards from the foot takes the train up the far
+                // side first, which is the way a real vertical loop is run
+                // when you enter it going right.
+                let angle = CGFloat.pi / 2 - CGFloat(step) / CGFloat(steps) * .pi * 2
                 points.append(CGPoint(x: centre.x + cos(angle) * radius,
                                       y: centre.y + sin(angle) * radius))
             }
         }
 
-        let loopCentre = at(0.70, 0.50)
-        let loopRadius = size.height * 0.19
+        // The loop is entered and left at its lowest point, travelling right
+        // both times. Sending the train in one way and out the other is what
+        // made it turn on a dime coming off the loop.
+        let loopCentre = at(0.72, 0.62)
+        let loopRadius = size.height * 0.28
+        let loopFoot = CGPoint(x: loopCentre.x, y: loopCentre.y + loopRadius)
 
         // Out of the station and up the lift hill.
-        line(at(0.08, 0.90), at(0.30, 0.90), steps: 6)
-        line(at(0.30, 0.90), at(0.40, 0.12), steps: 14)
+        line(at(0.06, 0.90), at(0.22, 0.90), steps: 5)
+        line(at(0.22, 0.90), at(0.32, 0.13), steps: 16)
         // Over the crest and down the first drop.
-        curve(at(0.40, 0.12), at(0.48, 0.10), to: at(0.50, 0.22), steps: 6)
-        curve(at(0.50, 0.22), at(0.54, 0.62), to: at(0.56, 0.84), steps: 10)
-        // Into the loop, round it, and out the far side.
-        curve(at(0.56, 0.84), at(0.63, 0.80), to: CGPoint(x: loopCentre.x, y: loopCentre.y + loopRadius), steps: 5)
-        loop(centre: loopCentre, radius: loopRadius, steps: 24)
-        curve(CGPoint(x: loopCentre.x, y: loopCentre.y + loopRadius), at(0.84, 0.78), to: at(0.93, 0.90), steps: 7)
-        // Back along the bottom to the station.
-        line(at(0.93, 0.90), at(0.93, 0.96), steps: 2)
-        line(at(0.93, 0.96), at(0.11, 0.96), steps: 16)
-        curve(at(0.11, 0.96), at(0.06, 0.96), to: at(0.08, 0.90), steps: 3)
+        curve(at(0.32, 0.13), at(0.40, 0.10), to: at(0.44, 0.22), steps: 6)
+        curve(at(0.44, 0.22), at(0.51, 0.68), to: at(0.56, 0.90), steps: 11)
+        // Level run into the foot of the loop, still going right.
+        line(at(0.56, 0.90), loopFoot, steps: 5)
+        loop(centre: loopCentre, radius: loopRadius, steps: 30)
+        // Straight out the far side, under the loop, and back along the
+        // bottom to the station.
+        line(loopFoot, at(0.90, 0.90), steps: 6)
+        curve(at(0.90, 0.90), at(0.95, 0.91), to: at(0.94, 0.955), steps: 4)
+        line(at(0.94, 0.955), at(0.11, 0.955), steps: 18)
+        curve(at(0.11, 0.955), at(0.04, 0.955), to: at(0.06, 0.90), steps: 4)
 
         return points
     }

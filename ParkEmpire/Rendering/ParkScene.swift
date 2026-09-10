@@ -473,33 +473,43 @@ final class ParkScene: SKScene {
             // so it needs twice as long to run at the same speed as a loop.
             let duration = Double(points.count) * (isLoop ? 0.85 : 1.7)
 
-            // A locomotive and two carriages either way. On a loop each car
-            // starts a tile further back round the ring. On a dead-ended line
-            // the train shuttles: every car keeps the same distance back along
-            // the rails and the whole thing reverses at the end, which is what
-            // a real terminus looks like.
+            // Three cars either way. On a loop it is a locomotive pulling two
+            // carriages, each starting a tile further back round the ring. On
+            // a dead-ended line it is a push-pull set: a locomotive at each
+            // end facing outwards, so the train reverses at the terminus
+            // without anything having to turn round.
             let cars = 3
             let spacing = Self.tileSide
             let consist = spacing * CGFloat(cars - 1)
 
             for carriage in 0..<cars {
-                let carPath: [CGPoint]
-                if isLoop {
-                    let offset = (points.count - carriage) % points.count
-                    carPath = Array(points[offset...] + points[..<offset])
-                } else {
-                    carPath = PathMotion.shuttlePoints(along: points,
-                                                     carIndex: carriage,
-                                                     carSpacing: spacing,
-                                                     consistLength: consist,
-                                                     samples: max(48, points.count * 3))
-                }
+                let isTailLocomotive = !isLoop && carriage == cars - 1
+                let isLocomotive = carriage == 0 || isTailLocomotive
 
                 let node = SKSpriteNode(texture: SpriteFactory.trainCarTexture(
-                    isLocomotive: carriage == 0, size: carSize))
+                    isLocomotive: isLocomotive, size: carSize))
                 node.size = carSize
+                // The rear locomotive faces the other way, which is what makes
+                // a set that runs equally well in both directions read as one.
+                if isTailLocomotive { node.xScale = -1 }
                 trainLayer.addChild(node)
-                PathMotion.drive(node, around: carPath, duration: duration)
+
+                if isLoop {
+                    let offset = (points.count - carriage) % points.count
+                    let carPath = Array(points[offset...] + points[..<offset])
+                    PathMotion.drive(node, around: carPath, duration: duration)
+                } else {
+                    let run = PathMotion.shuttleRun(along: points,
+                                                    carIndex: carriage,
+                                                    carSpacing: spacing,
+                                                    consistLength: consist,
+                                                    samples: max(48, points.count * 3))
+                    PathMotion.drive(node,
+                                     around: run.points,
+                                     duration: duration,
+                                     headings: run.headings)
+                }
+
                 trainNodes.append(node)
             }
         }

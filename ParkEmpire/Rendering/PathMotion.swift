@@ -22,23 +22,41 @@ enum PathMotion {
     static func drive(_ node: SKSpriteNode,
                       around points: [CGPoint],
                       duration: TimeInterval,
-                      turnFraction: Double = 1.0) {
+                      turnFraction: Double = 1.0,
+                      headings: [CGFloat]? = nil) {
         guard points.count > 1 else { return }
 
-        let leg = duration / Double(points.count)
-        let turnTime = max(0.01, leg * min(1.0, max(0.05, turnFraction)))
+        // Legs are timed by how long they are rather than by how many there
+        // are. A circuit sampled densely round a loop and sparsely along a
+        // straight would otherwise crawl through the loop and race the
+        // straight, and the turn spread across each leg would jerk wherever
+        // the sampling changed.
+        var lengths: [CGFloat] = []
+        lengths.reserveCapacity(points.count)
+        for index in points.indices {
+            let next = points[(index + 1) % points.count]
+            lengths.append(max(hypot(next.x - points[index].x,
+                                     next.y - points[index].y), 0.0001))
+        }
+        let total = lengths.reduce(0, +)
 
         node.position = points[0]
-        node.zRotation = heading(from: points[0], to: points[1])
+        node.zRotation = headings?.first ?? heading(from: points[0], to: points[1])
 
         var legs: [SKAction] = []
         for index in points.indices {
-            let from = points[index]
             let to = points[(index + 1) % points.count]
-            let move = SKAction.move(to: to, duration: leg)
+            let legTime = duration * Double(lengths[index] / total)
+
+            let move = SKAction.move(to: to, duration: legTime)
             move.timingMode = .linear
-            let turn = SKAction.rotate(toAngle: heading(from: from, to: to),
-                                       duration: turnTime,
+
+            // A caller can supply headings where facing should not follow the
+            // direction of travel, which is how a train reverses down a line
+            // without every carriage spinning round.
+            let angle = headings?[index] ?? heading(from: points[index], to: to)
+            let turn = SKAction.rotate(toAngle: angle,
+                                       duration: max(0.01, legTime * min(1.0, max(0.05, turnFraction))),
                                        shortestUnitArc: true)
             legs.append(.group([move, turn]))
         }
@@ -84,12 +102,12 @@ enum PathMotion {
     ///
     /// The head stops short of the near end by the length of the train, so the
     /// last car comes to rest at the platform rather than the first.
-    static func shuttlePoints(along line: [CGPoint],
-                              carIndex: Int,
-                              carSpacing: CGFloat,
-                              consistLength: CGFloat,
-                              samples: Int) -> [CGPoint] {
-        guard line.count > 1, samples > 1 else { return line }
+    static func shuttleRun(along line: [CGPoint],
+                           carIndex: Int,
+                           carSpacing: CGFloat,
+                           consistLength: CGFloat,
+                           samples: Int) -> (points: [CGPoint], headings: [CGFloat]) {
+        guard line.count > 1, samples > 1 else { return (line, []) }
 
         var cumulative: [CGFloat] = [0]
         cumulative.reserveCapacity(line.count)
@@ -99,18 +117,39 @@ enum PathMotion {
             cumulative.append(cumulative[index - 1] + step)
         }
         let total = cumulative[cumulative.count - 1]
-        guard total > 0 else { return line }
+        guard total > 0 else { return (line, []) }
 
         let head = min(consistLength, total * 0.5)
 
-        return (0..<samples).map { sample in
+        var points: [CGPoint] = []
+        var headings: [CGFloat] = []
+        points.reserveCapacity(samples)
+        headings.reserveCapacity(samples)
+
+        for sample in 0..<samples {
             let phase = Double(sample) / Double(samples)
             // A triangle wave: out along the line, then back.
             let along = phase < 0.5 ? phase * 2 : (1 - phase) * 2
             let headDistance = head + (total - head) * CGFloat(along)
             let distance = min(max(headDistance - carSpacing * CGFloat(carIndex), 0), total)
-            return point(at: distance, along: line, cumulative: cumulative)
+            points.append(point(at: distance, along: line, cumulative: cumulative))
+            // Facing follows the rails, not the direction of travel, so the
+            // train backs down the line instead of every carriage spinning
+            // round at the terminus.
+            headings.append(tangent(at: distance, along: line, cumulative: cumulative))
         }
+
+        return (points, headings)
+    }
+
+    /// Which way the rails point at a given distance along them.
+    private static func tangent(at distance: CGFloat,
+                                along line: [CGPoint],
+                                cumulative: [CGFloat]) -> CGFloat {
+        guard line.count > 1 else { return 0 }
+        var index = 1
+        while index < cumulative.count - 1 && cumulative[index] < distance { index += 1 }
+        return heading(from: line[index - 1], to: line[index])
     }
 
     /// Where a given distance along a polyline falls.
