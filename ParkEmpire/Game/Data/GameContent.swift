@@ -65,7 +65,8 @@ enum GameContent {
             operatingCostPerCycle: 4,
             footprint: GridSize(3, 3),
             unlockLevel: 1,
-            appearance: BuildingAppearance(.carousel, .pink, .cream, .amber)
+            appearance: BuildingAppearance(.carousel, .pink, .cream, .amber),
+            group: .gentle
         ),
         AttractionDefinition(
             id: "ride.pirateship",
@@ -81,7 +82,8 @@ enum GameContent {
             operatingCostPerCycle: 8,
             footprint: GridSize(4, 3),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.swingBoat, .red, .sand, .brown)
+            appearance: BuildingAppearance(.swingBoat, .red, .sand, .brown),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.droptower",
@@ -97,7 +99,8 @@ enum GameContent {
             operatingCostPerCycle: 12,
             footprint: GridSize(3, 3),
             unlockLevel: 3,
-            appearance: BuildingAppearance(.dropTower, .amber, .sand, .slate)
+            appearance: BuildingAppearance(.dropTower, .amber, .sand, .slate),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.minicoaster",
@@ -113,7 +116,8 @@ enum GameContent {
             operatingCostPerCycle: 18,
             footprint: GridSize(6, 4),
             unlockLevel: 4,
-            appearance: BuildingAppearance(.coaster, .yellow, .lime, .blue)
+            appearance: BuildingAppearance(.coaster, .yellow, .lime, .blue),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.teacups",
@@ -129,7 +133,8 @@ enum GameContent {
             operatingCostPerCycle: 5,
             footprint: GridSize(3, 3),
             unlockLevel: 1,
-            appearance: BuildingAppearance(.teacups, .violet, .cream, .pink)
+            appearance: BuildingAppearance(.teacups, .violet, .cream, .pink),
+            group: .family
         ),
         AttractionDefinition(
             id: "ride.bumpercars",
@@ -145,7 +150,8 @@ enum GameContent {
             operatingCostPerCycle: 7,
             footprint: GridSize(4, 3),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.bumperCars, .blue, .charcoal, .yellow)
+            appearance: BuildingAppearance(.bumperCars, .blue, .charcoal, .yellow),
+            group: .family
         ),
         AttractionDefinition(
             id: "ride.carpetslide",
@@ -161,7 +167,8 @@ enum GameContent {
             operatingCostPerCycle: 4,
             footprint: GridSize(4, 4),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.carpetSlide, .orange, .sand, .yellow)
+            appearance: BuildingAppearance(.carpetSlide, .orange, .sand, .yellow),
+            group: .family
         ),
         AttractionDefinition(
             id: "ride.gokarts.small",
@@ -177,7 +184,8 @@ enum GameContent {
             operatingCostPerCycle: 11,
             footprint: GridSize(4, 4),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.goKarts, .red, .lime, .white)
+            appearance: BuildingAppearance(.goKarts, .red, .lime, .white),
+            group: .family
         ),
         AttractionDefinition(
             id: "ride.hauntedhouse",
@@ -193,7 +201,8 @@ enum GameContent {
             operatingCostPerCycle: 10,
             footprint: GridSize(4, 4),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.hauntedHouse, .indigo, .charcoal, .amber)
+            appearance: BuildingAppearance(.hauntedHouse, .indigo, .charcoal, .amber),
+            group: .gentle
         ),
         AttractionDefinition(
             id: "ride.ferriswheel",
@@ -209,7 +218,8 @@ enum GameContent {
             operatingCostPerCycle: 12,
             footprint: GridSize(4, 4),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.ferrisWheel, .cyan, .red, .white)
+            appearance: BuildingAppearance(.ferrisWheel, .cyan, .red, .white),
+            group: .gentle
         ),
         AttractionDefinition(
             id: "ride.gokarts.medium",
@@ -225,7 +235,8 @@ enum GameContent {
             operatingCostPerCycle: 17,
             footprint: GridSize(6, 5),
             unlockLevel: 3,
-            appearance: BuildingAppearance(.goKarts, .amber, .lime, .white)
+            appearance: BuildingAppearance(.goKarts, .amber, .lime, .white),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.slingshot",
@@ -241,7 +252,8 @@ enum GameContent {
             operatingCostPerCycle: 14,
             footprint: GridSize(3, 3),
             unlockLevel: 4,
-            appearance: BuildingAppearance(.slingshot, .yellow, .slate, .charcoal)
+            appearance: BuildingAppearance(.slingshot, .yellow, .slate, .charcoal),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.logflume",
@@ -257,7 +269,8 @@ enum GameContent {
             operatingCostPerCycle: 16,
             footprint: GridSize(6, 5),
             unlockLevel: 3,
-            appearance: BuildingAppearance(.logFlume, .cream, .green, .cyan)
+            appearance: BuildingAppearance(.logFlume, .cream, .green, .cyan),
+            group: .water
         ),
         AttractionDefinition(
             id: "ride.gokarts.large",
@@ -273,7 +286,8 @@ enum GameContent {
             operatingCostPerCycle: 26,
             footprint: GridSize(8, 6),
             unlockLevel: 4,
-            appearance: BuildingAppearance(.goKarts, .indigo, .slate, .white)
+            appearance: BuildingAppearance(.goKarts, .indigo, .slate, .white),
+            group: .thrill
         ),
         AttractionDefinition(
             id: "ride.bigcoaster",
@@ -289,7 +303,96 @@ enum GameContent {
             operatingCostPerCycle: 34,
             footprint: GridSize(9, 6),
             unlockLevel: 4,
-            appearance: BuildingAppearance(.megaCoaster, .red, .charcoal, .amber)
+            appearance: BuildingAppearance(.megaCoaster, .red, .charcoal, .amber),
+            group: .thrill
+        ),
+        AttractionDefinition(
+            id: "ride.mirrormaze",
+            displayName: "Mirror Maze",
+            summary: "Cheap, quiet, and it keeps a queue moving all day. Nothing on it can break.",
+            purchasePrice: 2_800,
+            capacity: 14,
+            rideDuration: 70,
+            loadDuration: 10,
+            excitement: 34,
+            nausea: 6,
+            maintenanceRate: 0.006,
+            operatingCostPerCycle: 3,
+            footprint: GridSize(3, 3),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.mirrorMaze, .indigo, .cyan, .amber),
+            group: .gentle
+        ),
+        AttractionDefinition(
+            id: "ride.fishingboats",
+            displayName: "Fishing Boats",
+            summary: "A slow lap of a reedy pond. Needs water beside it, and calms a nauseous crowd.",
+            purchasePrice: 4_600,
+            capacity: 12,
+            rideDuration: 95,
+            loadDuration: 16,
+            excitement: 26,
+            nausea: 2,
+            maintenanceRate: 0.010,
+            operatingCostPerCycle: 6,
+            footprint: GridSize(5, 4),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.fishingBoats, .cream, .green, .red),
+            group: .water,
+            needsWater: true
+        ),
+        AttractionDefinition(
+            id: "ride.bumperboats",
+            displayName: "Bumper Boats",
+            summary: "Bumper cars, wet. Needs water beside it, and the queue never stops laughing.",
+            purchasePrice: 6_800,
+            capacity: 12,
+            rideDuration: 65,
+            loadDuration: 18,
+            excitement: 48,
+            nausea: 18,
+            maintenanceRate: 0.018,
+            operatingCostPerCycle: 9,
+            footprint: GridSize(4, 4),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.bumperBoats, .teal, .cyan, .amber),
+            group: .water,
+            needsWater: true
+        ),
+        AttractionDefinition(
+            id: "ride.skygliders",
+            displayName: "Sky Gliders",
+            summary: "Chairs on a cable. Enormous capacity, almost no thrill, and everybody rides it once.",
+            purchasePrice: 9_500,
+            capacity: 26,
+            rideDuration: 115,
+            loadDuration: 20,
+            excitement: 38,
+            nausea: 8,
+            maintenanceRate: 0.020,
+            operatingCostPerCycle: 11,
+            footprint: GridSize(6, 3),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.skyGliders, .cream, .green, .red),
+            group: .gentle
+        ),
+        AttractionDefinition(
+            id: "ride.wavepool",
+            displayName: "Wave Rider",
+            summary: "A standing wave to surf. Needs water beside it, and thrills without spinning anybody.",
+            purchasePrice: 14_000,
+            capacity: 10,
+            rideDuration: 60,
+            loadDuration: 20,
+            excitement: 72,
+            nausea: 22,
+            maintenanceRate: 0.038,
+            operatingCostPerCycle: 18,
+            footprint: GridSize(5, 4),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.wavePool, .slate, .sand, .cyan),
+            group: .water,
+            needsWater: true
         ),
         AttractionDefinition(
             id: "transport.station",

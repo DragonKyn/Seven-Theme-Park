@@ -65,6 +65,11 @@ enum BuildingArtwork {
         case .slingshot: drawSlingshotBase(context, size, primary, secondary, accent)
         case .carpetSlide: drawCarpetSlideBase(context, size, primary, secondary, accent)
         case .trainStation: drawTrainStation(context, size, primary, secondary, accent)
+        case .bumperBoats: drawBumperBoatsBase(context, size, primary, secondary, accent)
+        case .fishingBoats: drawFishingBoatsBase(context, size, primary, secondary, accent)
+        case .wavePool: drawWavePoolBase(context, size, primary, secondary, accent)
+        case .skyGliders: drawSkyGlidersBase(context, size, primary, secondary, accent)
+        case .mirrorMaze: drawMirrorMaze(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
         case .burgerStall: drawBurgerStall(context, size, primary, secondary, accent)
@@ -101,6 +106,10 @@ enum BuildingArtwork {
         // Two logs on the circuit, so there is always one on the drop or
         // climbing towards it.
         case .logFlume: return 2
+        case .bumperBoats: return 4
+        case .fishingBoats: return 3
+        case .wavePool: return 2
+        case .skyGliders: return 5
         // Four lanes, four mats. One mat on a four-lane slide looks like the
         // other three are shut.
         case .carpetSlide: return 4
@@ -135,6 +144,10 @@ enum BuildingArtwork {
             case .goKarts: drawKart(context, size, variant)
             case .bumperCars: drawBumperCar(context, size, variant)
             case .logFlume:  drawLog(context, size, primary, secondary, accent)
+            case .bumperBoats: drawBumperBoat(context, size, variant)
+            case .fishingBoats: drawRowBoat(context, size, variant)
+            case .wavePool: drawSurfer(context, size, variant)
+            case .skyGliders: drawGliderChair(context, size, variant)
             case .slingshot: drawCapsule(context, size, primary, secondary, accent)
             case .carpetSlide: drawMat(context, size, primary, secondary, accent)
             case .hauntedHouse: drawGhost(context, size, primary, secondary, accent)
@@ -173,6 +186,14 @@ enum BuildingArtwork {
         case .logFlume:
             return CGSize(width: buildingSize.width * 0.115,
                           height: buildingSize.height * 0.085)
+        case .bumperBoats:
+            return CGSize(width: shortest * 0.22, height: shortest * 0.20)
+        case .fishingBoats:
+            return CGSize(width: shortest * 0.24, height: shortest * 0.16)
+        case .wavePool:
+            return CGSize(width: shortest * 0.26, height: shortest * 0.15)
+        case .skyGliders:
+            return CGSize(width: shortest * 0.13, height: shortest * 0.20)
         case .slingshot:
             return CGSize(width: shortest * 0.26, height: shortest * 0.26)
         case .carpetSlide:
@@ -884,6 +905,279 @@ enum BuildingArtwork {
         stroke(UIBezierPath(roundedRect: board, cornerRadius: board.height * 0.22),
                accent, width: max(1, size.width * 0.018))
         return board
+    }
+
+    // MARK: - On the water
+
+    /// A walled pond with boats loose in it. The same idea as the bumper car
+    /// arena, wet.
+    private static func drawBumperBoatsBase(_ context: CGContext,
+                                            _ size: CGSize,
+                                            _ primary: UIColor,
+                                            _ secondary: UIColor,
+                                            _ accent: UIColor) {
+        let wall = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.05, dy: size.height * 0.06)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: wall, cornerRadius: wall.height * 0.20), primary)
+        }
+
+        let pond = wall.insetBy(dx: wall.width * 0.07, dy: wall.height * 0.09)
+        fill(UIBezierPath(roundedRect: pond, cornerRadius: pond.height * 0.17), ParkPalette.water)
+
+        // Ripples, so still water does not read as a slab of paint.
+        for step in 0..<3 {
+            let inset = pond.height * (0.16 + 0.12 * CGFloat(step))
+            stroke(UIBezierPath(roundedRect: pond.insetBy(dx: inset * 1.6, dy: inset),
+                                cornerRadius: pond.height * 0.14),
+                   ParkPalette.colour(.white).withAlphaComponent(0.16),
+                   width: max(1, size.height * 0.010))
+        }
+
+        // Landing stage on the near edge.
+        let jetty = CGRect(x: pond.midX - pond.width * 0.16, y: pond.maxY - size.height * 0.02,
+                           width: pond.width * 0.32, height: size.height * 0.09)
+        fill(UIBezierPath(roundedRect: jetty, cornerRadius: jetty.height * 0.3), accent)
+    }
+
+    /// A bumper boat from above: a rounded hull with a rubber ring round it.
+    /// Named apart from the galleon's hull, which is a different boat.
+    private static func drawBumperBoat(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let ring = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        fill(UIBezierPath(ovalIn: ring), ParkPalette.colour(.charcoal))
+
+        let hull = ring.insetBy(dx: ring.width * 0.15, dy: ring.height * 0.17)
+        fill(UIBezierPath(ovalIn: hull), livery(variant))
+
+        let head = min(hull.width, hull.height) * 0.46
+        fill(UIBezierPath(ovalIn: CGRect(x: hull.midX - head * 0.72, y: hull.midY - head / 2,
+                                         width: head, height: head)),
+             ParkPalette.colour(.cream))
+    }
+
+    /// A jetty on a pond with a rowing boat going round it.
+    private static func drawFishingBoatsBase(_ context: CGContext,
+                                             _ size: CGSize,
+                                             _ primary: UIColor,
+                                             _ secondary: UIColor,
+                                             _ accent: UIColor) {
+        let bank = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.03, dy: size.height * 0.04)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: bank, cornerRadius: bank.height * 0.16), secondary)
+        }
+
+        let pond = bank.insetBy(dx: bank.width * 0.10, dy: bank.height * 0.12)
+        fill(UIBezierPath(ovalIn: pond), ParkPalette.water)
+
+        // Reeds round the edge, and lily pads on the water.
+        for (x, y) in [(0.12, 0.30), (0.16, 0.70), (0.86, 0.36), (0.90, 0.66), (0.50, 0.10)] {
+            let stem = UIBezierPath()
+            let foot = CGPoint(x: size.width * CGFloat(x), y: size.height * CGFloat(y))
+            stem.move(to: foot)
+            stem.addLine(to: CGPoint(x: foot.x + size.width * 0.012, y: foot.y - size.height * 0.11))
+            stroke(stem, ParkPalette.colour(.green), width: max(1, size.width * 0.012))
+        }
+        for (x, y, r) in [(0.34, 0.36, 0.055), (0.62, 0.62, 0.045), (0.44, 0.72, 0.038)] {
+            let radius = size.height * CGFloat(r)
+            fill(UIBezierPath(ovalIn: CGRect(x: size.width * CGFloat(x) - radius,
+                                             y: size.height * CGFloat(y) - radius,
+                                             width: radius * 2, height: radius * 2)),
+                 ParkPalette.colour(.lime).withAlphaComponent(0.85))
+        }
+
+        // Jetty out from the near bank.
+        let jetty = CGRect(x: pond.midX - size.width * 0.05, y: pond.maxY - size.height * 0.10,
+                           width: size.width * 0.10, height: size.height * 0.22)
+        fill(UIBezierPath(roundedRect: jetty, cornerRadius: jetty.width * 0.3),
+             ParkPalette.colour(.brown))
+        let hut = CGRect(x: pond.midX - size.width * 0.09, y: pond.maxY + size.height * 0.02,
+                         width: size.width * 0.18, height: size.height * 0.12)
+        fill(UIBezierPath(roundedRect: hut, cornerRadius: hut.height * 0.3), primary)
+        fill(UIBezierPath(rect: CGRect(x: hut.minX, y: hut.minY,
+                                       width: hut.width, height: hut.height * 0.34)), accent)
+    }
+
+    /// A rowing boat with an angler and a rod out over the side.
+    private static func drawRowBoat(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let hull = UIBezierPath()
+        hull.move(to: CGPoint(x: size.width * 0.06, y: size.height * 0.24))
+        hull.addLine(to: CGPoint(x: size.width * 0.68, y: size.height * 0.16))
+        hull.addQuadCurve(to: CGPoint(x: size.width * 0.68, y: size.height * 0.84),
+                          controlPoint: CGPoint(x: size.width * 1.04, y: size.height * 0.5))
+        hull.addLine(to: CGPoint(x: size.width * 0.06, y: size.height * 0.76))
+        hull.close()
+        fill(hull, ParkPalette.colour(.brown))
+
+        let well = CGRect(x: size.width * 0.16, y: size.height * 0.34,
+                          width: size.width * 0.48, height: size.height * 0.32)
+        fill(UIBezierPath(roundedRect: well, cornerRadius: well.height * 0.4),
+             ParkPalette.colour(.sand))
+
+        let head = size.height * 0.30
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.26, y: size.height * 0.5 - head / 2,
+                                         width: head, height: head)),
+             ParkPalette.colour(.cream))
+
+        // The rod, which is the whole reason anybody knows what this is.
+        let rod = UIBezierPath()
+        rod.move(to: CGPoint(x: size.width * 0.40, y: size.height * 0.44))
+        rod.addLine(to: CGPoint(x: size.width * 0.86, y: size.height * -0.10))
+        stroke(rod, ParkPalette.colour(.charcoal), width: max(1, size.height * 0.055))
+    }
+
+    /// A rectangular pool with a wave rolling down it and a board on the wave.
+    private static func drawWavePoolBase(_ context: CGContext,
+                                         _ size: CGSize,
+                                         _ primary: UIColor,
+                                         _ secondary: UIColor,
+                                         _ accent: UIColor) {
+        let deck = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.04, dy: size.height * 0.05)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: deck, cornerRadius: deck.height * 0.14), secondary)
+        }
+
+        let pool = deck.insetBy(dx: deck.width * 0.08, dy: deck.height * 0.16)
+        fill(UIBezierPath(roundedRect: pool, cornerRadius: pool.height * 0.12), ParkPalette.water)
+
+        // Standing swell across the pool, drawn as three stacked crests.
+        for step in 0..<3 {
+            let crest = UIBezierPath()
+            let y = pool.minY + pool.height * (0.30 + 0.22 * CGFloat(step))
+            crest.move(to: CGPoint(x: pool.minX, y: y))
+            var x = pool.minX
+            var up = true
+            while x < pool.maxX {
+                let next = min(x + pool.width * 0.16, pool.maxX)
+                crest.addQuadCurve(to: CGPoint(x: next, y: y),
+                                   controlPoint: CGPoint(x: (x + next) / 2,
+                                                         y: y + (up ? -1 : 1) * pool.height * 0.09))
+                x = next
+                up.toggle()
+            }
+            stroke(crest, ParkPalette.colour(.white).withAlphaComponent(0.55 - 0.12 * CGFloat(step)),
+                   width: max(1, size.height * 0.016))
+        }
+
+        // Machinery housing along the far end, where the wave comes from.
+        let plant = CGRect(x: deck.minX, y: deck.minY,
+                           width: deck.width * 0.14, height: deck.height)
+        fill(UIBezierPath(roundedRect: plant, cornerRadius: plant.width * 0.25), primary)
+        fill(UIBezierPath(rect: CGRect(x: plant.minX, y: plant.midY - deck.height * 0.06,
+                                       width: plant.width, height: deck.height * 0.12)), accent)
+    }
+
+    /// A board with a rider on it, seen from above.
+    private static func drawSurfer(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let board = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: size.height * 0.22)
+        fill(UIBezierPath(roundedRect: board, cornerRadius: board.height / 2), livery(variant))
+
+        let head = size.height * 0.44
+        fill(UIBezierPath(ovalIn: CGRect(x: board.midX - head / 2, y: size.height / 2 - head / 2,
+                                         width: head, height: head)),
+             ParkPalette.colour(.cream))
+        // Spray off the tail.
+        let wash = UIBezierPath()
+        wash.move(to: CGPoint(x: board.minX, y: size.height * 0.5))
+        wash.addLine(to: CGPoint(x: board.minX - size.width * 0.22, y: size.height * 0.18))
+        wash.move(to: CGPoint(x: board.minX, y: size.height * 0.5))
+        wash.addLine(to: CGPoint(x: board.minX - size.width * 0.22, y: size.height * 0.82))
+        stroke(wash, ParkPalette.colour(.white).withAlphaComponent(0.8),
+               width: max(1, size.height * 0.10))
+    }
+
+    // MARK: - Sky gliders and the maze
+
+    /// Two towers with a cable between them and chairs hanging off it.
+    private static func drawSkyGlidersBase(_ context: CGContext,
+                                           _ size: CGSize,
+                                           _ primary: UIColor,
+                                           _ secondary: UIColor,
+                                           _ accent: UIColor) {
+        let ground = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.03, dy: size.height * 0.06)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.16), secondary)
+        }
+
+        // The cable, slack between the two tower heads.
+        let head = size.height * 0.30
+        let cable = UIBezierPath()
+        cable.move(to: CGPoint(x: size.width * 0.14, y: head))
+        cable.addQuadCurve(to: CGPoint(x: size.width * 0.86, y: head),
+                           controlPoint: CGPoint(x: size.width * 0.50, y: head + size.height * 0.34))
+        stroke(cable, ParkPalette.colour(.charcoal), width: max(1, size.height * 0.022))
+
+        // Towers, with a boarding platform under each.
+        for x in [CGFloat(0.14), CGFloat(0.86)] {
+            let mast = UIBezierPath()
+            mast.move(to: CGPoint(x: size.width * x, y: head - size.height * 0.06))
+            mast.addLine(to: CGPoint(x: size.width * x, y: size.height * 0.80))
+            stroke(mast, accent, width: max(2, size.width * 0.030))
+
+            let platform = CGRect(x: size.width * x - size.width * 0.10,
+                                  y: size.height * 0.76,
+                                  width: size.width * 0.20, height: size.height * 0.16)
+            fill(UIBezierPath(roundedRect: platform, cornerRadius: platform.height * 0.3), primary)
+        }
+    }
+
+    /// A chair on the cable: a seat, a back and the hanger above it.
+    private static func drawGliderChair(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let hanger = UIBezierPath()
+        hanger.move(to: CGPoint(x: size.width * 0.5, y: 0))
+        hanger.addLine(to: CGPoint(x: size.width * 0.5, y: size.height * 0.40))
+        stroke(hanger, ParkPalette.colour(.charcoal), width: max(1, size.width * 0.10))
+
+        let seat = CGRect(x: size.width * 0.12, y: size.height * 0.38,
+                          width: size.width * 0.76, height: size.height * 0.44)
+        fill(UIBezierPath(roundedRect: seat, cornerRadius: seat.height * 0.32), livery(variant))
+
+        let head = size.height * 0.30
+        fill(UIBezierPath(ovalIn: CGRect(x: seat.midX - head / 2, y: seat.minY - head * 0.35,
+                                         width: head, height: head)),
+             ParkPalette.colour(.cream))
+    }
+
+    /// A mirrored box: a squat building whose front is all glass panels.
+    private static func drawMirrorMaze(_ context: CGContext,
+                                       _ size: CGSize,
+                                       _ primary: UIColor,
+                                       _ secondary: UIColor,
+                                       _ accent: UIColor) {
+        let body = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.08, dy: size.height * 0.10)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.08), primary)
+        }
+
+        // Panels, each catching the light at a slightly different angle.
+        let columns = 4
+        let rows = 3
+        for column in 0..<columns {
+            for row in 0..<rows {
+                let panel = CGRect(
+                    x: body.minX + body.width * (0.06 + 0.225 * CGFloat(column)),
+                    y: body.minY + body.height * (0.10 + 0.28 * CGFloat(row)),
+                    width: body.width * 0.185,
+                    height: body.height * 0.22)
+                let tilt = Double((column * 3 + row) % 5) / 5
+                fill(UIBezierPath(roundedRect: panel, cornerRadius: panel.height * 0.12),
+                     ParkPalette.colour(.cyan).withAlphaComponent(0.35 + 0.45 * tilt))
+                // A streak across each pane, which is what says glass.
+                let streak = UIBezierPath()
+                streak.move(to: CGPoint(x: panel.minX + panel.width * 0.15, y: panel.maxY))
+                streak.addLine(to: CGPoint(x: panel.maxX, y: panel.minY + panel.height * 0.25))
+                stroke(streak, ParkPalette.colour(.white).withAlphaComponent(0.5),
+                       width: max(1, size.width * 0.008))
+            }
+        }
+
+        // Doorway, off to one side so the front is not symmetrical.
+        let door = CGRect(x: body.minX + body.width * 0.06, y: body.maxY - body.height * 0.24,
+                          width: body.width * 0.16, height: body.height * 0.24)
+        fill(UIBezierPath(roundedRect: door, cornerRadius: door.width * 0.2), accent)
     }
 
     // MARK: - Log flume

@@ -121,6 +121,7 @@ final class GameController: ObservableObject {
         build.isActive = true
         build.isDemolishing = false
         build.pending = nil
+        if build.category != category { build.rideGroup = nil }
         build.category = category
         if selectedDefinition?.category != category {
             build.selectedID = GameContent.buildables(in: category, unlockLevel: state.unlockLevel).first?.id
@@ -130,6 +131,21 @@ final class GameController: ObservableObject {
 
     func exitBuildMode() {
         build = BuildState()
+    }
+
+    /// The rides on show, once the chosen shelf is taken into account.
+    ///
+    /// Filed here rather than in the view because picking a shelf can empty
+    /// the list, and the view should not be the thing that decides what to do
+    /// about that.
+    func buildables(in category: BuildCategory) -> [BuildableDefinition] {
+        let all = GameContent.buildables(in: category, unlockLevel: state.unlockLevel)
+        guard category == .attraction, let group = build.rideGroup else { return all }
+        return all.filter { ($0 as? AttractionDefinition)?.group == group }
+    }
+
+    func showRideGroup(_ group: RideGroup?) {
+        build.rideGroup = group
     }
 
     /// Whether turning would change anything. Only ever offered on a
@@ -602,6 +618,8 @@ struct BuildState {
     /// A placement lined up and waiting to be confirmed. Nothing has been
     /// built or charged while this is set.
     var pending: PendingPlacement?
+    /// Which shelf of the ride list is on show, or nil for all of them.
+    var rideGroup: RideGroup?
     var selectedID: String?
     var ghost: GridCoord?
     var ghostValid = false

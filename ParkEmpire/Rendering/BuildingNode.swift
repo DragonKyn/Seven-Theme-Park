@@ -243,6 +243,27 @@ final class BuildingNode: SKSpriteNode {
                                           .wait(forDuration: 1.1)]))
             ]))
 
+        case .surf:
+            // A rider runs the length of the pool, drops off the back of the
+            // wave, and another one is up. Two of them out of step means the
+            // pool is never empty.
+            let starts: [TimeInterval] = [0, 1.9]
+            let slot = index % starts.count
+            let entry = -buildingSize.width * 0.30
+            let exit = buildingSize.width * 0.34
+            node.position = CGPoint(x: entry, y: buildingSize.height * (slot == 0 ? -0.06 : 0.10))
+
+            let ride = SKAction.moveTo(x: exit, duration: 2.6)
+            ride.timingMode = .easeInEaseOut
+            node.run(.sequence([
+                .wait(forDuration: starts[slot]),
+                .repeatForever(.sequence([ride,
+                                          .fadeOut(withDuration: 0.25),
+                                          .moveTo(x: entry, duration: 0.01),
+                                          .fadeIn(withDuration: 0.25),
+                                          .wait(forDuration: 1.2)]))
+            ]))
+
         case .hover:
             // Drifts around the porch without ever settling.
             node.position = CGPoint(x: buildingSize.width * 0.30,

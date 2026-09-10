@@ -48,6 +48,8 @@ protocol BuildableDefinition {
     var requiresPathAccess: Bool { get }
     /// Whether it also has to sit against a railway to be any use.
     var requiresTrackAccess: Bool { get }
+    /// Whether it has to sit against water.
+    var requiresWaterAccess: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
     /// terrain rather than an object, and there is nothing to draw.
     var previewAppearance: BuildingAppearance? { get }
@@ -69,6 +71,7 @@ extension BuildableDefinition {
 
     var requiresPathAccess: Bool { true }
     var requiresTrackAccess: Bool { false }
+    var requiresWaterAccess: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }
 

@@ -4,6 +4,38 @@ import Foundation
 ///
 /// Adding a ride should mean adding one of these to `GameContent` — the
 /// simulation systems never branch on a specific attraction id.
+/// How a ride is filed in the build menu.
+///
+/// The list of rides only gets longer, and "everything with a queue" stops
+/// being a useful heading somewhere around a dozen. Grouping is presentation
+/// only: nothing in the simulation reads it.
+enum RideGroup: String, Codable, CaseIterable, Identifiable {
+    case gentle
+    case family
+    case thrill
+    case water
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .gentle: return "Gentle"
+        case .family: return "Family"
+        case .thrill: return "Thrill"
+        case .water: return "Water"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .gentle: return "leaf.fill"
+        case .family: return "figure.2.and.child.holdinghands"
+        case .thrill: return "bolt.fill"
+        case .water: return "drop.fill"
+        }
+    }
+}
+
 /// What a boardable building actually does with the guests it takes on.
 enum AttractionKind: String, Codable {
     /// Guests get on, enjoy themselves, and get off where they started.
@@ -38,6 +70,10 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     /// What the building is for. Declared last and defaulted, so every ride in
     /// the catalogue reads exactly as it did before transport existed.
     var kind: AttractionKind = .ride
+    /// Which shelf of the build menu it sits on.
+    var group: RideGroup = .family
+    /// Whether it has to sit against water to work.
+    var needsWater = false
 
     var category: BuildCategory {
         kind == .transport ? .transport : .attraction
@@ -45,6 +81,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
 
     /// A station with no railway against it has nowhere to send anybody.
     var requiresTrackAccess: Bool { kind == .transport }
+
+    var requiresWaterAccess: Bool { needsWater }
 
     /// The same ride with its purchased upgrades folded in. Returning a
     /// definition rather than a separate stats type means every system that
@@ -68,7 +106,9 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             footprint: footprint,
             unlockLevel: unlockLevel,
             appearance: appearance,
-            kind: kind
+            kind: kind,
+            group: group,
+            needsWater: needsWater
         )
     }
 

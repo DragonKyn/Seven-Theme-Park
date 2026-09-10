@@ -58,6 +58,16 @@ enum BuildingMotif: String, Codable {
     case carpetSlide
     /// Platform under a canopy, with a clock on the end.
     case trainStation
+    /// Walled pond with boats loose in it.
+    case bumperBoats
+    /// Reedy pond with a jetty and a rowing boat on it.
+    case fishingBoats
+    /// Rectangular pool with a standing wave rolling down it.
+    case wavePool
+    /// Two towers with a cable and chairs between them.
+    case skyGliders
+    /// Squat mirrored box.
+    case mirrorMaze
     /// Booth with a striped awning across the front.
     case stall
     /// Small booth with a domed top.
@@ -98,16 +108,18 @@ enum BuildingMotif: String, Codable {
         case .carousel, .ferrisWheel, .teacups: return .spin
         case .swingBoat: return .swing
         case .dropTower: return .rise
-        case .coaster, .megaCoaster, .logFlume: return .circuit
+        case .coaster, .megaCoaster, .logFlume, .fishingBoats, .skyGliders: return .circuit
         case .goKarts: return .race
-        case .bumperCars: return .bumper
+        case .bumperCars, .bumperBoats: return .bumper
         case .slingshot: return .launch
         case .carpetSlide: return .slide
         case .hauntedHouse: return .hover
+        case .wavePool: return .surf
         case .fountain: return .bob
         // The station itself is still; what moves is the train, and that runs
         // on the player's own track rather than round the building.
         case .trainStation: return .none
+        case .mirrorMaze: return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
@@ -131,6 +143,8 @@ enum BuildingMotion: String, Codable {
     case slide
     /// Floats gently around one spot, never leaving it.
     case hover
+    /// Runs the length of a pool and starts again from the top.
+    case surf
     /// Several vehicles sharing a circuit at different speeds.
     case race
     /// Several vehicles crossing an arena and colliding.

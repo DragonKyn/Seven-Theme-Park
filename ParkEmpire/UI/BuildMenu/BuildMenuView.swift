@@ -13,8 +13,7 @@ struct BuildMenuView: View {
     }
 
     private var items: [BuildItem] {
-        GameContent.buildables(in: controller.build.category,
-                               unlockLevel: controller.state.unlockLevel)
+        controller.buildables(in: controller.build.category)
             .map { BuildItem(id: $0.id, definition: $0) }
     }
 
@@ -94,6 +93,10 @@ struct BuildMenuView: View {
                 .accessibilityLabel("Remove")
             }
 
+            if !controller.build.isDemolishing && controller.build.category == .attraction {
+                rideGroups
+            }
+
             if !controller.build.isDemolishing {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -118,6 +121,37 @@ struct BuildMenuView: View {
         }
         .padding(10)
         .panelBackground()
+    }
+
+    /// A second shelf of chips inside the ride list. The list of rides only
+    /// gets longer, and "everything with a queue" stops being a useful
+    /// heading somewhere around a dozen.
+    private var rideGroups: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                groupChip(nil, title: "All", symbol: "square.grid.2x2.fill")
+                ForEach(RideGroup.allCases) { group in
+                    groupChip(group, title: group.displayName, symbol: group.symbolName)
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+
+    private func groupChip(_ group: RideGroup?, title: String, symbol: String) -> some View {
+        let selected = controller.build.rideGroup == group
+        return Button {
+            controller.showRideGroup(group)
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .padding(.horizontal, 9)
+                .frame(height: 26)
+                .foregroundStyle(selected ? Color.black : Theme.textPrimary)
+                .background(
+                    Capsule().fill(selected ? Theme.accent : Theme.control)
+                )
+        }
     }
 
     private func isSelected(_ category: BuildCategory) -> Bool {
