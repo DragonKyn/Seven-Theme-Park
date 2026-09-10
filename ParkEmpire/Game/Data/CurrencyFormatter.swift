@@ -28,6 +28,26 @@ enum CurrencyFormatter {
         precise.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
+    /// Shortened for places with no room to grow: thousands and millions get
+    /// a suffix rather than another four digits. A park that is doing well
+    /// should not push the rest of a row onto a second line.
+    static func compact(_ value: Double) -> String {
+        let magnitude = abs(value)
+        let sign = value < 0 ? "-" : ""
+        switch magnitude {
+        case 1_000_000_000...:
+            return sign + String(format: "$%.1fB", magnitude / 1_000_000_000)
+        case 1_000_000...:
+            return sign + String(format: "$%.1fM", magnitude / 1_000_000)
+        case 100_000...:
+            return sign + String(format: "$%.0fK", magnitude / 1_000)
+        case 10_000...:
+            return sign + String(format: "$%.1fK", magnitude / 1_000)
+        default:
+            return short(value)
+        }
+    }
+
     /// Always signed, including a plus. For a running total the player is
     /// watching move, where "400" and "+400" mean different things.
     static func delta(_ value: Double) -> String {

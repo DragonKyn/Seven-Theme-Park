@@ -11,6 +11,8 @@ struct MainMenuView: View {
     @EnvironmentObject private var router: AppRouter
     @State private var showingNewGame = false
     @State private var demo: DemoParkBackdrop?
+    /// The slot the player has asked to delete, held until they confirm.
+    @State private var slotToDelete: Int?
 
     var body: some View {
         ZStack {
@@ -47,6 +49,22 @@ struct MainMenuView: View {
             }
             .presentationDetents([.large])
         }
+        .confirmationDialog("Delete this park?",
+                            isPresented: Binding(get: { slotToDelete != nil },
+                                                 set: { if !$0 { slotToDelete = nil } }),
+                            titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let slot = slotToDelete { router.deleteSave(in: slot) }
+                slotToDelete = nil
+            }
+            Button("Keep it", role: .cancel) { slotToDelete = nil }
+        } message: {
+            if let slot = slotToDelete, let summary = router.slotSummaries[slot] {
+                Text("\(summary.parkName) is on day \(summary.day). This cannot be undone.")
+            } else {
+                Text("This cannot be undone.")
+            }
+        }
         .onAppear {
             router.refreshSlots()
             if demo == nil { demo = DemoParkBackdrop() }
@@ -66,10 +84,7 @@ struct MainMenuView: View {
                 )
                 .shadow(color: .black.opacity(0.55), radius: 10, y: 3)
 
-            Text(AppInfo.tagline.uppercased())
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .tracking(3.2)
-                .foregroundStyle(.white.opacity(0.82))
+            TaglineView(taglines: AppInfo.taglines)
 
             // A hairline under the title, brightest in the middle, which is
             // enough to make the masthead read as a unit.
@@ -118,7 +133,7 @@ struct MainMenuView: View {
                 SaveSlotRow(slot: slot,
                             summary: router.slotSummaries[slot],
                             onLoad: { router.loadGame(from: slot) },
-                            onDelete: { router.deleteSave(in: slot) })
+                            onDelete: { slotToDelete = slot })
             }
         }
     }
@@ -242,20 +257,29 @@ private struct SaveSlotRow: View {
                     }
                 }
 
-                HStack(spacing: 5) {
+                HStack(spacing: 6) {
                     StarRatingView(stars: stars(for: summary.parkRating))
                     Text("Day \(summary.day)")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.70))
-                    Text(summary.mode == .freeBuild
-                         ? "Unlimited"
-                         : CurrencyFormatter.short(summary.cash))
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.money.opacity(0.95))
                     Text("\(summary.guestCount) guests")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.70))
                 }
+                .lineLimit(1)
+
+                // The balance gets its own chip on its own line. A park doing
+                // well can carry a lot of digits, and sharing a row with the
+                // rest of the numbers pushed it onto a second line.
+                Text(summary.mode == .freeBuild
+                     ? "Unlimited"
+                     : CurrencyFormatter.compact(summary.cash))
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.black.opacity(0.85))
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Theme.moneyGradient))
             }
 
             Spacer(minLength: 0)

@@ -8,12 +8,15 @@ import Foundation
 /// which is also what decides whether two stations are connected.
 struct TrackNetwork {
 
-    /// One connected run of track, ordered so that consecutive tiles touch and
-    /// the last touches the first.
+    /// One connected run of track, ordered so consecutive tiles touch.
+    ///
+    /// A loop's last tile touches its first. A line is stored one way only:
+    /// what a train does when it reaches the end is the renderer's business,
+    /// and storing the return leg here would double every line.
     struct Route {
         let tiles: [GridCoord]
         /// True when the track forms a closed loop rather than a dead-ended
-        /// line. A line is still driveable: the train runs back down it.
+        /// line. A line is still runnable: the train shuttles along it.
         let isLoop: Bool
     }
 
@@ -83,12 +86,7 @@ struct TrackNetwork {
         guard ordered.count > 1 else { return nil }
 
         let closes = ordered[0].isOrthogonallyAdjacent(to: ordered[ordered.count - 1])
-        if closes { return Route(tiles: ordered, isLoop: true) }
-
-        // A dead-ended line is driven out and then back, so the train never
-        // has to jump from one end to the other.
-        let returning = ordered.dropFirst().dropLast().reversed()
-        return Route(tiles: ordered + returning, isLoop: false)
+        return Route(tiles: ordered, isLoop: closes)
     }
 
     // MARK: - Stations

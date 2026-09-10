@@ -468,25 +468,38 @@ final class ParkScene: SKScene {
             }
             // A tile a second or so, which reads as a park train rather than
             // as something anybody would ride for the speed.
-            let duration = Double(points.count) * 0.85
+            let isLoop = route.isLoop
+            // A line is stored one way, and the train covers it twice a cycle,
+            // so it needs twice as long to run at the same speed as a loop.
+            let duration = Double(points.count) * (isLoop ? 0.85 : 1.7)
 
-            // On a loop, a locomotive and two carriages, each starting a tile
-            // further back, so the train bends through corners rather than
-            // pivoting as one block. A dead-ended line is driven out and back
-            // over the same rails, so it runs as a single railcar: carriages
-            // trailing round that path would meet themselves coming the other
-            // way.
-            let cars = route.isLoop ? 3 : 1
+            // A locomotive and two carriages either way. On a loop each car
+            // starts a tile further back round the ring. On a dead-ended line
+            // the train shuttles: every car keeps the same distance back along
+            // the rails and the whole thing reverses at the end, which is what
+            // a real terminus looks like.
+            let cars = 3
+            let spacing = Self.tileSide
+            let consist = spacing * CGFloat(cars - 1)
 
             for carriage in 0..<cars {
-                let offset = (points.count - carriage) % points.count
-                let ordered = Array(points[offset...] + points[..<offset])
+                let carPath: [CGPoint]
+                if isLoop {
+                    let offset = (points.count - carriage) % points.count
+                    carPath = Array(points[offset...] + points[..<offset])
+                } else {
+                    carPath = PathMotion.shuttlePoints(along: points,
+                                                     carIndex: carriage,
+                                                     carSpacing: spacing,
+                                                     consistLength: consist,
+                                                     samples: max(48, points.count * 3))
+                }
 
                 let node = SKSpriteNode(texture: SpriteFactory.trainCarTexture(
                     isLocomotive: carriage == 0, size: carSize))
                 node.size = carSize
                 trainLayer.addChild(node)
-                PathMotion.drive(node, around: ordered, duration: duration)
+                PathMotion.drive(node, around: carPath, duration: duration)
                 trainNodes.append(node)
             }
         }

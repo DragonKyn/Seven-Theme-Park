@@ -248,9 +248,21 @@ final class BuildingNode: SKSpriteNode {
                                                .fadeAlpha(to: 1.0, duration: 1.3)])))
 
         case .circuit:
+            let points = BuildingArtwork.motionPath(for: motif, buildingSize: buildingSize)
+            let carLength = BuildingArtwork.motionPartSize(for: motif,
+                                                           buildingSize: buildingSize).width
+            // Each car starts far enough back along the circuit to sit just
+            // behind the one in front, worked out from how long a car is
+            // rather than from a fixed number of points, because the circuits
+            // are sampled at different densities.
+            let spacing = PathMotion.ringLength(of: points) / CGFloat(max(points.count, 1))
+            let step = max(1, Int((carLength * 1.05 / max(spacing, 0.001)).rounded()))
+            let back = (index * step) % max(points.count, 1)
+            let offset = (points.count - back) % max(points.count, 1)
+            let ordered = Array(points[offset...] + points[..<offset])
+
             PathMotion.drive(node,
-                             around: BuildingArtwork.motionPath(for: motif,
-                                                                buildingSize: buildingSize),
+                             around: ordered,
                              duration: motif == .megaCoaster ? 8.5 : 5.5)
 
         case .race:

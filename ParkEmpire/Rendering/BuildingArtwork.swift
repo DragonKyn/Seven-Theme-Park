@@ -89,6 +89,10 @@ enum BuildingArtwork {
         switch motif {
         case .goKarts: return 4
         case .bumperCars: return 5
+        // A coaster train is a string of cars. One car going round on its own
+        // is a maintenance vehicle.
+        case .megaCoaster: return 4
+        case .coaster: return 3
         default: return 1
         }
     }
@@ -114,7 +118,7 @@ enum BuildingArtwork {
             case .carousel:  drawCanopy(context, size, primary, secondary, accent)
             case .swingBoat: drawBoat(context, size, primary, secondary, accent)
             case .dropTower: drawTowerCar(context, size, primary, secondary, accent)
-            case .coaster, .megaCoaster: drawTrain(context, size, primary, secondary, accent)
+            case .coaster, .megaCoaster: drawCoasterCar(context, size, primary, variant)
             case .ferrisWheel: drawWheel(context, size, primary, secondary, accent)
             case .teacups:   drawCups(context, size, primary, secondary, accent)
             case .goKarts: drawKart(context, size, variant)
@@ -140,9 +144,13 @@ enum BuildingArtwork {
         case .dropTower:
             return CGSize(width: shortest * 0.30, height: shortest * 0.18)
         case .coaster:
-            return CGSize(width: shortest * 0.26, height: shortest * 0.16)
+            return CGSize(width: shortest * 0.19, height: shortest * 0.12)
         case .megaCoaster:
-            return CGSize(width: shortest * 0.30, height: shortest * 0.17)
+            // Measured against the building rather than its shorter side: a
+            // nine-by-six coaster is wide, and a car scaled off the short side
+            // ends up the size of the station.
+            return CGSize(width: buildingSize.width * 0.075,
+                          height: buildingSize.height * 0.055)
         case .ferrisWheel:
             return CGSize(width: shortest * 0.82, height: shortest * 0.82)
         case .teacups:
@@ -376,17 +384,46 @@ enum BuildingArtwork {
         fill(UIBezierPath(roundedRect: station, cornerRadius: station.height * 0.3), primary)
     }
 
-    private static func drawTrain(_ context: CGContext,
-                                  _ size: CGSize,
-                                  _ primary: UIColor,
-                                  _ secondary: UIColor,
-                                  _ accent: UIColor) {
-        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
-        fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.4), primary)
-        let nose = CGRect(x: body.maxX - body.width * 0.28, y: body.minY,
-                          width: body.width * 0.28, height: body.height)
-        fill(UIBezierPath(roundedRect: nose, cornerRadius: body.height * 0.4),
-             ParkPalette.colour(.cream))
+    /// One car of a coaster train, nose to the right. The lead car gets a
+    /// pointed nose; the rest are plain, which is what makes a string of them
+    /// read as a train rather than as four identical blocks.
+    private static func drawCoasterCar(_ context: CGContext,
+                                       _ size: CGSize,
+                                       _ primary: UIColor,
+                                       _ variant: Int) {
+        let isLead = variant == 0
+        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: size.height * 0.12)
+
+        if isLead {
+            // Wedge nose, which is the whole silhouette at this size.
+            let nose = UIBezierPath()
+            nose.move(to: CGPoint(x: body.minX, y: body.minY))
+            nose.addLine(to: CGPoint(x: body.maxX - body.width * 0.20, y: body.minY))
+            nose.addQuadCurve(to: CGPoint(x: body.maxX - body.width * 0.20, y: body.maxY),
+                              controlPoint: CGPoint(x: body.maxX + body.width * 0.16,
+                                                    y: body.midY))
+            nose.addLine(to: CGPoint(x: body.minX, y: body.maxY))
+            nose.close()
+            fill(nose, primary)
+        } else {
+            fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.34), primary)
+        }
+
+        // Riders: two pale dots per car, which is what says these are people
+        // and not freight.
+        let head = size.height * 0.34
+        for offset in [CGFloat(0.26), CGFloat(0.56)] {
+            fill(UIBezierPath(ovalIn: CGRect(x: body.minX + body.width * offset,
+                                             y: body.midY - head / 2,
+                                             width: head, height: head)),
+                 ParkPalette.colour(.cream))
+        }
+
+        // Dark strip along the bottom, so the car sits on the rail rather than
+        // floating over it.
+        fill(UIBezierPath(rect: CGRect(x: body.minX, y: body.maxY - size.height * 0.10,
+                                       width: body.width * 0.86, height: size.height * 0.10)),
+             ParkPalette.colour(.charcoal))
     }
 
     /// The path a vehicle on a circuit follows, in node space: origin at the
