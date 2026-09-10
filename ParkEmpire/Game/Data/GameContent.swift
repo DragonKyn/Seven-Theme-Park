@@ -257,7 +257,7 @@ enum GameContent {
             operatingCostPerCycle: 16,
             footprint: GridSize(6, 5),
             unlockLevel: 3,
-            appearance: BuildingAppearance(.logFlume, .green, .brown, .cyan)
+            appearance: BuildingAppearance(.logFlume, .cream, .green, .cyan)
         ),
         AttractionDefinition(
             id: "ride.gokarts.large",
@@ -328,7 +328,7 @@ enum GameContent {
             relief: NeedRelief(hunger: 55, thirst: -10, bathroom: -12, happiness: 4),
             footprint: GridSize(2, 2),
             unlockLevel: 1,
-            appearance: BuildingAppearance(.stall, .red, .amber, .brown)
+            appearance: BuildingAppearance(.burgerStall, .red, .amber, .brown)
         ),
         FacilityDefinition(
             id: "shop.drinks",
@@ -345,7 +345,7 @@ enum GameContent {
             relief: NeedRelief(thirst: 65, bathroom: -20, happiness: 3),
             footprint: GridSize(2, 2),
             unlockLevel: 1,
-            appearance: BuildingAppearance(.kiosk, .cyan, .blue, .cream)
+            appearance: BuildingAppearance(.drinkKiosk, .cyan, .blue, .indigo)
         ),
         FacilityDefinition(
             id: "shop.pizza",
@@ -362,7 +362,7 @@ enum GameContent {
             relief: NeedRelief(hunger: 62, thirst: -14, bathroom: -14, happiness: 5),
             footprint: GridSize(2, 2),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.stall, .green, .red, .brown)
+            appearance: BuildingAppearance(.pizzaStall, .green, .cream, .red)
         ),
         FacilityDefinition(
             id: "shop.icecream",
@@ -379,7 +379,7 @@ enum GameContent {
             relief: NeedRelief(hunger: 22, thirst: 12, bathroom: -6, happiness: 11),
             footprint: GridSize(2, 2),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.kiosk, .pink, .cream, .violet)
+            appearance: BuildingAppearance(.iceCreamStall, .pink, .cream, .violet)
         ),
         FacilityDefinition(
             id: "shop.souvenir",
@@ -396,7 +396,7 @@ enum GameContent {
             relief: NeedRelief(happiness: 9),
             footprint: GridSize(2, 2),
             unlockLevel: 3,
-            appearance: BuildingAppearance(.shopFront, .violet, .indigo, .amber)
+            appearance: BuildingAppearance(.souvenirShop, .violet, .indigo, .amber)
         ),
         FacilityDefinition(
             id: "facility.bathroom",

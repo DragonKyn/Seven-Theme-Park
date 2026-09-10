@@ -62,6 +62,12 @@ enum BuildingMotif: String, Codable {
     case stall
     /// Small booth with a domed top.
     case kiosk
+    /// Booths with a board saying what they sell.
+    case burgerStall
+    case pizzaStall
+    case drinkKiosk
+    case iceCreamStall
+    case souvenirShop
     /// Wider building with a row of windows.
     case shopFront
     /// Plain block with a sign board.
@@ -103,6 +109,7 @@ enum BuildingMotif: String, Codable {
         // on the player's own track rather than round the building.
         case .trainStation: return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
+             .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
             return .none
         }

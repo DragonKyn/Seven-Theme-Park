@@ -44,6 +44,10 @@ enum ParkPalette {
                        alpha: 1)
     }
 
+    /// Darker than plain brown, so a flume trough reads against grass and
+    /// against the logs riding in it.
+    static let flumeTimber = UIColor(red: 0.38, green: 0.26, blue: 0.19, alpha: 1)
+
     static let signPost = UIColor(red: 0.47, green: 0.33, blue: 0.22, alpha: 1)
     static let signFace = UIColor(red: 0.98, green: 0.94, blue: 0.84, alpha: 1)
     static let signFrame = UIColor(red: 0.90, green: 0.55, blue: 0.20, alpha: 1)

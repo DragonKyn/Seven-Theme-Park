@@ -67,6 +67,11 @@ enum BuildingArtwork {
         case .trainStation: drawTrainStation(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
+        case .burgerStall: drawBurgerStall(context, size, primary, secondary, accent)
+        case .pizzaStall: drawPizzaStall(context, size, primary, secondary, accent)
+        case .drinkKiosk: drawDrinkKiosk(context, size, primary, secondary, accent)
+        case .iceCreamStall: drawIceCreamStall(context, size, primary, secondary, accent)
+        case .souvenirShop: drawSouvenirShop(context, size, primary, secondary, accent)
         case .shopFront: drawShopFront(context, size, primary, secondary, accent)
         case .restroom:  drawRestroom(context, size, primary, secondary, accent)
         case .bench:     drawBench(context, size, primary, secondary, accent)
@@ -705,6 +710,182 @@ enum BuildingArtwork {
              ParkPalette.colour(.amber))
     }
 
+    // MARK: - Shop emblems
+
+    /// Draws the shared booth, then whatever the shop actually sells on a
+    /// board above it.
+    ///
+    /// The emblems are deliberately blunt: a burger is three stacked bands, a
+    /// cone is a triangle under a scoop. At this size a drawing of a burger
+    /// and a drawing of a sandwich look identical, so what matters is that
+    /// each shop's silhouette is different from its neighbour's.
+    private static func drawBurgerStall(_ context: CGContext,
+                                        _ size: CGSize,
+                                        _ primary: UIColor,
+                                        _ secondary: UIColor,
+                                        _ accent: UIColor) {
+        drawStall(context, size, primary, secondary, accent)
+        let board = signBoard(context, size, accent)
+
+        let width = board.width * 0.62
+        let bun = CGRect(x: board.midX - width / 2, y: board.midY - board.height * 0.26,
+                         width: width, height: board.height * 0.52)
+        // Top bun.
+        let top = UIBezierPath(arcCenter: CGPoint(x: bun.midX, y: bun.midY - bun.height * 0.06),
+                               radius: width / 2,
+                               startAngle: .pi, endAngle: 0, clockwise: true)
+        top.close()
+        fill(top, ParkPalette.colour(.amber))
+        // Filling and base.
+        fill(UIBezierPath(rect: CGRect(x: bun.minX, y: bun.midY - bun.height * 0.05,
+                                       width: width, height: bun.height * 0.20)),
+             ParkPalette.colour(.brown))
+        fill(UIBezierPath(roundedRect: CGRect(x: bun.minX, y: bun.midY + bun.height * 0.17,
+                                              width: width, height: bun.height * 0.22),
+                          cornerRadius: bun.height * 0.10),
+             ParkPalette.colour(.amber))
+    }
+
+    private static func drawPizzaStall(_ context: CGContext,
+                                       _ size: CGSize,
+                                       _ primary: UIColor,
+                                       _ secondary: UIColor,
+                                       _ accent: UIColor) {
+        drawStall(context, size, primary, secondary, accent)
+        let board = signBoard(context, size, accent)
+
+        // A single slice, point down.
+        let slice = UIBezierPath()
+        let width = board.width * 0.52
+        slice.move(to: CGPoint(x: board.midX - width / 2, y: board.midY - board.height * 0.24))
+        slice.addLine(to: CGPoint(x: board.midX + width / 2, y: board.midY - board.height * 0.24))
+        slice.addLine(to: CGPoint(x: board.midX, y: board.midY + board.height * 0.30))
+        slice.close()
+        fill(slice, ParkPalette.colour(.amber))
+
+        // Crust along the top, pepperoni on the face.
+        fill(UIBezierPath(roundedRect: CGRect(x: board.midX - width / 2,
+                                              y: board.midY - board.height * 0.30,
+                                              width: width, height: board.height * 0.12),
+                          cornerRadius: board.height * 0.06),
+             ParkPalette.colour(.brown))
+        let dot = board.height * 0.11
+        for offset in [CGPoint(x: -0.12, y: -0.08), CGPoint(x: 0.11, y: -0.06), CGPoint(x: -0.01, y: 0.10)] {
+            fill(UIBezierPath(ovalIn: CGRect(x: board.midX + board.width * offset.x - dot / 2,
+                                             y: board.midY + board.height * offset.y - dot / 2,
+                                             width: dot, height: dot)),
+                 ParkPalette.colour(.red))
+        }
+    }
+
+    private static func drawDrinkKiosk(_ context: CGContext,
+                                       _ size: CGSize,
+                                       _ primary: UIColor,
+                                       _ secondary: UIColor,
+                                       _ accent: UIColor) {
+        drawKiosk(context, size, primary, secondary, accent)
+        let board = signBoard(context, size, accent)
+
+        // A tapered cup with a lid and a straw.
+        let cup = UIBezierPath()
+        let top = board.midY - board.height * 0.18
+        let bottom = board.midY + board.height * 0.30
+        let halfTop = board.width * 0.17
+        let halfBottom = board.width * 0.12
+        cup.move(to: CGPoint(x: board.midX - halfTop, y: top))
+        cup.addLine(to: CGPoint(x: board.midX + halfTop, y: top))
+        cup.addLine(to: CGPoint(x: board.midX + halfBottom, y: bottom))
+        cup.addLine(to: CGPoint(x: board.midX - halfBottom, y: bottom))
+        cup.close()
+        fill(cup, ParkPalette.colour(.cream))
+
+        fill(UIBezierPath(roundedRect: CGRect(x: board.midX - halfTop * 1.15,
+                                              y: top - board.height * 0.10,
+                                              width: halfTop * 2.3, height: board.height * 0.12),
+                          cornerRadius: board.height * 0.05),
+             ParkPalette.colour(.red))
+
+        let straw = UIBezierPath()
+        straw.move(to: CGPoint(x: board.midX + halfTop * 0.35, y: top - board.height * 0.08))
+        straw.addLine(to: CGPoint(x: board.midX + halfTop * 0.85, y: top - board.height * 0.38))
+        stroke(straw, ParkPalette.colour(.red), width: max(1, board.width * 0.05))
+    }
+
+    private static func drawIceCreamStall(_ context: CGContext,
+                                          _ size: CGSize,
+                                          _ primary: UIColor,
+                                          _ secondary: UIColor,
+                                          _ accent: UIColor) {
+        drawKiosk(context, size, primary, secondary, accent)
+        let board = signBoard(context, size, accent)
+
+        // Cone, point down, with a scoop on top.
+        let cone = UIBezierPath()
+        let width = board.width * 0.34
+        let top = board.midY - board.height * 0.02
+        cone.move(to: CGPoint(x: board.midX - width / 2, y: top))
+        cone.addLine(to: CGPoint(x: board.midX + width / 2, y: top))
+        cone.addLine(to: CGPoint(x: board.midX, y: board.midY + board.height * 0.34))
+        cone.close()
+        fill(cone, ParkPalette.colour(.sand))
+
+        let scoop = board.height * 0.34
+        fill(UIBezierPath(ovalIn: CGRect(x: board.midX - scoop / 2,
+                                         y: top - scoop * 0.78,
+                                         width: scoop, height: scoop)),
+             ParkPalette.colour(.pink))
+        fill(UIBezierPath(ovalIn: CGRect(x: board.midX - scoop * 0.30,
+                                         y: top - scoop * 1.10,
+                                         width: scoop * 0.62, height: scoop * 0.62)),
+             ParkPalette.colour(.cream))
+    }
+
+    private static func drawSouvenirShop(_ context: CGContext,
+                                         _ size: CGSize,
+                                         _ primary: UIColor,
+                                         _ secondary: UIColor,
+                                         _ accent: UIColor) {
+        drawShopFront(context, size, primary, secondary, accent)
+        let board = signBoard(context, size, accent)
+
+        // A wrapped box with a ribbon over it.
+        let box = CGRect(x: board.midX - board.width * 0.20, y: board.midY - board.height * 0.16,
+                         width: board.width * 0.40, height: board.height * 0.44)
+        fill(UIBezierPath(roundedRect: box, cornerRadius: board.height * 0.05),
+             ParkPalette.colour(.red))
+        fill(UIBezierPath(rect: CGRect(x: box.midX - box.width * 0.09, y: box.minY,
+                                       width: box.width * 0.18, height: box.height)),
+             ParkPalette.colour(.cream))
+        fill(UIBezierPath(rect: CGRect(x: box.minX, y: box.midY - box.height * 0.09,
+                                       width: box.width, height: box.height * 0.18)),
+             ParkPalette.colour(.cream))
+        // Bow.
+        let bow = box.height * 0.30
+        for direction in [CGFloat(-1), CGFloat(1)] {
+            fill(UIBezierPath(ovalIn: CGRect(x: box.midX + direction * bow * 0.5 - bow / 2,
+                                             y: box.minY - bow * 0.55,
+                                             width: bow, height: bow * 0.8)),
+                 ParkPalette.colour(.cream))
+        }
+    }
+
+    /// A blank board over the top of a booth, and the space left to draw on.
+    /// Every shop gets the same board so the row of them reads as a parade.
+    @discardableResult
+    private static func signBoard(_ context: CGContext,
+                                  _ size: CGSize,
+                                  _ accent: UIColor) -> CGRect {
+        let board = CGRect(x: size.width * 0.24, y: size.height * 0.05,
+                           width: size.width * 0.52, height: size.height * 0.34)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: board, cornerRadius: board.height * 0.22),
+                 ParkPalette.colour(.cream))
+        }
+        stroke(UIBezierPath(roundedRect: board, cornerRadius: board.height * 0.22),
+               accent, width: max(1, size.width * 0.018))
+        return board
+    }
+
     // MARK: - Log flume
 
     /// The channel a log runs, in texture space.
@@ -771,6 +952,26 @@ enum BuildingArtwork {
             fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.10), secondary)
         }
 
+        // Planting round the edges, which is what stops a brown trough on
+        // brown ground reading as one shape. Fixed positions, so the same
+        // flume always looks the same.
+        let bushes: [(CGFloat, CGFloat, CGFloat)] = [
+            (0.10, 0.62, 0.9), (0.17, 0.72, 0.7), (0.44, 0.86, 1.0),
+            (0.52, 0.72, 0.7), (0.40, 0.36, 0.8), (0.86, 0.34, 1.0),
+            (0.93, 0.48, 0.7), (0.24, 0.36, 0.7), (0.66, 0.88, 0.8)
+        ]
+        for (x, y, scale) in bushes {
+            let radius = size.height * 0.055 * scale
+            let centre = CGPoint(x: size.width * x, y: size.height * y)
+            fill(UIBezierPath(ovalIn: CGRect(x: centre.x - radius, y: centre.y - radius * 0.85,
+                                             width: radius * 2, height: radius * 1.7)),
+                 ParkPalette.colour(.green))
+            fill(UIBezierPath(ovalIn: CGRect(x: centre.x - radius * 0.55,
+                                             y: centre.y - radius * 1.05,
+                                             width: radius * 1.1, height: radius * 1.0)),
+                 ParkPalette.colour(.lime))
+        }
+
         // The splash pool goes down before the channel, so the trough passes
         // over the water rather than stopping at it.
         let pool = flumeSplash(in: size)
@@ -799,8 +1000,10 @@ enum BuildingArtwork {
         channel.close()
 
         // Timber trough, then the water sitting in it.
-        stroke(channel, ParkPalette.colour(.brown), width: max(3, size.height * 0.055))
+        stroke(channel, ParkPalette.flumeTimber, width: max(3, size.height * 0.055))
         stroke(channel, ParkPalette.water, width: max(1.5, size.height * 0.030))
+        stroke(channel, ParkPalette.colour(.white).withAlphaComponent(0.35),
+               width: max(1, size.height * 0.008))
 
         // Spray where the drop meets the pool.
         let spray = UIBezierPath()
