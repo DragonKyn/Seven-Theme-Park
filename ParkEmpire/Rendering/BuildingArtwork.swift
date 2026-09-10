@@ -55,6 +55,14 @@ enum BuildingArtwork {
         case .swingBoat: drawSwingBoatBase(context, size, primary, secondary, accent)
         case .dropTower: drawDropTowerBase(context, size, primary, secondary, accent)
         case .coaster:   drawCoasterBase(context, size, primary, secondary, accent)
+        case .ferrisWheel: drawFerrisWheelBase(context, size, primary, secondary, accent)
+        case .teacups:   drawTeacupsBase(context, size, primary, secondary, accent)
+        case .bumperCars: drawBumperCarsBase(context, size, primary, secondary, accent)
+        case .hauntedHouse: drawHauntedHouse(context, size, primary, secondary, accent)
+        case .goKarts:   drawGoKartsBase(context, size, primary, secondary, accent)
+        case .logFlume:  drawLogFlumeBase(context, size, primary, secondary, accent)
+        case .slingshot: drawSlingshotBase(context, size, primary, secondary, accent)
+        case .carpetSlide: drawCarpetSlideBase(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
         case .shopFront: drawShopFront(context, size, primary, secondary, accent)
@@ -91,6 +99,13 @@ enum BuildingArtwork {
             case .swingBoat: drawBoat(context, size, primary, secondary, accent)
             case .dropTower: drawTowerCar(context, size, primary, secondary, accent)
             case .coaster:   drawTrain(context, size, primary, secondary, accent)
+            case .ferrisWheel: drawWheel(context, size, primary, secondary, accent)
+            case .teacups:   drawCups(context, size, primary, secondary, accent)
+            case .bumperCars, .goKarts: drawCar(context, size, primary, secondary, accent)
+            case .logFlume:  drawLog(context, size, primary, secondary, accent)
+            case .slingshot: drawCapsule(context, size, primary, secondary, accent)
+            case .carpetSlide: drawMat(context, size, primary, secondary, accent)
+            case .hauntedHouse: drawGhost(context, size, primary, secondary, accent)
             case .fountain:  drawFountainJet(context, size, primary, secondary, accent)
             default:         break
             }
@@ -109,6 +124,20 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.30, height: shortest * 0.18)
         case .coaster:
             return CGSize(width: shortest * 0.26, height: shortest * 0.16)
+        case .ferrisWheel:
+            return CGSize(width: shortest * 0.82, height: shortest * 0.82)
+        case .teacups:
+            return CGSize(width: shortest * 0.62, height: shortest * 0.62)
+        case .bumperCars, .goKarts:
+            return CGSize(width: shortest * 0.24, height: shortest * 0.16)
+        case .logFlume:
+            return CGSize(width: shortest * 0.28, height: shortest * 0.15)
+        case .slingshot:
+            return CGSize(width: shortest * 0.26, height: shortest * 0.26)
+        case .carpetSlide:
+            return CGSize(width: buildingSize.width * 0.16, height: buildingSize.height * 0.12)
+        case .hauntedHouse:
+            return CGSize(width: shortest * 0.20, height: shortest * 0.26)
         case .fountain:
             return CGSize(width: shortest * 0.30, height: shortest * 0.42)
         default:
@@ -344,6 +373,376 @@ enum BuildingArtwork {
     static func trackRect(in size: CGSize) -> CGRect {
         CGRect(origin: .zero, size: size)
             .insetBy(dx: size.width * 0.16, dy: size.height * 0.20)
+    }
+
+    // MARK: - Wheel and spinners
+
+    private static func drawFerrisWheelBase(_ context: CGContext,
+                                            _ size: CGSize,
+                                            _ primary: UIColor,
+                                            _ secondary: UIColor,
+                                            _ accent: UIColor) {
+        let pad = CGRect(x: size.width * 0.10, y: size.height * 0.72,
+                         width: size.width * 0.80, height: size.height * 0.22)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: pad, cornerRadius: pad.height * 0.35), secondary)
+        }
+
+        // Two legs leaning in to the hub the wheel turns on.
+        let hub = CGPoint(x: size.width / 2, y: size.height / 2)
+        let legWidth = max(2, size.width * 0.045)
+        for direction in [CGFloat(-1), CGFloat(1)] {
+            let leg = UIBezierPath()
+            leg.move(to: hub)
+            leg.addLine(to: CGPoint(x: hub.x + direction * size.width * 0.26,
+                                    y: size.height * 0.80))
+            stroke(leg, accent, width: legWidth)
+        }
+
+        let cap = CGRect(x: hub.x - legWidth, y: hub.y - legWidth,
+                         width: legWidth * 2, height: legWidth * 2)
+        fill(UIBezierPath(ovalIn: cap), primary)
+    }
+
+    /// The rim, its spokes and the cabins hanging off it.
+    private static func drawWheel(_ context: CGContext,
+                                  _ size: CGSize,
+                                  _ primary: UIColor,
+                                  _ secondary: UIColor,
+                                  _ accent: UIColor) {
+        let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+        let radius = min(size.width, size.height) / 2 - max(2, size.width * 0.08)
+
+        let spokes = 8
+        for index in 0..<spokes {
+            let angle = CGFloat(index) / CGFloat(spokes) * .pi * 2
+            let spoke = UIBezierPath()
+            spoke.move(to: centre)
+            spoke.addLine(to: CGPoint(x: centre.x + cos(angle) * radius,
+                                      y: centre.y + sin(angle) * radius))
+            stroke(spoke, accent, width: max(1, size.width * 0.025))
+        }
+
+        let rim = CGRect(x: centre.x - radius, y: centre.y - radius,
+                         width: radius * 2, height: radius * 2)
+        stroke(UIBezierPath(ovalIn: rim), primary, width: max(1.5, size.width * 0.05))
+
+        let cabin = size.width * 0.13
+        for index in 0..<spokes {
+            let angle = CGFloat(index) / CGFloat(spokes) * .pi * 2
+            let point = CGPoint(x: centre.x + cos(angle) * radius - cabin / 2,
+                                y: centre.y + sin(angle) * radius - cabin / 2)
+            fill(UIBezierPath(roundedRect: CGRect(origin: point,
+                                                  size: CGSize(width: cabin, height: cabin)),
+                              cornerRadius: cabin * 0.3),
+                 index % 2 == 0 ? secondary : ParkPalette.colour(.cream))
+        }
+    }
+
+    private static func drawTeacupsBase(_ context: CGContext,
+                                        _ size: CGSize,
+                                        _ primary: UIColor,
+                                        _ secondary: UIColor,
+                                        _ accent: UIColor) {
+        let floor = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.10, dy: size.height * 0.10)
+        withShadow(context) {
+            fill(UIBezierPath(ovalIn: floor), secondary)
+        }
+        stroke(UIBezierPath(ovalIn: floor.insetBy(dx: floor.width * 0.14, dy: floor.height * 0.14)),
+               accent, width: max(1, size.width * 0.02))
+    }
+
+    /// Three cups clustered on a turntable.
+    private static func drawCups(_ context: CGContext,
+                                 _ size: CGSize,
+                                 _ primary: UIColor,
+                                 _ secondary: UIColor,
+                                 _ accent: UIColor) {
+        let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+        let orbit = size.width * 0.28
+        let cup = size.width * 0.36
+        let colours = [primary, accent, ParkPalette.colour(.cream)]
+
+        for index in 0..<3 {
+            let angle = CGFloat(index) / 3 * .pi * 2
+            let rect = CGRect(x: centre.x + cos(angle) * orbit - cup / 2,
+                              y: centre.y + sin(angle) * orbit - cup / 2,
+                              width: cup, height: cup)
+            fill(UIBezierPath(ovalIn: rect), colours[index])
+            stroke(UIBezierPath(ovalIn: rect.insetBy(dx: cup * 0.24, dy: cup * 0.24)),
+                   ParkPalette.colour(.charcoal), width: max(1, size.width * 0.02))
+        }
+    }
+
+    // MARK: - Circuits
+
+    private static func drawBumperCarsBase(_ context: CGContext,
+                                           _ size: CGSize,
+                                           _ primary: UIColor,
+                                           _ secondary: UIColor,
+                                           _ accent: UIColor) {
+        let arena = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.06, dy: size.height * 0.07)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: arena, cornerRadius: arena.height * 0.18), primary)
+        }
+
+        let floor = arena.insetBy(dx: arena.width * 0.07, dy: arena.height * 0.09)
+        fill(UIBezierPath(roundedRect: floor, cornerRadius: floor.height * 0.15),
+             ParkPalette.colour(.charcoal))
+
+        // Bulbs around the rail, the one detail that says fairground.
+        let bulbs = 10
+        for index in 0..<bulbs {
+            let step = CGFloat(index) / CGFloat(bulbs)
+            let x = arena.minX + arena.width * step + arena.width / CGFloat(bulbs) / 2
+            let dot = size.width * 0.035
+            for y in [arena.minY + dot, arena.maxY - dot * 2] {
+                fill(UIBezierPath(ovalIn: CGRect(x: x - dot / 2, y: y,
+                                                 width: dot, height: dot)), accent)
+            }
+        }
+    }
+
+    private static func drawGoKartsBase(_ context: CGContext,
+                                        _ size: CGSize,
+                                        _ primary: UIColor,
+                                        _ secondary: UIColor,
+                                        _ accent: UIColor) {
+        let ground = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.04, dy: size.height * 0.05)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.12), secondary)
+        }
+
+        // Asphalt, then a white edge line on top of it.
+        let track = trackRect(in: size)
+        stroke(UIBezierPath(ovalIn: track), ParkPalette.colour(.charcoal),
+               width: max(3, size.height * 0.13))
+        stroke(UIBezierPath(ovalIn: track), ParkPalette.colour(.white),
+               width: max(1, size.height * 0.012))
+
+        // Start line across the bottom straight.
+        let line = CGRect(x: track.midX - size.width * 0.01,
+                          y: track.maxY - size.height * 0.065,
+                          width: size.width * 0.02, height: size.height * 0.13)
+        fill(UIBezierPath(rect: line), ParkPalette.colour(.white))
+
+        let pit = CGRect(x: track.midX + size.width * 0.06,
+                         y: track.maxY - size.height * 0.02,
+                         width: size.width * 0.22, height: size.height * 0.15)
+        fill(UIBezierPath(roundedRect: pit, cornerRadius: pit.height * 0.3), primary)
+        fill(UIBezierPath(rect: CGRect(x: pit.minX, y: pit.minY,
+                                       width: pit.width, height: pit.height * 0.3)), accent)
+    }
+
+    private static func drawCar(_ context: CGContext,
+                                _ size: CGSize,
+                                _ primary: UIColor,
+                                _ secondary: UIColor,
+                                _ accent: UIColor) {
+        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.35), accent)
+        let cockpit = CGRect(x: body.minX + body.width * 0.30, y: body.minY + body.height * 0.22,
+                             width: body.width * 0.34, height: body.height * 0.56)
+        fill(UIBezierPath(ovalIn: cockpit), ParkPalette.colour(.charcoal))
+    }
+
+    private static func drawLogFlumeBase(_ context: CGContext,
+                                         _ size: CGSize,
+                                         _ primary: UIColor,
+                                         _ secondary: UIColor,
+                                         _ accent: UIColor) {
+        let ground = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.04, dy: size.height * 0.05)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.12), secondary)
+        }
+
+        // The channel itself: water inside a timber lip.
+        let channel = trackRect(in: size)
+        stroke(UIBezierPath(ovalIn: channel), ParkPalette.colour(.brown),
+               width: max(3, size.height * 0.12))
+        stroke(UIBezierPath(ovalIn: channel), ParkPalette.water,
+               width: max(1.5, size.height * 0.07))
+
+        // Splash pool in the middle, which is what the ride is remembered for.
+        let pool = CGRect(x: channel.midX - channel.width * 0.20,
+                          y: channel.midY - channel.height * 0.16,
+                          width: channel.width * 0.40, height: channel.height * 0.32)
+        fill(UIBezierPath(ovalIn: pool), ParkPalette.water)
+        stroke(UIBezierPath(ovalIn: pool), ParkPalette.colour(.white),
+               width: max(1, size.height * 0.015))
+
+        let lift = CGRect(x: channel.minX - size.width * 0.02,
+                          y: channel.minY - size.height * 0.02,
+                          width: size.width * 0.16, height: size.height * 0.20)
+        fill(UIBezierPath(roundedRect: lift, cornerRadius: lift.height * 0.25), primary)
+    }
+
+    private static func drawLog(_ context: CGContext,
+                                _ size: CGSize,
+                                _ primary: UIColor,
+                                _ secondary: UIColor,
+                                _ accent: UIColor) {
+        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.5),
+             ParkPalette.colour(.brown))
+        let riders = CGRect(x: body.minX + body.width * 0.22, y: body.minY + body.height * 0.18,
+                            width: body.width * 0.52, height: body.height * 0.46)
+        fill(UIBezierPath(roundedRect: riders, cornerRadius: riders.height * 0.4), primary)
+    }
+
+    // MARK: - Towers and slides
+
+    private static func drawSlingshotBase(_ context: CGContext,
+                                          _ size: CGSize,
+                                          _ primary: UIColor,
+                                          _ secondary: UIColor,
+                                          _ accent: UIColor) {
+        let pad = CGRect(x: size.width * 0.14, y: size.height * 0.78,
+                         width: size.width * 0.72, height: size.height * 0.16)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: pad, cornerRadius: pad.height * 0.35), secondary)
+        }
+
+        // Twin masts, leaning very slightly apart.
+        for direction in [CGFloat(-1), CGFloat(1)] {
+            let mast = UIBezierPath()
+            mast.move(to: CGPoint(x: size.width / 2 + direction * size.width * 0.22,
+                                  y: size.height * 0.04))
+            mast.addLine(to: CGPoint(x: size.width / 2 + direction * size.width * 0.30,
+                                     y: size.height * 0.82))
+            stroke(mast, accent, width: max(2, size.width * 0.055))
+        }
+
+        // The elastic, slack between the two mast heads.
+        let cable = UIBezierPath()
+        cable.move(to: CGPoint(x: size.width * 0.28, y: size.height * 0.06))
+        cable.addQuadCurve(to: CGPoint(x: size.width * 0.72, y: size.height * 0.06),
+                           controlPoint: CGPoint(x: size.width * 0.50, y: size.height * 0.30))
+        stroke(cable, primary, width: max(1, size.width * 0.025))
+    }
+
+    private static func drawCapsule(_ context: CGContext,
+                                    _ size: CGSize,
+                                    _ primary: UIColor,
+                                    _ secondary: UIColor,
+                                    _ accent: UIColor) {
+        let ball = CGRect(origin: .zero, size: size).insetBy(dx: 1, dy: 1)
+        fill(UIBezierPath(ovalIn: ball), primary)
+        stroke(UIBezierPath(ovalIn: ball.insetBy(dx: ball.width * 0.18, dy: ball.height * 0.18)),
+               ParkPalette.colour(.charcoal), width: max(1, size.width * 0.09))
+    }
+
+    private static func drawCarpetSlideBase(_ context: CGContext,
+                                            _ size: CGSize,
+                                            _ primary: UIColor,
+                                            _ secondary: UIColor,
+                                            _ accent: UIColor) {
+        let ground = CGRect(origin: .zero, size: size)
+            .insetBy(dx: size.width * 0.06, dy: size.height * 0.06)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.12), secondary)
+        }
+
+        // Four lanes running top to bottom, with humps drawn as bands.
+        let lanes = 4
+        let laneWidth = ground.width * 0.17
+        for index in 0..<lanes {
+            let spacing = ground.width / CGFloat(lanes + 1)
+            let x = ground.minX + spacing * CGFloat(index + 1) - laneWidth / 2
+            let lane = CGRect(x: x, y: ground.minY + ground.height * 0.10,
+                              width: laneWidth, height: ground.height * 0.66)
+            fill(UIBezierPath(roundedRect: lane, cornerRadius: laneWidth * 0.3),
+                 index % 2 == 0 ? primary : accent)
+            for hump in 1...3 {
+                let y = lane.minY + lane.height * CGFloat(hump) / 4
+                fill(UIBezierPath(rect: CGRect(x: lane.minX, y: y,
+                                               width: lane.width,
+                                               height: max(1, size.height * 0.012))),
+                     ParkPalette.colour(.cream))
+            }
+        }
+
+        // Landing mat across the bottom.
+        let landing = CGRect(x: ground.minX, y: ground.maxY - ground.height * 0.16,
+                             width: ground.width, height: ground.height * 0.14)
+        fill(UIBezierPath(roundedRect: landing, cornerRadius: landing.height * 0.3),
+             ParkPalette.colour(.charcoal))
+    }
+
+    private static func drawMat(_ context: CGContext,
+                                _ size: CGSize,
+                                _ primary: UIColor,
+                                _ secondary: UIColor,
+                                _ accent: UIColor) {
+        let mat = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        fill(UIBezierPath(roundedRect: mat, cornerRadius: mat.height * 0.4),
+             ParkPalette.colour(.cream))
+    }
+
+    // MARK: - Haunted house
+
+    private static func drawHauntedHouse(_ context: CGContext,
+                                         _ size: CGSize,
+                                         _ primary: UIColor,
+                                         _ secondary: UIColor,
+                                         _ accent: UIColor) {
+        let body = CGRect(x: size.width * 0.14, y: size.height * 0.38,
+                          width: size.width * 0.72, height: size.height * 0.52)
+        withShadow(context) {
+            fill(UIBezierPath(rect: body), primary)
+        }
+
+        // Steep gabled roof overhanging the walls on both sides.
+        let roof = UIBezierPath()
+        roof.move(to: CGPoint(x: size.width * 0.08, y: size.height * 0.40))
+        roof.addLine(to: CGPoint(x: size.width * 0.50, y: size.height * 0.08))
+        roof.addLine(to: CGPoint(x: size.width * 0.92, y: size.height * 0.40))
+        roof.close()
+        fill(roof, secondary)
+
+        // Lit windows, the only warm thing about it.
+        let windowSize = CGSize(width: size.width * 0.13, height: size.height * 0.13)
+        for x in [CGFloat(0.24), CGFloat(0.63)] {
+            let rect = CGRect(origin: CGPoint(x: size.width * x, y: size.height * 0.48),
+                              size: windowSize)
+            fill(UIBezierPath(roundedRect: rect, cornerRadius: windowSize.width * 0.2), accent)
+        }
+
+        let door = CGRect(x: size.width * 0.43, y: size.height * 0.68,
+                          width: size.width * 0.14, height: size.height * 0.22)
+        fill(UIBezierPath(roundedRect: door, cornerRadius: door.width * 0.4),
+             ParkPalette.colour(.charcoal))
+    }
+
+    private static func drawGhost(_ context: CGContext,
+                                  _ size: CGSize,
+                                  _ primary: UIColor,
+                                  _ secondary: UIColor,
+                                  _ accent: UIColor) {
+        let body = UIBezierPath()
+        let waist = size.height * 0.66
+        body.move(to: CGPoint(x: size.width * 0.10, y: waist))
+        body.addQuadCurve(to: CGPoint(x: size.width * 0.90, y: waist),
+                          controlPoint: CGPoint(x: size.width * 0.50, y: -size.height * 0.24))
+        // A scalloped hem, which is what makes a white blob read as a ghost.
+        body.addLine(to: CGPoint(x: size.width * 0.90, y: size.height * 0.94))
+        body.addQuadCurve(to: CGPoint(x: size.width * 0.50, y: size.height * 0.94),
+                          controlPoint: CGPoint(x: size.width * 0.70, y: size.height * 0.72))
+        body.addQuadCurve(to: CGPoint(x: size.width * 0.10, y: size.height * 0.94),
+                          controlPoint: CGPoint(x: size.width * 0.30, y: size.height * 0.72))
+        body.close()
+        fill(body, ParkPalette.colour(.white))
+
+        let eye = size.width * 0.16
+        for x in [CGFloat(0.28), CGFloat(0.56)] {
+            fill(UIBezierPath(ovalIn: CGRect(x: size.width * x, y: size.height * 0.42,
+                                             width: eye, height: eye)),
+                 ParkPalette.colour(.charcoal))
+        }
     }
 
     // MARK: - Shops and services

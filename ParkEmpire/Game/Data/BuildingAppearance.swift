@@ -38,6 +38,22 @@ enum BuildingMotif: String, Codable {
     case dropTower
     /// Oval of track over a base, with a train running it.
     case coaster
+    /// Upright wheel hung with cabins.
+    case ferrisWheel
+    /// Round floor carrying a cluster of cups.
+    case teacups
+    /// Walled arena with cars loose inside it.
+    case bumperCars
+    /// Gabled house with lit windows and a ghost outside.
+    case hauntedHouse
+    /// Asphalt circuit with kerbs and a pit building.
+    case goKarts
+    /// Water channel around a splash pool, with a log on it.
+    case logFlume
+    /// Twin launch towers with a capsule between them.
+    case slingshot
+    /// Parallel slide lanes running down to a landing mat.
+    case carpetSlide
     /// Booth with a striped awning across the front.
     case stall
     /// Small booth with a domed top.
@@ -69,10 +85,13 @@ enum BuildingMotif: String, Codable {
     /// alive; a stopped animation is how a broken ride announces itself.
     var motion: BuildingMotion {
         switch self {
-        case .carousel: return .spin
+        case .carousel, .ferrisWheel, .teacups: return .spin
         case .swingBoat: return .swing
         case .dropTower: return .rise
-        case .coaster: return .circuit
+        case .coaster, .goKarts, .logFlume, .bumperCars: return .circuit
+        case .slingshot: return .launch
+        case .carpetSlide: return .slide
+        case .hauntedHouse: return .hover
         case .fountain: return .bob
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
@@ -90,6 +109,12 @@ enum BuildingMotion: String, Codable {
     case circuit
     /// A small vertical pulse, for things that trickle rather than travel.
     case bob
+    /// Fired upward fast, then falling back and settling.
+    case launch
+    /// Runs down its lane, then reappears at the top.
+    case slide
+    /// Floats gently around one spot, never leaving it.
+    case hover
 }
 
 /// Named colours the park is drawn from. Naming them rather than storing raw

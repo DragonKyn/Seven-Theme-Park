@@ -133,6 +133,50 @@ final class BuildingNode: SKSpriteNode {
             down.timingMode = .easeInEaseOut
             node.run(.repeatForever(.sequence([up, down])))
 
+        case .launch:
+            // Held at the bottom, fired, then bouncing to a stop. The long
+            // wait afterwards is what sells how violent the launch was.
+            let low = -buildingSize.height * 0.24
+            let high = buildingSize.height * 0.30
+            node.position = CGPoint(x: 0, y: low)
+            let fire = SKAction.moveTo(y: high, duration: 0.45)
+            fire.timingMode = .easeOut
+            let fall = SKAction.moveTo(y: low, duration: 0.75)
+            fall.timingMode = .easeIn
+            let settle = SKAction.moveTo(y: low + buildingSize.height * 0.10, duration: 0.3)
+            settle.timingMode = .easeOut
+            node.run(.repeatForever(.sequence([.wait(forDuration: 2.2),
+                                               fire,
+                                               fall,
+                                               settle,
+                                               .moveTo(y: low, duration: 0.3)])))
+
+        case .slide:
+            // Down one lane and straight back to the top, because there is
+            // always another rider waiting.
+            let top = buildingSize.height * 0.30
+            let bottom = -buildingSize.height * 0.30
+            let lane = -buildingSize.width * 0.24
+            node.position = CGPoint(x: lane, y: top)
+            let descend = SKAction.moveTo(y: bottom, duration: 1.5)
+            descend.timingMode = .easeIn
+            node.run(.repeatForever(.sequence([descend,
+                                               .wait(forDuration: 0.5),
+                                               .moveTo(y: top, duration: 0.01),
+                                               .wait(forDuration: 0.8)])))
+
+        case .hover:
+            // Drifts around the porch without ever settling.
+            node.position = CGPoint(x: buildingSize.width * 0.30,
+                                    y: -buildingSize.height * 0.22)
+            let up = SKAction.moveBy(x: 0, y: buildingSize.height * 0.10, duration: 1.9)
+            let down = SKAction.moveBy(x: 0, y: -buildingSize.height * 0.10, duration: 1.9)
+            up.timingMode = .easeInEaseOut
+            down.timingMode = .easeInEaseOut
+            node.run(.repeatForever(.sequence([up, down])))
+            node.run(.repeatForever(.sequence([.fadeAlpha(to: 0.55, duration: 1.3),
+                                               .fadeAlpha(to: 1.0, duration: 1.3)])))
+
         case .circuit:
             // The track is drawn in texture space with y downward; the scene
             // has y upward, so the oval is rebuilt here rather than reused.
