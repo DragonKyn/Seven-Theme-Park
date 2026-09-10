@@ -78,6 +78,7 @@ enum ThoughtCatalog {
         case .brokeAndBored: return ("Nothing left to spend. I'll head out.", .neutral)
         case .noBathroom: return ("No restrooms anywhere. I'm leaving.", .negative)
         case .queuesTooLong: return ("Every line is enormous. I'm done.", .negative)
+        case .tooDirty: return ("This place is filthy. I'm not staying.", .negative)
         }
     }
 
