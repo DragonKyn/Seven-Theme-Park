@@ -46,6 +46,15 @@ enum DemoPark {
             state.map.setTerrain(.path, at: GridCoord(x, 7))
             state.map.setTerrain(.path, at: GridCoord(x, 14))
         }
+
+        // A third street along the bottom, which is what the station platforms
+        // open on to.
+        for y in 19...20 {
+            state.map.setTerrain(.path, at: GridCoord(spine, y))
+        }
+        for x in (spine - 7)...(spine + 7) {
+            state.map.setTerrain(.path, at: GridCoord(x, 20))
+        }
     }
 
     private static func placeBuildings(_ state: GameState) {
@@ -59,6 +68,10 @@ enum DemoPark {
         place(state, "ride.hauntedhouse", at: GridCoord(spine - 10, 15))
         place(state, "ride.gokarts.small", at: GridCoord(spine + 7, 8))
 
+        layOutRailway(state)
+        place(state, "transport.station", at: GridCoord(spine - 5, 21))
+        place(state, "transport.station", at: GridCoord(spine + 2, 21))
+
         place(state, "shop.burger", at: GridCoord(spine - 3, 5))
         place(state, "shop.drinks", at: GridCoord(spine + 2, 5))
         place(state, "shop.icecream", at: GridCoord(spine - 3, 12))
@@ -68,6 +81,23 @@ enum DemoPark {
         place(state, "facility.bench", at: GridCoord(spine + 1, 4))
         place(state, "facility.bin", at: GridCoord(spine - 1, 6))
         place(state, "facility.bin", at: GridCoord(spine + 1, 13))
+    }
+
+    /// A loop of track below the park with a two-tile gap between it and the
+    /// bottom street, which is exactly the room a station platform needs.
+    private static func layOutRailway(_ state: GameState) {
+        let spine = state.map.entranceCoord.x
+        let left = spine - 7
+        let right = spine + 7
+
+        for x in left...right {
+            state.map.setTerrain(.track, at: GridCoord(x, 23))
+            state.map.setTerrain(.track, at: GridCoord(x, 28))
+        }
+        for y in 24...27 {
+            state.map.setTerrain(.track, at: GridCoord(left, y))
+            state.map.setTerrain(.track, at: GridCoord(right, y))
+        }
     }
 
     /// Every coordinate here is a gap between the paths and the buildings

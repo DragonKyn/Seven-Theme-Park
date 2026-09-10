@@ -7,6 +7,9 @@ enum TerrainType: String, Codable {
     /// Decorative water. Guests cannot walk on it and nothing can be built
     /// over it, which is the price of how good it looks.
     case water
+    /// Railway. Guests cannot walk on it; trains run along it between
+    /// stations, and nothing else can be built over it.
+    case track
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {

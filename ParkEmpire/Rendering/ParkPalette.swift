@@ -25,6 +25,10 @@ enum ParkPalette {
     static let guestNeutral = UIColor(red: 0.97, green: 0.78, blue: 0.24, alpha: 1)
     static let guestUnhappy = UIColor(red: 0.90, green: 0.32, blue: 0.28, alpha: 1)
 
+    static let ballast = UIColor(red: 0.44, green: 0.41, blue: 0.37, alpha: 1)
+    static let rail = UIColor(red: 0.72, green: 0.73, blue: 0.75, alpha: 1)
+    static let sleeper = UIColor(red: 0.32, green: 0.24, blue: 0.18, alpha: 1)
+
     static let asphalt = UIColor(red: 0.34, green: 0.35, blue: 0.38, alpha: 1)
     static let bayLine = UIColor(red: 0.86, green: 0.86, blue: 0.83, alpha: 0.85)
 
@@ -69,6 +73,7 @@ enum ParkPalette {
         case .path: return path
         case .entrance: return entrance
         case .water: return alternate ? waterAlt : water
+        case .track: return ballast
         case .grass: return alternate ? grassAlt : grass
         }
     }

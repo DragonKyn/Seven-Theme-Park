@@ -122,6 +122,9 @@ struct BuildMenuView: View {
             let name = controller.selectedDefinition?.displayName.lowercased() ?? "this"
             return "Tap to place \(name). Drag moves the map. Turn on Draw to lay a run."
         }
+        if controller.build.category == .transport {
+            return "Drag out a loop of track, then put stations on it. Guests ride between them."
+        }
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."
         }

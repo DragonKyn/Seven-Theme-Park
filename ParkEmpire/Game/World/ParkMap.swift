@@ -243,6 +243,11 @@ struct ParkMap: Codable {
         }
     }
 
+    /// Whether any tile touching this footprint is the given terrain.
+    func touchesTerrain(_ terrain: TerrainType, around rect: GridRect) -> Bool {
+        rect.adjacentCoords.contains { tile(at: $0)?.terrain == terrain }
+    }
+
     /// Every tile of the given terrain. Used to fold water into the beauty
     /// field, and small enough to scan on demand rather than index.
     func coords(ofTerrain terrain: TerrainType) -> [GridCoord] {

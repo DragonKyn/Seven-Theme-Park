@@ -32,7 +32,21 @@ enum GameContent {
 
     /// Terrain in build-menu order. Both are drawn by dragging, so they share
     /// the same handling everywhere the player paints a run of tiles.
-    static let terrains: [TerrainDefinition] = [path, water]
+    static let track = TerrainDefinition(
+        id: "terrain.track",
+        displayName: "Track",
+        summary: "Railway for the trains. Drag out a loop, then put a station on it.",
+        purchasePrice: 45,
+        refundValue: 15,
+        terrain: .track,
+        category: .transport,
+        beauty: 0,
+        beautyRadius: 0
+    )
+
+    /// Terrain in build-menu order. All of it is drawn by dragging, so it
+    /// shares the same handling everywhere the player paints a run of tiles.
+    static let terrains: [TerrainDefinition] = [path, water, track]
 
     // MARK: - Attractions
 
@@ -276,6 +290,23 @@ enum GameContent {
             footprint: GridSize(9, 6),
             unlockLevel: 4,
             appearance: BuildingAppearance(.coaster, .red, .charcoal, .amber)
+        ),
+        AttractionDefinition(
+            id: "transport.station",
+            displayName: "Train Station",
+            summary: "Carries guests to another station on the same track. Cheap to run, and it saves a long walk.",
+            purchasePrice: 4_800,
+            capacity: 20,
+            rideDuration: 60,
+            loadDuration: 18,
+            excitement: 30,
+            nausea: 4,
+            maintenanceRate: 0.014,
+            operatingCostPerCycle: 6,
+            footprint: GridSize(3, 2),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.trainStation, .green, .cream, .brown),
+            kind: .transport
         )
     ]
 

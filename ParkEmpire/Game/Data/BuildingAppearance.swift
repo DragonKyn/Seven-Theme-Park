@@ -54,6 +54,8 @@ enum BuildingMotif: String, Codable {
     case slingshot
     /// Parallel slide lanes running down to a landing mat.
     case carpetSlide
+    /// Platform under a canopy, with a clock on the end.
+    case trainStation
     /// Booth with a striped awning across the front.
     case stall
     /// Small booth with a domed top.
@@ -95,6 +97,9 @@ enum BuildingMotif: String, Codable {
         case .carpetSlide: return .slide
         case .hauntedHouse: return .hover
         case .fountain: return .bob
+        // The station itself is still; what moves is the train, and that runs
+        // on the player's own track rather than round the building.
+        case .trainStation: return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
             return .none

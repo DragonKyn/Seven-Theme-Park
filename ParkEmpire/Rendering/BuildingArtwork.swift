@@ -63,6 +63,7 @@ enum BuildingArtwork {
         case .logFlume:  drawLogFlumeBase(context, size, primary, secondary, accent)
         case .slingshot: drawSlingshotBase(context, size, primary, secondary, accent)
         case .carpetSlide: drawCarpetSlideBase(context, size, primary, secondary, accent)
+        case .trainStation: drawTrainStation(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
         case .shopFront: drawShopFront(context, size, primary, secondary, accent)
@@ -760,6 +761,47 @@ enum BuildingArtwork {
         let mat = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
         fill(UIBezierPath(roundedRect: mat, cornerRadius: mat.height * 0.4),
              ParkPalette.colour(.cream))
+    }
+
+    /// A platform under a canopy, with a clock on the gable end. The train
+    /// belongs to the track rather than to the building, so nothing here moves.
+    private static func drawTrainStation(_ context: CGContext,
+                                         _ size: CGSize,
+                                         _ primary: UIColor,
+                                         _ secondary: UIColor,
+                                         _ accent: UIColor) {
+        let platform = CGRect(x: size.width * 0.04, y: size.height * 0.52,
+                              width: size.width * 0.92, height: size.height * 0.40)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: platform, cornerRadius: platform.height * 0.18), secondary)
+        }
+
+        // Edge stripe along the platform, the way a real one is painted.
+        fill(UIBezierPath(rect: CGRect(x: platform.minX, y: platform.maxY - size.height * 0.06,
+                                       width: platform.width, height: size.height * 0.045)),
+             accent)
+
+        let canopy = CGRect(x: size.width * 0.08, y: size.height * 0.14,
+                            width: size.width * 0.84, height: size.height * 0.30)
+        fill(UIBezierPath(roundedRect: canopy, cornerRadius: canopy.height * 0.30), primary)
+
+        // Posts holding the canopy up over the platform.
+        for x in [size.width * 0.16, size.width * 0.80] {
+            fill(UIBezierPath(rect: CGRect(x: x, y: canopy.maxY,
+                                           width: size.width * 0.035,
+                                           height: size.height * 0.16)),
+                 ParkPalette.colour(.brown))
+        }
+
+        let clock = min(size.width, size.height) * 0.18
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.50 - clock / 2,
+                                         y: canopy.midY - clock / 2,
+                                         width: clock, height: clock)),
+             ParkPalette.colour(.cream))
+        stroke(UIBezierPath(ovalIn: CGRect(x: size.width * 0.50 - clock / 2,
+                                           y: canopy.midY - clock / 2,
+                                           width: clock, height: clock)),
+               ParkPalette.colour(.charcoal), width: max(1, size.width * 0.012))
     }
 
     // MARK: - Haunted house

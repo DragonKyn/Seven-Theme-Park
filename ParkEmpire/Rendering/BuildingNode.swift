@@ -182,8 +182,8 @@ final class BuildingNode: SKSpriteNode {
                                                .fadeAlpha(to: 1.0, duration: 1.3)])))
 
         case .circuit:
-            Self.drive(node,
-                       around: Self.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
+            PathMotion.drive(node,
+                       around: PathMotion.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
                                                in: buildingSize,
                                                inset: 0,
                                                startAngle: 0,
@@ -210,13 +210,13 @@ final class BuildingNode: SKSpriteNode {
         let startAngles: [CGFloat] = [0, 1.9, 3.4, 4.9]
 
         let slot = index % lanes.count
-        let points = Self.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
+        let points = PathMotion.ovalPoints(BuildingArtwork.trackRect(in: buildingSize),
                                      in: buildingSize,
                                      inset: lanes[slot] * min(buildingSize.width, buildingSize.height),
                                      startAngle: startAngles[slot],
                                      steps: 36)
 
-        Self.drive(node, around: points, duration: lapTimes[slot])
+        PathMotion.drive(node, around: points, duration: lapTimes[slot])
     }
 
     /// Cars cross the arena on overlapping loops at different speeds, so they
@@ -241,7 +241,7 @@ final class BuildingNode: SKSpriteNode {
         let points = loops[slot].map { CGPoint(x: $0.x * arena.width, y: $0.y * arena.height) }
         // A bumper car turns on the spot and then drives, rather than sweeping
         // round the corner the way a kart does.
-        Self.drive(node, around: points, duration: lapTimes[slot], turnFraction: 0.25)
+        PathMotion.drive(node, around: points, duration: lapTimes[slot], turnFraction: 0.25)
 
         // A short recoil on its own clock. Out of step with the driving, which
         // is what stops five cars jolting in unison.
@@ -297,71 +297,6 @@ final class BuildingNode: SKSpriteNode {
                                            settleUp,
                                            settleDown,
                                            .wait(forDuration: 1.2)])))
-    }
-
-    // MARK: - Steering
-
-    /// Drives a sprite round a closed loop of points, turning it to face the
-    /// way it is going at every step.
-    ///
-    /// `SKAction.follow(orientToPath:)` used to do the driving, and left the
-    /// karts side-on to the track. Steering explicitly costs a handful more
-    /// actions and takes SpriteKit's orientation convention out of the
-    /// argument: the artwork points along positive x, and so does the heading
-    /// this sets.
-    ///
-    /// `turnFraction` is how much of each leg is spent turning. A kart sweeps
-    /// through the whole leg; a bumper car snaps round and then drives.
-    static func drive(_ node: SKSpriteNode,
-                      around points: [CGPoint],
-                      duration: TimeInterval,
-                      turnFraction: Double = 1.0) {
-        guard points.count > 1 else { return }
-
-        let leg = duration / Double(points.count)
-        let turnTime = max(0.01, leg * min(1.0, max(0.05, turnFraction)))
-
-        node.position = points[0]
-        node.zRotation = heading(from: points[0], to: points[1])
-
-        var legs: [SKAction] = []
-        for index in points.indices {
-            let from = points[index]
-            let to = points[(index + 1) % points.count]
-            let move = SKAction.move(to: to, duration: leg)
-            move.timingMode = .linear
-            let turn = SKAction.rotate(toAngle: heading(from: from, to: to),
-                                       duration: turnTime,
-                                       shortestUnitArc: true)
-            legs.append(.group([move, turn]))
-        }
-
-        node.run(.repeatForever(.sequence(legs)))
-    }
-
-    private static func heading(from: CGPoint, to: CGPoint) -> CGFloat {
-        atan2(to.y - from.y, to.x - from.x)
-    }
-
-    /// Points around an oval, starting at `startAngle` so several vehicles can
-    /// share one track without sharing a starting position.
-    static func ovalPoints(_ trackRect: CGRect,
-                           in buildingSize: CGSize,
-                           inset: CGFloat,
-                           startAngle: CGFloat,
-                           steps: Int) -> [CGPoint] {
-        let radiusX = max(1, trackRect.width / 2 - inset)
-        let radiusY = max(1, trackRect.height / 2 - inset)
-        // The track is drawn in texture space with y downward; the scene has y
-        // upward. The oval is centred, so only the origin has to move.
-        let centre = CGPoint(x: trackRect.midX - buildingSize.width / 2,
-                             y: trackRect.midY - buildingSize.height / 2)
-
-        return (0..<steps).map { step in
-            let angle = startAngle + CGFloat(step) / CGFloat(steps) * .pi * 2
-            return CGPoint(x: centre.x + cos(angle) * radiusX,
-                           y: centre.y + sin(angle) * radiusY)
-        }
     }
 
     /// Freezes every moving part. A ride that has stopped moving is the

@@ -13,6 +13,12 @@ struct GridCoord: Hashable, Codable {
 
     static let zero = GridCoord(0, 0)
 
+    /// True when the two tiles share an edge. Diagonals do not count: a train
+    /// cannot corner through the gap between two tiles.
+    func isOrthogonallyAdjacent(to other: GridCoord) -> Bool {
+        abs(x - other.x) + abs(y - other.y) == 1
+    }
+
     var orthogonalNeighbours: [GridCoord] {
         [GridCoord(x + 1, y), GridCoord(x - 1, y), GridCoord(x, y + 1), GridCoord(x, y - 1)]
     }

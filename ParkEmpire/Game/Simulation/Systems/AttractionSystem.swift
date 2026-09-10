@@ -84,6 +84,13 @@ final class AttractionSystem {
             state.attractions[attractionIndex].satisfactionCount += 1
         }
 
+        if definition.kind == .transport {
+            for guestID in riders {
+                setDown(guestID: guestID, from: attractionID, state: state, now: now)
+            }
+            state.statistics.transportTripsTotal += riders.count
+        }
+
         state.attractions[attractionIndex].guestsToday += riders.count
         state.attractions[attractionIndex].totalGuests += riders.count
         state.statistics.ridesGivenTotal += riders.count
@@ -94,6 +101,25 @@ final class AttractionSystem {
         state.ledger.spend(definition.operatingCostPerCycle, on: .maintenance)
         // Wear and breakdown risk are `MaintenanceSystem`'s business; it works
         // from the ride's phase so it does not need telling about cycles.
+    }
+
+    /// Puts a guest off the train at another station on the same railway.
+    ///
+    /// The journey itself is not walked: the guest was on a train, and moving
+    /// them tile by tile down the track would need a second movement system
+    /// for no visible gain. If the railway goes nowhere else they simply get
+    /// off where they got on, which is what a loop line does anyway.
+    private func setDown(guestID: UUID, from stationID: UUID, state: GameState, now: Double) {
+        guard let guestIndex = state.guestIndex(id: guestID),
+              let destination = state.transportDestination(from: stationID),
+              let landing = state.map.accessTiles(for: destination.rect).first else { return }
+
+        state.guests[guestIndex].tile = landing
+        state.guests[guestIndex].position = landing.centre
+        state.guests[guestIndex].route = []
+        state.guests[guestIndex].nextDecisionAt = now
+        state.guests[guestIndex].think("The train dropped me right by \(destination.name).",
+                                       mood: .positive, at: now, icon: .ride)
     }
 
     /// Returns the happiness delta the ride produced, which doubles as the

@@ -4,6 +4,14 @@ import Foundation
 ///
 /// Adding a ride should mean adding one of these to `GameContent` — the
 /// simulation systems never branch on a specific attraction id.
+/// What a boardable building actually does with the guests it takes on.
+enum AttractionKind: String, Codable {
+    /// Guests get on, enjoy themselves, and get off where they started.
+    case ride
+    /// Guests get on and are set down at another station on the same railway.
+    case transport
+}
+
 struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     let id: String
     let displayName: String
@@ -27,8 +35,16 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     let unlockLevel: Int
     /// How the placed building is drawn.
     let appearance: BuildingAppearance
+    /// What the building is for. Declared last and defaulted, so every ride in
+    /// the catalogue reads exactly as it did before transport existed.
+    var kind: AttractionKind = .ride
 
-    var category: BuildCategory { .attraction }
+    var category: BuildCategory {
+        kind == .transport ? .transport : .attraction
+    }
+
+    /// A station with no railway against it has nowhere to send anybody.
+    var requiresTrackAccess: Bool { kind == .transport }
 
     /// The same ride with its purchased upgrades folded in. Returning a
     /// definition rather than a separate stats type means every system that
@@ -51,7 +67,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             operatingCostPerCycle: operatingCostPerCycle,
             footprint: footprint,
             unlockLevel: unlockLevel,
-            appearance: appearance
+            appearance: appearance,
+            kind: kind
         )
     }
 

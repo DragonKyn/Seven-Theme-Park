@@ -108,6 +108,31 @@ final class GameState: Codable {
         ledger.isUnlimited = mode.hasUnlimitedMoney
     }
 
+    /// The railway as it currently stands, derived from the track tiles.
+    ///
+    /// Built on demand rather than cached: it is wanted when a train unloads
+    /// and when the map changes, neither of which is per tick, and a stored
+    /// copy would be one more thing that could fall out of step with the map.
+    var trackNetwork: TrackNetwork { TrackNetwork.build(map: map) }
+
+    /// Where a guest riding this station's train should be set down: another
+    /// station on the same railway, chosen at random so a network of three is
+    /// not just two shuttles. Nil when the station has nowhere to send anyone.
+    func transportDestination(from stationID: UUID) -> Attraction? {
+        let network = trackNetwork
+        guard let station = attraction(id: stationID),
+              let route = network.routeIndex(touching: station.rect) else { return nil }
+
+        let others = attractions.filter { candidate in
+            candidate.id != stationID
+                && candidate.definition?.kind == .transport
+                && candidate.isOperational
+                && network.routeIndex(touching: candidate.rect) == route
+        }
+        guard !others.isEmpty else { return nil }
+        return others[rng.int(0...(others.count - 1))]
+    }
+
     // MARK: - Lookup
 
     func attraction(id: UUID) -> Attraction? {

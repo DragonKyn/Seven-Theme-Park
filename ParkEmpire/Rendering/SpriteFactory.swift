@@ -89,6 +89,118 @@ enum SpriteFactory {
         }
     }
 
+    /// One tile of railway, drawn to match the track it is actually connected
+    /// to. `connections` is a bitmask of north, east, south and west, so a
+    /// straight run reads as a straight run and a corner as a corner rather
+    /// than every tile being a crossroads.
+    static func trackTileTexture(connections: Int, side: CGFloat) -> SKTexture {
+        texture(key: "track-\(connections)-\(side)",
+                size: CGSize(width: side, height: side)) { _, size in
+            ParkPalette.ballast.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            let gauge = size.width * 0.22
+            let sleeperWidth = size.width * 0.52
+
+            // Texture space runs y downward while the grid runs y upward, so
+            // north is the top of the image.
+            let directions: [(bit: Int, dx: CGFloat, dy: CGFloat)] = [
+                (1, 0, -1), (2, 1, 0), (4, 0, 1), (8, -1, 0)
+            ]
+            // A tile with nothing attached still shows a short stub, so a
+            // half-drawn line does not look like bare gravel.
+            let live = directions.filter { connections & $0.bit != 0 }
+            let arms = live.isEmpty ? [directions[1], directions[3]] : live
+
+            for arm in arms {
+                let end = CGPoint(x: centre.x + arm.dx * size.width / 2,
+                                  y: centre.y + arm.dy * size.height / 2)
+
+                // Sleepers first, laid across the direction of travel.
+                ParkPalette.sleeper.setFill()
+                for step in stride(from: 0.18, through: 0.92, by: 0.30) {
+                    let point = CGPoint(x: centre.x + (end.x - centre.x) * step,
+                                        y: centre.y + (end.y - centre.y) * step)
+                    let sleeper = arm.dx == 0
+                        ? CGRect(x: point.x - sleeperWidth / 2, y: point.y - size.height * 0.045,
+                                 width: sleeperWidth, height: size.height * 0.09)
+                        : CGRect(x: point.x - size.width * 0.045, y: point.y - sleeperWidth / 2,
+                                 width: size.width * 0.09, height: sleeperWidth)
+                    UIBezierPath(rect: sleeper).fill()
+                }
+
+                // Then the pair of rails on top, so they read continuous.
+                ParkPalette.rail.setStroke()
+                for offset in [-gauge / 2, gauge / 2] {
+                    let rail = UIBezierPath()
+                    if arm.dx == 0 {
+                        rail.move(to: CGPoint(x: centre.x + offset, y: centre.y))
+                        rail.addLine(to: CGPoint(x: centre.x + offset, y: end.y))
+                    } else {
+                        rail.move(to: CGPoint(x: centre.x, y: centre.y + offset))
+                        rail.addLine(to: CGPoint(x: end.x, y: centre.y + offset))
+                    }
+                    rail.lineWidth = max(1, size.width * 0.055)
+                    rail.stroke()
+                }
+            }
+        }
+    }
+
+    /// A locomotive or a carriage, nose to the right, because the sprite is
+    /// turned to face the way it is travelling.
+    static func trainCarTexture(isLocomotive: Bool, size: CGSize) -> SKTexture {
+        texture(key: "train-\(isLocomotive ? "loco" : "car")-\(Int(size.width))x\(Int(size.height))",
+                size: size) { context, size in
+            let colour = isLocomotive
+                ? ParkPalette.colour(.red)
+                : ParkPalette.colour(.cream)
+
+            context.setShadow(offset: CGSize(width: 0, height: size.height * 0.10),
+                              blur: size.height * 0.16,
+                              color: UIColor.black.withAlphaComponent(0.30).cgColor)
+
+            let body = CGRect(x: size.width * 0.04, y: size.height * 0.16,
+                              width: size.width * 0.92, height: size.height * 0.68)
+            colour.setFill()
+            UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.30).fill()
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+
+            if isLocomotive {
+                // Boiler front and a funnel, which is the whole silhouette at
+                // this size.
+                let nose = CGRect(x: body.maxX - body.width * 0.22, y: body.minY,
+                                  width: body.width * 0.22, height: body.height)
+                ParkPalette.colour(.charcoal).setFill()
+                UIBezierPath(roundedRect: nose, cornerRadius: body.height * 0.3).fill()
+
+                let funnel = CGRect(x: body.maxX - body.width * 0.40,
+                                    y: body.minY - size.height * 0.10,
+                                    width: body.width * 0.13,
+                                    height: body.height * 0.42)
+                UIBezierPath(roundedRect: funnel, cornerRadius: funnel.width * 0.3).fill()
+            } else {
+                // Windows down the side.
+                ParkPalette.colour(.charcoal).withAlphaComponent(0.55).setFill()
+                for index in 0..<3 {
+                    let window = CGRect(x: body.minX + body.width * (0.14 + 0.26 * CGFloat(index)),
+                                        y: body.midY - body.height * 0.20,
+                                        width: body.width * 0.18,
+                                        height: body.height * 0.40)
+                    UIBezierPath(roundedRect: window, cornerRadius: window.height * 0.25).fill()
+                }
+            }
+
+            // Underframe, so the car does not float.
+            ParkPalette.colour(.charcoal).setFill()
+            UIBezierPath(rect: CGRect(x: body.minX + body.width * 0.06,
+                                      y: body.maxY - size.height * 0.02,
+                                      width: body.width * 0.88,
+                                      height: size.height * 0.10)).fill()
+        }
+    }
+
     /// The board and posts of the park's entrance sign. The name itself is a
     /// label node on top, because it changes and the texture cache should not
     /// grow a new entry every time the player renames the park.

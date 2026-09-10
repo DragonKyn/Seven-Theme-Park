@@ -26,6 +26,7 @@ final class ParkScene: SKScene {
     private let worldNode = SKNode()
     private let tileLayer = SKNode()
     private let sceneryLayer = SKNode()
+    private let trainLayer = SKNode()
     private let buildingLayer = SKNode()
     private let guestLayer = SKNode()
     private let overlayLayer = SKNode()
@@ -56,6 +57,8 @@ final class ParkScene: SKScene {
     private var litterNodes: [GridCoord: SKSpriteNode] = [:]
     private var litterIntensity: [GridCoord: Int] = [:]
     private var renderedLitterGeneration = -1
+    private var trainNodes: [SKSpriteNode] = []
+    private var renderedTrackGeneration = -1
     private var ghostNode: SKSpriteNode?
     private var selectionNode: SKSpriteNode?
 
@@ -81,6 +84,7 @@ final class ParkScene: SKScene {
         if worldNode.parent == nil {
             worldNode.addChild(tileLayer)
             worldNode.addChild(sceneryLayer)
+            worldNode.addChild(trainLayer)
             worldNode.addChild(buildingLayer)
             worldNode.addChild(overlayLayer)
             worldNode.addChild(guestLayer)
@@ -89,6 +93,9 @@ final class ParkScene: SKScene {
 
         tileLayer.zPosition = 0
         sceneryLayer.zPosition = 5
+        // Between the scenery and the buildings, so a train passes behind a
+        // station canopy the way it would in life.
+        trainLayer.zPosition = 7
         buildingLayer.zPosition = 10
         overlayLayer.zPosition = 20
         guestLayer.zPosition = 30
@@ -312,6 +319,7 @@ final class ParkScene: SKScene {
         syncTiles(state: controller.state)
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
+        syncTrains(state: controller.state)
         syncBuildings(state: controller.state)
         syncEntranceSign(state: controller.state)
         syncGuests(state: controller.state)
@@ -334,8 +342,7 @@ final class ParkScene: SKScene {
         for index in 0..<state.map.tileCount {
             let coord = state.map.coord(atLinearIndex: index)
             guard let tile = state.map.tile(at: coord) else { continue }
-            tileNodes[index].texture = SpriteFactory.tileTexture(colour: colour(for: tile, at: coord),
-                                                                 side: Self.tileSide)
+            tileNodes[index].texture = texture(for: tile, at: coord, map: state.map)
         }
     }
 
@@ -343,9 +350,9 @@ final class ParkScene: SKScene {
         tileNodes.reserveCapacity(state.map.tileCount)
         for index in 0..<state.map.tileCount {
             let coord = state.map.coord(atLinearIndex: index)
-            let node = SKSpriteNode(texture: SpriteFactory.tileTexture(
-                colour: colour(for: state.map.tile(at: coord) ?? Tile(), at: coord),
-                side: Self.tileSide))
+            let node = SKSpriteNode(texture: texture(for: state.map.tile(at: coord) ?? Tile(),
+                                                     at: coord,
+                                                     map: state.map))
             node.size = CGSize(width: Self.tileSide, height: Self.tileSide)
             node.position = CGPoint(x: (CGFloat(coord.x) + 0.5) * Self.tileSide,
                                     y: (CGFloat(coord.y) + 0.5) * Self.tileSide)
@@ -354,8 +361,72 @@ final class ParkScene: SKScene {
         }
     }
 
+    /// Railway is drawn from what it joins on to, so a straight run reads as
+    /// a straight run. Everything else is a flat colour.
+    private func texture(for tile: Tile, at coord: GridCoord, map: ParkMap) -> SKTexture {
+        guard tile.terrain == .track else {
+            return SpriteFactory.tileTexture(colour: colour(for: tile, at: coord),
+                                             side: Self.tileSide)
+        }
+
+        // North, east, south, west.
+        let offsets: [(Int, GridCoord)] = [
+            (1, GridCoord(coord.x, coord.y + 1)),
+            (2, GridCoord(coord.x + 1, coord.y)),
+            (4, GridCoord(coord.x, coord.y - 1)),
+            (8, GridCoord(coord.x - 1, coord.y))
+        ]
+        var connections = 0
+        for (bit, neighbour) in offsets where map.tile(at: neighbour)?.terrain == .track {
+            connections |= bit
+        }
+        return SpriteFactory.trackTileTexture(connections: connections, side: Self.tileSide)
+    }
+
     private func colour(for tile: Tile, at coord: GridCoord) -> UIColor {
         ParkPalette.colour(for: tile.terrain, alternate: (coord.x + coord.y) % 2 != 0)
+    }
+
+    // MARK: - Trains
+
+    /// Runs a train round each length of track the player has laid.
+    ///
+    /// Rebuilt whenever the map changes rather than nudged: track is edited a
+    /// tile at a time and a half-updated route would send a locomotive across
+    /// the grass.
+    private func syncTrains(state: GameState) {
+        guard state.map.generation != renderedTrackGeneration else { return }
+        renderedTrackGeneration = state.map.generation
+
+        for node in trainNodes { node.removeFromParent() }
+        trainNodes.removeAll()
+
+        let carSize = CGSize(width: Self.tileSide * 0.86, height: Self.tileSide * 0.46)
+
+        for route in state.trackNetwork.routes where route.tiles.count > 2 {
+            let points = route.tiles.map {
+                CGPoint(x: (CGFloat($0.x) + 0.5) * Self.tileSide,
+                        y: (CGFloat($0.y) + 0.5) * Self.tileSide)
+            }
+            // A tile a second or so, which reads as a park train rather than
+            // as something anybody would want to ride for the speed.
+            let duration = Double(points.count) * 0.85
+
+            // A locomotive and two carriages, each starting one tile further
+            // back round the same route, so the train bends through corners
+            // instead of pivoting as one rigid block.
+            for carriage in 0..<3 {
+                let offset = (points.count - carriage) % points.count
+                let ordered = Array(points[offset...] + points[..<offset])
+
+                let node = SKSpriteNode(texture: SpriteFactory.trainCarTexture(
+                    isLocomotive: carriage == 0, size: carSize))
+                node.size = carSize
+                trainLayer.addChild(node)
+                PathMotion.drive(node, around: ordered, duration: duration)
+                trainNodes.append(node)
+            }
+        }
     }
 
     // MARK: - Buildings

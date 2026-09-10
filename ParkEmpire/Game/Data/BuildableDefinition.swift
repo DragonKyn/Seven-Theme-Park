@@ -6,6 +6,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
     case attraction
     case shop
     case facility
+    case transport
     case scenery
 
     var id: String { rawValue }
@@ -16,6 +17,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "Rides"
         case .shop: return "Food & Retail"
         case .facility: return "Guest Services"
+        case .transport: return "Transport"
         case .scenery: return "Scenery"
         }
     }
@@ -26,6 +28,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .attraction: return "sparkles"
         case .shop: return "cart"
         case .facility: return "figure.stand"
+        case .transport: return "tram.fill"
         case .scenery: return "tree.fill"
         }
     }
@@ -43,6 +46,8 @@ protocol BuildableDefinition {
     var unlockLevel: Int { get }
     /// Whether the placed object must touch a walkable tile to function.
     var requiresPathAccess: Bool { get }
+    /// Whether it also has to sit against a railway to be any use.
+    var requiresTrackAccess: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
     /// terrain rather than an object, and there is nothing to draw.
     var previewAppearance: BuildingAppearance? { get }
@@ -50,6 +55,7 @@ protocol BuildableDefinition {
 
 extension BuildableDefinition {
     var requiresPathAccess: Bool { true }
+    var requiresTrackAccess: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }
 
