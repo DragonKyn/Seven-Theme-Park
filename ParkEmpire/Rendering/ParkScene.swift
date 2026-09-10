@@ -11,6 +11,10 @@ final class ParkScene: SKScene {
 
     weak var controller: GameController?
 
+    /// A presentation scene draws the park but takes no input and drifts the
+    /// camera by itself. Used for the park running behind the main menu.
+    var isInteractive = true
+
     /// Points per tile at 1:1 zoom.
     static let tileSide: CGFloat = 32
 
@@ -75,10 +79,31 @@ final class ParkScene: SKScene {
             addChild(cameraNode)
         }
         camera = cameraNode
-        cameraNode.setScale(1.0)
-        centreCameraOnEntrance()
 
-        installGestures(on: view)
+        if isInteractive {
+            cameraNode.setScale(1.0)
+            centreCameraOnEntrance()
+            installGestures(on: view)
+        } else {
+            startCameraDrift()
+        }
+    }
+
+    /// Slowly sweeps the park so the menu background is never quite still.
+    private func startCameraDrift() {
+        guard let state = controller?.state else { return }
+        cameraNode.setScale(0.78)
+
+        let centreX = CGFloat(state.map.width) / 2 * Self.tileSide
+        let low = CGPoint(x: centreX, y: Self.tileSide * 5)
+        let high = CGPoint(x: centreX, y: Self.tileSide * 15)
+
+        cameraNode.position = low
+        let up = SKAction.move(to: high, duration: 26)
+        let down = SKAction.move(to: low, duration: 26)
+        up.timingMode = .easeInEaseOut
+        down.timingMode = .easeInEaseOut
+        cameraNode.run(.repeatForever(.sequence([up, down])))
     }
 
     private func centreCameraOnEntrance() {
@@ -254,15 +279,17 @@ final class ParkScene: SKScene {
 
         controller.advance(realDelta: delta)
 
-        updateGestureModes()
+        if isInteractive { updateGestureModes() }
         syncTiles(state: controller.state)
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
         syncBuildings(state: controller.state)
         syncGuests(state: controller.state)
         syncStaff(state: controller.state)
-        syncGhost(controller: controller)
-        syncSelection(controller: controller)
+        if isInteractive {
+            syncGhost(controller: controller)
+            syncSelection(controller: controller)
+        }
     }
 
     // MARK: - Tiles

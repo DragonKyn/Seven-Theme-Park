@@ -25,6 +25,9 @@ final class GameController: ObservableObject {
     private let engine = SimulationEngine()
     private let saveService: SaveGameService
     private(set) var slot: Int
+    /// A demo controller drives the park behind the main menu. It simulates
+    /// normally but never writes a save, and nothing routes input to it.
+    let isDemo: Bool
 
     private var uiRefreshAccumulator: Double = 0
     private var autosaveAccumulator: Double = 0
@@ -32,11 +35,20 @@ final class GameController: ObservableObject {
 
     // MARK: - Init
 
-    init(state: GameState, slot: Int, saveService: SaveGameService = SaveGameService()) {
+    init(state: GameState,
+         slot: Int,
+         saveService: SaveGameService = SaveGameService(),
+         isDemo: Bool = false) {
         self.state = state
         self.slot = slot
         self.saveService = saveService
+        self.isDemo = isDemo
         refreshUI()
+    }
+
+    /// The park that runs behind the main menu.
+    static func demo() -> GameController {
+        GameController(state: DemoPark.makeState(), slot: -1, isDemo: true)
     }
 
     convenience init(newParkNamed name: String, slot: Int, saveService: SaveGameService = SaveGameService()) {
@@ -55,7 +67,7 @@ final class GameController: ObservableObject {
             refreshUI()
         }
 
-        guard ticks > 0 else { return }
+        guard ticks > 0, !isDemo else { return }
         autosaveAccumulator += Double(ticks) * Balance.tickDuration
         if autosaveAccumulator >= Balance.autosaveInterval {
             autosaveAccumulator = 0

@@ -1,3 +1,4 @@
+import SpriteKit
 import SwiftUI
 
 struct MainMenuView: View {
@@ -5,11 +6,18 @@ struct MainMenuView: View {
     @State private var showingNewGame = false
     @State private var newParkName = ""
     @State private var selectedSlot = 0
+    @State private var demo: DemoParkBackdrop?
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.20, green: 0.44, blue: 0.62),
-                                    Color(red: 0.36, green: 0.66, blue: 0.45)],
+            backdrop
+                .ignoresSafeArea()
+
+            // Darkened towards the top and bottom so the menu text stays
+            // readable over whatever the park happens to be doing.
+            LinearGradient(colors: [Color.black.opacity(0.62),
+                                    Color.black.opacity(0.18),
+                                    Color.black.opacity(0.70)],
                            startPoint: .top,
                            endPoint: .bottom)
                 .ignoresSafeArea()
@@ -78,7 +86,23 @@ struct MainMenuView: View {
             }
             .presentationDetents([.medium])
         }
-        .onAppear { router.refreshSlots() }
+        .onAppear {
+            router.refreshSlots()
+            if demo == nil { demo = DemoParkBackdrop() }
+        }
+    }
+
+    @ViewBuilder
+    private var backdrop: some View {
+        if let demo {
+            SpriteView(scene: demo.scene, options: [.ignoresSiblingOrder])
+                .allowsHitTesting(false)
+        } else {
+            LinearGradient(colors: [Color(red: 0.20, green: 0.44, blue: 0.62),
+                                    Color(red: 0.36, green: 0.66, blue: 0.45)],
+                           startPoint: .top,
+                           endPoint: .bottom)
+        }
     }
 
     private func firstEmptySlot() -> Int {

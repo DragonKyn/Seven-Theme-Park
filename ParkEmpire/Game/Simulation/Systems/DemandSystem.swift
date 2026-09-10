@@ -54,6 +54,17 @@ final class DemandSystem {
         return SimMath.clamp(appeal * ratingFactor * priceFactor, 0, Balance.maxArrivalsPerMinute)
     }
 
+    /// Admits guests immediately, bypassing the demand model.
+    ///
+    /// Only used to populate the demo park behind the main menu: waiting for
+    /// arrivals would take ten simulated minutes to draw a crowd, which is far
+    /// too much work to do while the menu is opening.
+    func seed(count: Int, state: GameState) {
+        for _ in 0..<count where state.guestCount < Balance.maxGuests {
+            admitGuest(state: state)
+        }
+    }
+
     // MARK: - Admission
 
     private func admitGuest(state: GameState) {
