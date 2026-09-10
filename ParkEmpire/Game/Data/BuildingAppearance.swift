@@ -88,7 +88,9 @@ enum BuildingMotif: String, Codable {
         case .carousel, .ferrisWheel, .teacups: return .spin
         case .swingBoat: return .swing
         case .dropTower: return .rise
-        case .coaster, .goKarts, .logFlume, .bumperCars: return .circuit
+        case .coaster, .logFlume: return .circuit
+        case .goKarts: return .race
+        case .bumperCars: return .bumper
         case .slingshot: return .launch
         case .carpetSlide: return .slide
         case .hauntedHouse: return .hover
@@ -115,6 +117,10 @@ enum BuildingMotion: String, Codable {
     case slide
     /// Floats gently around one spot, never leaving it.
     case hover
+    /// Several vehicles sharing a circuit at different speeds.
+    case race
+    /// Several vehicles crossing an arena and colliding.
+    case bumper
 }
 
 /// Named colours the park is drawn from. Naming them rather than storing raw

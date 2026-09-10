@@ -9,8 +9,9 @@ final class BuildingNode: SKSpriteNode {
     private let badgeLabel = SKLabelNode(fontNamed: "HelveticaNeue-Bold")
     private let badgeBackground = SKSpriteNode()
     private var badgeColour: UIColor = ParkPalette.badge
-    /// The one part of the building that moves, if it has one.
-    private var motionNode: SKSpriteNode?
+    /// The parts of the building that move. Most rides have one; a race
+    /// track and a bumper car arena have several.
+    private var motionNodes: [SKSpriteNode] = []
 
     /// A nil `title` means no label at all, which is what scenery wants: a
     /// park with forty captioned trees is unreadable.
@@ -78,20 +79,38 @@ final class BuildingNode: SKSpriteNode {
 
     // MARK: - Motion
 
-    /// Adds the moving part for this motif and starts it. Called once, when
+    /// Adds the moving parts for this motif and starts them. Called once, when
     /// the node is created.
+    ///
+    /// Most rides have a single moving part. A race track and a bumper car
+    /// arena have several, which is the whole point of them: one kart going
+    /// round on its own is a test track, not a race.
     func configureMotion(appearance: BuildingAppearance, buildingSize: CGSize) {
-        guard motionNode == nil,
-              let texture = BuildingArtwork.motionTexture(for: appearance, size: buildingSize)
-        else { return }
+        guard motionNodes.isEmpty else { return }
+        let motion = appearance.motif.motion
+        guard motion != .none else { return }
 
         let partSize = BuildingArtwork.motionPartSize(for: appearance.motif,
                                                       buildingSize: buildingSize)
-        let node = SKSpriteNode(texture: texture)
-        node.size = partSize
-        node.zPosition = 1
 
-        switch appearance.motif.motion {
+        for index in 0..<BuildingArtwork.motionPartCount(for: appearance.motif) {
+            guard let texture = BuildingArtwork.motionTexture(for: appearance,
+                                                              size: buildingSize,
+                                                              variant: index) else { continue }
+            let node = SKSpriteNode(texture: texture)
+            node.size = partSize
+            node.zPosition = 1
+            apply(motion, to: node, index: index, buildingSize: buildingSize)
+            addChild(node)
+            motionNodes.append(node)
+        }
+    }
+
+    private func apply(_ motion: BuildingMotion,
+                       to node: SKSpriteNode,
+                       index: Int,
+                       buildingSize: CGSize) {
+        switch motion {
         case .none:
             return
 
@@ -134,22 +153,7 @@ final class BuildingNode: SKSpriteNode {
             node.run(.repeatForever(.sequence([up, down])))
 
         case .launch:
-            // Held at the bottom, fired, then bouncing to a stop. The long
-            // wait afterwards is what sells how violent the launch was.
-            let low = -buildingSize.height * 0.24
-            let high = buildingSize.height * 0.30
-            node.position = CGPoint(x: 0, y: low)
-            let fire = SKAction.moveTo(y: high, duration: 0.45)
-            fire.timingMode = .easeOut
-            let fall = SKAction.moveTo(y: low, duration: 0.75)
-            fall.timingMode = .easeIn
-            let settle = SKAction.moveTo(y: low + buildingSize.height * 0.10, duration: 0.3)
-            settle.timingMode = .easeOut
-            node.run(.repeatForever(.sequence([.wait(forDuration: 2.2),
-                                               fire,
-                                               fall,
-                                               settle,
-                                               .moveTo(y: low, duration: 0.3)])))
+            applyLaunch(to: node, buildingSize: buildingSize)
 
         case .slide:
             // Down one lane and straight back to the top, because there is
@@ -178,30 +182,172 @@ final class BuildingNode: SKSpriteNode {
                                                .fadeAlpha(to: 1.0, duration: 1.3)])))
 
         case .circuit:
-            // The track is drawn in texture space with y downward; the scene
-            // has y upward, so the oval is rebuilt here rather than reused.
-            let track = BuildingArtwork.trackRect(in: buildingSize)
-            let path = CGPath(ellipseIn: CGRect(x: track.minX - buildingSize.width / 2,
-                                                y: track.minY - buildingSize.height / 2,
-                                                width: track.width,
-                                                height: track.height),
-                              transform: nil)
+            let path = Self.ovalPath(BuildingArtwork.trackRect(in: buildingSize),
+                                     in: buildingSize,
+                                     inset: 0,
+                                     startAngle: 0)
             node.run(.repeatForever(.follow(path,
                                             asOffset: false,
                                             orientToPath: true,
                                             duration: 5.5)))
-        }
 
-        addChild(node)
-        motionNode = node
+        case .race:
+            applyRace(to: node, index: index, buildingSize: buildingSize)
+
+        case .bumper:
+            applyBumper(to: node, index: index, buildingSize: buildingSize)
+        }
     }
 
-    /// Freezes the moving part. A ride that has stopped moving is the clearest
-    /// signal that it is closed or broken.
+    // MARK: - Multi-part motions
+
+    /// Each kart gets its own lane and its own lap time, so they string out,
+    /// close up and lap one another instead of orbiting in fixed formation.
+    private func applyRace(to node: SKSpriteNode, index: Int, buildingSize: CGSize) {
+        let lanes: [CGFloat] = [0, 0.055, -0.045, 0.11]
+        let lapTimes: [TimeInterval] = [4.1, 4.6, 3.8, 5.0]
+        // Spread round the oval rather than all leaving the line together,
+        // because a race that is always restarting reads as a queue.
+        let startAngles: [CGFloat] = [0, 1.9, 3.4, 4.9]
+
+        let slot = index % lanes.count
+        let path = Self.ovalPath(BuildingArtwork.trackRect(in: buildingSize),
+                                 in: buildingSize,
+                                 inset: lanes[slot] * min(buildingSize.width, buildingSize.height),
+                                 startAngle: startAngles[slot])
+
+        node.run(.repeatForever(.follow(path,
+                                        asOffset: false,
+                                        orientToPath: true,
+                                        duration: lapTimes[slot])))
+    }
+
+    /// Cars cross the arena on overlapping loops at different speeds, so they
+    /// keep meeting in the middle. The jolt is what sells the collision: the
+    /// paths only have to bring them together at roughly the right moment.
+    private func applyBumper(to node: SKSpriteNode, index: Int, buildingSize: CGSize) {
+        let arena = CGSize(width: buildingSize.width * 0.62,
+                           height: buildingSize.height * 0.52)
+
+        // Fixed figure-of-eight loops rather than random walks, so the same
+        // arena always looks the same and nothing has to be simulated.
+        let loops: [[CGPoint]] = [
+            [CGPoint(x: -0.5, y: -0.5), CGPoint(x: 0.4, y: 0.1), CGPoint(x: -0.2, y: 0.5), CGPoint(x: 0.5, y: -0.3)],
+            [CGPoint(x: 0.5, y: 0.4), CGPoint(x: -0.4, y: -0.2), CGPoint(x: 0.1, y: -0.5), CGPoint(x: -0.5, y: 0.3)],
+            [CGPoint(x: -0.1, y: 0.5), CGPoint(x: 0.5, y: -0.4), CGPoint(x: -0.5, y: 0.0), CGPoint(x: 0.2, y: 0.4)],
+            [CGPoint(x: 0.3, y: -0.5), CGPoint(x: -0.5, y: 0.4), CGPoint(x: 0.4, y: 0.3), CGPoint(x: -0.3, y: -0.3)],
+            [CGPoint(x: -0.4, y: 0.2), CGPoint(x: 0.2, y: -0.4), CGPoint(x: 0.5, y: 0.2), CGPoint(x: -0.2, y: -0.1)]
+        ]
+        let lapTimes: [TimeInterval] = [5.4, 6.2, 4.8, 6.8, 5.9]
+        let slot = index % loops.count
+
+        let points = loops[slot].map { CGPoint(x: $0.x * arena.width, y: $0.y * arena.height) }
+        node.position = points[0]
+
+        let path = CGMutablePath()
+        path.move(to: points[0])
+        for point in points.dropFirst() { path.addLine(to: point) }
+        path.closeSubpath()
+
+        node.run(.repeatForever(.follow(path,
+                                        asOffset: false,
+                                        orientToPath: true,
+                                        duration: lapTimes[slot])))
+
+        // A short recoil on its own clock. Out of step with the driving, which
+        // is what stops five cars jolting in unison.
+        let jolt = SKAction.sequence([.scale(to: 1.18, duration: 0.07),
+                                      .scale(to: 1.0, duration: 0.13)])
+        node.run(.repeatForever(.sequence([.wait(forDuration: 1.4 + Double(slot) * 0.55),
+                                           jolt])))
+    }
+
+    /// Winched down, held, then fired well clear of the masts, spinning, with
+    /// a couple of diminishing bounces on the way back to the pad.
+    private func applyLaunch(to node: SKSpriteNode, buildingSize: CGSize) {
+        let pad = -buildingSize.height * 0.18
+        let charged = -buildingSize.height * 0.38
+        let apex = buildingSize.height * 1.05
+        let firstBounce = buildingSize.height * 0.34
+        let secondBounce = buildingSize.height * 0.08
+
+        node.position = CGPoint(x: 0, y: pad)
+
+        let winch = SKAction.moveTo(y: charged, duration: 1.1)
+        winch.timingMode = .easeInEaseOut
+        // A held breath at full stretch, which is the whole appeal of the ride.
+        let strain = SKAction.sequence([.moveBy(x: buildingSize.width * 0.012, y: 0, duration: 0.05),
+                                        .moveBy(x: -buildingSize.width * 0.024, y: 0, duration: 0.05),
+                                        .moveBy(x: buildingSize.width * 0.012, y: 0, duration: 0.05)])
+
+        let fire = SKAction.moveTo(y: apex, duration: 0.42)
+        fire.timingMode = .easeOut
+        let spin = SKAction.rotate(byAngle: .pi * 2, duration: 0.42)
+        let launch = SKAction.group([fire, spin])
+
+        let fall = SKAction.moveTo(y: secondBounce, duration: 0.52)
+        fall.timingMode = .easeIn
+        let bounceUp = SKAction.moveTo(y: firstBounce, duration: 0.34)
+        bounceUp.timingMode = .easeOut
+        let bounceDown = SKAction.moveTo(y: pad, duration: 0.38)
+        bounceDown.timingMode = .easeIn
+        let settleUp = SKAction.moveTo(y: secondBounce, duration: 0.22)
+        settleUp.timingMode = .easeOut
+        let settleDown = SKAction.moveTo(y: pad, duration: 0.24)
+        settleDown.timingMode = .easeIn
+
+        node.run(.repeatForever(.sequence([.wait(forDuration: 1.3),
+                                           winch,
+                                           .repeat(strain, count: 3),
+                                           .wait(forDuration: 0.45),
+                                           launch,
+                                           .wait(forDuration: 0.10),
+                                           fall,
+                                           bounceUp,
+                                           bounceDown,
+                                           settleUp,
+                                           settleDown,
+                                           .wait(forDuration: 1.2)])))
+    }
+
+    /// An oval in node space, starting at `startAngle` so several sprites can
+    /// share one track without sharing a starting position.
+    ///
+    /// Built from segments rather than `CGPath(ellipseIn:)` because that
+    /// always begins at the same point, which would park every kart on the
+    /// start line together.
+    private static func ovalPath(_ trackRect: CGRect,
+                                 in buildingSize: CGSize,
+                                 inset: CGFloat,
+                                 startAngle: CGFloat) -> CGPath {
+        let radiusX = max(1, trackRect.width / 2 - inset)
+        let radiusY = max(1, trackRect.height / 2 - inset)
+        // The track is drawn in texture space with y downward; the scene has y
+        // upward. The oval is centred, so only the origin has to move.
+        let centre = CGPoint(x: trackRect.midX - buildingSize.width / 2,
+                             y: trackRect.midY - buildingSize.height / 2)
+
+        let path = CGMutablePath()
+        let steps = 48
+        for step in 0...steps {
+            let angle = startAngle + CGFloat(step) / CGFloat(steps) * .pi * 2
+            let point = CGPoint(x: centre.x + cos(angle) * radiusX,
+                                y: centre.y + sin(angle) * radiusY)
+            if step == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+
+    /// Freezes every moving part. A ride that has stopped moving is the
+    /// clearest signal that it is closed or broken.
     func setMotionRunning(_ running: Bool) {
-        guard let motionNode else { return }
-        if motionNode.isPaused == running {
-            motionNode.isPaused = !running
+        for node in motionNodes where node.isPaused == running {
+            node.isPaused = !running
         }
     }
 }

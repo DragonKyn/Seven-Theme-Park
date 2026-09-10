@@ -81,13 +81,27 @@ enum BuildingArtwork {
 
     /// The moving part, drawn in its own texture so it can be animated
     /// independently. Nil for anything that does not move.
-    static func motionTexture(for appearance: BuildingAppearance, size: CGSize) -> SKTexture? {
+    /// How many moving parts a motif has. A track with one vehicle on it is a
+    /// test track; a bumper car arena with one car in it has nothing to bump.
+    static func motionPartCount(for motif: BuildingMotif) -> Int {
+        switch motif {
+        case .goKarts: return 4
+        case .bumperCars: return 5
+        default: return 1
+        }
+    }
+
+    ///  picks between vehicles where a motif has several, so no two
+    /// karts in a race are the same colour.
+    static func motionTexture(for appearance: BuildingAppearance,
+                              size: CGSize,
+                              variant: Int = 0) -> SKTexture? {
         guard appearance.motif.motion != .none else { return nil }
 
         let partSize = motionPartSize(for: appearance.motif, buildingSize: size)
         let key = "motion-\(appearance.motif.rawValue)-\(appearance.primary.rawValue)"
             + "-\(appearance.secondary.rawValue)-\(appearance.accent.rawValue)"
-            + "-\(Int(partSize.width))x\(Int(partSize.height))"
+            + "-\(variant)-\(Int(partSize.width))x\(Int(partSize.height))"
 
         return SpriteFactory.texture(key: key, size: partSize) { context, size in
             let primary = ParkPalette.colour(appearance.primary)
@@ -101,7 +115,8 @@ enum BuildingArtwork {
             case .coaster:   drawTrain(context, size, primary, secondary, accent)
             case .ferrisWheel: drawWheel(context, size, primary, secondary, accent)
             case .teacups:   drawCups(context, size, primary, secondary, accent)
-            case .bumperCars, .goKarts: drawCar(context, size, primary, secondary, accent)
+            case .goKarts: drawKart(context, size, variant)
+            case .bumperCars: drawBumperCar(context, size, variant)
             case .logFlume:  drawLog(context, size, primary, secondary, accent)
             case .slingshot: drawCapsule(context, size, primary, secondary, accent)
             case .carpetSlide: drawMat(context, size, primary, secondary, accent)
@@ -128,8 +143,10 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.82, height: shortest * 0.82)
         case .teacups:
             return CGSize(width: shortest * 0.62, height: shortest * 0.62)
-        case .bumperCars, .goKarts:
-            return CGSize(width: shortest * 0.24, height: shortest * 0.16)
+        case .goKarts:
+            return CGSize(width: shortest * 0.21, height: shortest * 0.13)
+        case .bumperCars:
+            return CGSize(width: shortest * 0.22, height: shortest * 0.18)
         case .logFlume:
             return CGSize(width: shortest * 0.28, height: shortest * 0.15)
         case .slingshot:
@@ -537,16 +554,78 @@ enum BuildingArtwork {
                                        width: pit.width, height: pit.height * 0.3)), accent)
     }
 
-    private static func drawCar(_ context: CGContext,
-                                _ size: CGSize,
-                                _ primary: UIColor,
-                                _ secondary: UIColor,
-                                _ accent: UIColor) {
-        let body = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
-        fill(UIBezierPath(roundedRect: body, cornerRadius: body.height * 0.35), accent)
-        let cockpit = CGRect(x: body.minX + body.width * 0.30, y: body.minY + body.height * 0.22,
-                             width: body.width * 0.34, height: body.height * 0.56)
-        fill(UIBezierPath(ovalIn: cockpit), ParkPalette.colour(.charcoal))
+    /// Livery for the vehicles a motif has several of. Fixed rather than taken
+    /// from the building's own colours, because four karts in four shades of
+    /// the same colour is not a race.
+    private static let liveries: [ParkColour] = [.red, .blue, .yellow, .green, .violet]
+
+    private static func livery(_ variant: Int) -> UIColor {
+        ParkPalette.colour(liveries[variant % liveries.count])
+    }
+
+    /// A kart seen from above, nose to the right, because the sprite is turned
+    /// to face the way it is travelling.
+    private static func drawKart(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let colour = livery(variant)
+        let tyre = ParkPalette.colour(.charcoal)
+
+        // Tyres first, so the body sits over their inner edge.
+        let tyreWidth = size.width * 0.22
+        let tyreHeight = size.height * 0.26
+        for x in [size.width * 0.14, size.width * 0.66] {
+            for y in [-size.height * 0.02, size.height * 0.76] {
+                fill(UIBezierPath(roundedRect: CGRect(x: x, y: y,
+                                                      width: tyreWidth, height: tyreHeight),
+                                  cornerRadius: tyreHeight * 0.4), tyre)
+            }
+        }
+
+        // Chassis: wide at the back, tapering to a point at the nose.
+        let body = UIBezierPath()
+        body.move(to: CGPoint(x: size.width * 0.06, y: size.height * 0.26))
+        body.addLine(to: CGPoint(x: size.width * 0.60, y: size.height * 0.18))
+        body.addQuadCurve(to: CGPoint(x: size.width * 0.60, y: size.height * 0.82),
+                          controlPoint: CGPoint(x: size.width * 1.02, y: size.height * 0.50))
+        body.addLine(to: CGPoint(x: size.width * 0.06, y: size.height * 0.74))
+        body.close()
+        fill(body, colour)
+
+        // Driver, and the roll bar behind them.
+        let helmet = size.height * 0.34
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.34,
+                                         y: size.height * 0.5 - helmet / 2,
+                                         width: helmet, height: helmet)),
+             ParkPalette.colour(.cream))
+
+        let bar = CGRect(x: size.width * 0.16, y: size.height * 0.28,
+                         width: size.width * 0.09, height: size.height * 0.44)
+        fill(UIBezierPath(roundedRect: bar, cornerRadius: bar.width * 0.4), tyre)
+    }
+
+    /// A bumper car seen from above: a round shell inside a fat rubber ring,
+    /// which is the only part of it that ever actually touches anything.
+    private static func drawBumperCar(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let colour = livery(variant)
+
+        let bumper = CGRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        fill(UIBezierPath(ovalIn: bumper), ParkPalette.colour(.charcoal))
+
+        let shell = bumper.insetBy(dx: bumper.width * 0.16, dy: bumper.height * 0.18)
+        fill(UIBezierPath(ovalIn: shell), colour)
+
+        // Driver, set slightly back from the front.
+        let head = min(shell.width, shell.height) * 0.44
+        fill(UIBezierPath(ovalIn: CGRect(x: shell.midX - head * 0.75,
+                                         y: shell.midY - head / 2,
+                                         width: head, height: head)),
+             ParkPalette.colour(.cream))
+
+        // Pole to the ceiling grid, drawn as a bright cap at the back.
+        let pole = min(shell.width, shell.height) * 0.20
+        fill(UIBezierPath(ovalIn: CGRect(x: shell.minX + shell.width * 0.06,
+                                         y: shell.midY - pole / 2,
+                                         width: pole, height: pole)),
+             ParkPalette.colour(.amber))
     }
 
     private static func drawLogFlumeBase(_ context: CGContext,
