@@ -54,6 +54,9 @@ enum DemoPark {
         place(state, "ride.pirateship", at: GridCoord(spine + 2, 8))
         place(state, "ride.droptower", at: GridCoord(spine - 5, 15))
         place(state, "ride.minicoaster", at: GridCoord(spine + 1, 15))
+        place(state, "ride.ferriswheel", at: GridCoord(spine - 10, 8))
+        place(state, "ride.hauntedhouse", at: GridCoord(spine - 10, 15))
+        place(state, "ride.gokarts.small", at: GridCoord(spine + 7, 8))
 
         place(state, "shop.burger", at: GridCoord(spine - 3, 5))
         place(state, "shop.drinks", at: GridCoord(spine + 2, 5))
@@ -102,6 +105,14 @@ enum DemoPark {
 
         place(state, "scenery.topiary", at: GridCoord(spine - 1, 5))
         place(state, "scenery.topiary", at: GridCoord(spine + 1, 5))
+
+        // A pond beside the entrance walk. Water is terrain, so it goes down a
+        // tile at a time the same way a walkway does.
+        for x in (spine + 3)...(spine + 5) {
+            for y in 1...3 {
+                place(state, "terrain.water", at: GridCoord(x, y))
+            }
+        }
     }
 
     /// Places by definition id. The layout is hand-written against a known

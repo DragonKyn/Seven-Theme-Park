@@ -4,7 +4,7 @@ An original theme park management simulation for iPhone, built with Swift,
 SwiftUI and SpriteKit. Working title — the name lives in one place
 (`ParkEmpire/App/AppInfo.swift`) so it can be changed without touching the UI.
 
-## Status: Phase 3 in progress (artwork, animation and scenery)
+## Status: Phase 4 in progress (guests, upgrades, more rides)
 
 Working today:
 
@@ -12,8 +12,9 @@ Working today:
   live demo park that runs the real simulation behind it
 - 30×30 tile park with an entrance and a short starting walkway
 - SpriteKit map with pinch-to-zoom, drag-to-pan, tap-to-inspect
-- Build menu: walkways, four rides, six shops and stalls, restroom, bench,
-  bin, and seven pieces of scenery, each with a thumbnail of its real artwork
+- Build menu: walkways, water, fifteen rides, six shops and stalls, restroom,
+  bench, bin, and seven pieces of scenery, each with a thumbnail of its real
+  artwork
 - Placement preview with valid/invalid feedback, path painting, demolition
   (with a confirmation for anything expensive)
 - Guests that arrive based on real demand, pathfind, queue, ride, eat, drink,
@@ -64,6 +65,32 @@ Added in Phase 3 so far:
 - **Safer map gestures.** One finger always moves the camera. Laying a run of
   walkway is behind an explicit Draw toggle, so dragging to look around can
   never place anything by accident.
+
+Added in Phase 4 so far:
+
+- **Eleven more rides.** Spinning teacups, bumper cars, a carpet slide, three
+  sizes of go-kart track, a haunted manor, a Ferris wheel, a slingshot, a log
+  flume and a large coaster. The big ones are deliberately land-hungry: a
+  Grand Prix circuit costs six by eight tiles of park.
+- **Water.** Terrain rather than an object, so it is drawn by dragging like a
+  walkway and refunded like one. Nothing crosses it and nothing builds on it,
+  and it makes the ground around it prettier than anything at the price.
+- **Upgrades.** Four tracks apply to every ride rather than being written per
+  attraction: extra cars, faster loading, reinforced parts, and theming, which
+  both excites guests and decorates the ground around the ride. An upgraded
+  ride reports itself through the definition it already had, so every system
+  picked the change up without being told about upgrades.
+- **Staff training.** One track, three levels: faster on their feet, faster at
+  the job, and dearer to keep.
+- **Guests who look like people.** Shirt, hair, skin tone and headwear combine
+  into far more variety than a set of fixed sprites would, and lean on age.
+  Mood moved to a coloured ring behind the figure so it still reads when a
+  guest is six pixels tall.
+- **Thought bubbles.** A fresh thought pops a bubble showing what it is about,
+  tinted by mood. Only recent thoughts qualify and ten show at once, so a park
+  full of complaints reads as trouble without becoming noise.
+- **A lighter interface.** Panels are a lit blue-slate gradient rather than
+  near-black, and cash has its own gold capsule with the day's profit under it.
 
 Not yet built (later phases, by design): reputation tiers, unlock progression,
 objectives, sound, tutorial, custom coaster building.
@@ -121,7 +148,8 @@ ParkEmpire/
       SimulationEngine.swift   fixed-tick loop
     World/        GridCoord, Tile, ParkMap, placement rules
     Data/         Definitions and the content catalogue, Balance constants,
-                  BuildingAppearance (what a thing looks like, as data)
+                  BuildingAppearance and GuestAppearance (what things look
+                  like, as data), UpgradeDefinition
     State/        GameState, ledger, clock, alerts, UI snapshots
     GameController.swift       the only thing the UI talks to
     DemoPark.swift             the park that runs behind the main menu
@@ -134,9 +162,12 @@ Rules the code follows:
 
 - Game rules are data (`GameContent`, `Balance`), not switch statements. Adding
   a ride is a new `AttractionDefinition`, not new simulation code.
-- Appearance is data too. A definition names a motif and three colour roles;
-  only the rendering layer knows what those mean in pixels, so the content
-  catalogue never imports UIKit.
+- Appearance is data too. A definition names a motif and three colour roles,
+  and a guest names a shirt, hair, skin tone and hat; only the rendering layer
+  knows what those mean in pixels, so the content catalogue never imports UIKit.
+- Upgrades change a definition rather than being read separately. A ride hands
+  out its upgraded stats through the same property every system already read,
+  which is why adding upgrades touched no simulation system.
 - The simulation runs on a fixed 0.1s tick; rendering runs at the display rate.
   Game speed multiplies ticks, so behaviour is identical at 1x and 4x.
 - SwiftUI observes snapshot structs published ~5 times a second, never the
