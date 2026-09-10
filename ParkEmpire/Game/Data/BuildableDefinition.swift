@@ -43,10 +43,14 @@ protocol BuildableDefinition {
     var unlockLevel: Int { get }
     /// Whether the placed object must touch a walkable tile to function.
     var requiresPathAccess: Bool { get }
+    /// Artwork for the build-menu thumbnail. Walkways have none: they are
+    /// terrain rather than an object, and there is nothing to draw.
+    var previewAppearance: BuildingAppearance? { get }
 }
 
 extension BuildableDefinition {
     var requiresPathAccess: Bool { true }
+    var previewAppearance: BuildingAppearance? { nil }
 }
 
 /// Paths are their own tiny definition: they change terrain rather than

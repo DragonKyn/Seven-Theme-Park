@@ -65,5 +65,7 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
         kind.sellsGoods ? .shop : .facility
     }
 
+    var previewAppearance: BuildingAppearance? { appearance }
+
     var profitPerSale: Double { defaultPrice - unitCost }
 }

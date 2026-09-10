@@ -10,36 +10,64 @@ enum BuildingArtwork {
 
     // MARK: - Public entry points
 
+    private static var previewCache: [String: UIImage] = [:]
+
     /// The building itself, without whatever moves on top of it.
     static func bodyTexture(for appearance: BuildingAppearance, size: CGSize) -> SKTexture {
-        let key = "body-\(appearance.motif.rawValue)-\(appearance.primary.rawValue)"
+        SpriteFactory.texture(key: key(for: appearance, prefix: "body", size: size), size: size) {
+            context, size in
+            drawBody(appearance, context, size)
+        }
+    }
+
+    /// The same artwork as a plain image, for the build menu. Cached, because
+    /// SwiftUI rebuilds the menu far more often than the catalogue changes.
+    static func previewImage(for appearance: BuildingAppearance, size: CGSize) -> UIImage {
+        let cacheKey = key(for: appearance, prefix: "preview", size: size)
+        if let cached = previewCache[cacheKey] { return cached }
+
+        let image = UIGraphicsImageRenderer(size: size).image { rendererContext in
+            drawBody(appearance, rendererContext.cgContext, size)
+        }
+        previewCache[cacheKey] = image
+        return image
+    }
+
+    private static func key(for appearance: BuildingAppearance,
+                            prefix: String,
+                            size: CGSize) -> String {
+        "\(prefix)-\(appearance.motif.rawValue)-\(appearance.primary.rawValue)"
             + "-\(appearance.secondary.rawValue)-\(appearance.accent.rawValue)"
             + "-\(Int(size.width))x\(Int(size.height))"
+    }
 
-        return SpriteFactory.texture(key: key, size: size) { context, size in
-            let primary = ParkPalette.colour(appearance.primary)
-            let secondary = ParkPalette.colour(appearance.secondary)
-            let accent = ParkPalette.colour(appearance.accent)
+    /// Shared by the map texture and the menu preview, so the two can never
+    /// show different artwork for the same thing.
+    private static func drawBody(_ appearance: BuildingAppearance,
+                                 _ context: CGContext,
+                                 _ size: CGSize) {
+        let primary = ParkPalette.colour(appearance.primary)
+        let secondary = ParkPalette.colour(appearance.secondary)
+        let accent = ParkPalette.colour(appearance.accent)
 
-            switch appearance.motif {
-            case .carousel:  drawCarouselBase(context, size, primary, secondary, accent)
-            case .swingBoat: drawSwingBoatBase(context, size, primary, secondary, accent)
-            case .dropTower: drawDropTowerBase(context, size, primary, secondary, accent)
-            case .coaster:   drawCoasterBase(context, size, primary, secondary, accent)
-            case .stall:     drawStall(context, size, primary, secondary, accent)
-            case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
-            case .shopFront: drawShopFront(context, size, primary, secondary, accent)
-            case .restroom:  drawRestroom(context, size, primary, secondary, accent)
-            case .bench:     drawBench(context, size, primary, secondary, accent)
-            case .bin:       drawBin(context, size, primary, secondary, accent)
-            case .tree:      drawTree(context, size, primary, secondary, accent)
-            case .conifer:   drawConifer(context, size, primary, secondary, accent)
-            case .flowerBed: drawFlowerBed(context, size, primary, secondary, accent)
-            case .fountain:  drawFountainBasin(context, size, primary, secondary, accent)
-            case .lamp:      drawLamp(context, size, primary, secondary, accent)
-            case .topiary:   drawTopiary(context, size, primary, secondary, accent)
-            case .statue:    drawStatue(context, size, primary, secondary, accent)
-            }
+        switch appearance.motif {
+        case .carousel:  drawCarouselBase(context, size, primary, secondary, accent)
+        case .swingBoat: drawSwingBoatBase(context, size, primary, secondary, accent)
+        case .dropTower: drawDropTowerBase(context, size, primary, secondary, accent)
+        case .coaster:   drawCoasterBase(context, size, primary, secondary, accent)
+        case .stall:     drawStall(context, size, primary, secondary, accent)
+        case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
+        case .shopFront: drawShopFront(context, size, primary, secondary, accent)
+        case .restroom:  drawRestroom(context, size, primary, secondary, accent)
+        case .bench:     drawBench(context, size, primary, secondary, accent)
+        case .bin:       drawBin(context, size, primary, secondary, accent)
+        case .tree:      drawTree(context, size, primary, secondary, accent)
+        case .conifer:   drawConifer(context, size, primary, secondary, accent)
+        case .flowerBed: drawFlowerBed(context, size, primary, secondary, accent)
+        case .fountain:  drawFountainBasin(context, size, primary, secondary, accent)
+        case .lamp:      drawLamp(context, size, primary, secondary, accent)
+        case .topiary:   drawTopiary(context, size, primary, secondary, accent)
+        case .statue:    drawStatue(context, size, primary, secondary, accent)
         }
     }
 

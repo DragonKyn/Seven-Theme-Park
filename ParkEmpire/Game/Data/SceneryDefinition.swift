@@ -21,6 +21,8 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
 
     var category: BuildCategory { .scenery }
 
+    var previewAppearance: BuildingAppearance? { appearance }
+
     /// Scenery is decoration, not a destination, so it can stand anywhere
     /// there is room rather than having to touch a walkway.
     var requiresPathAccess: Bool { false }

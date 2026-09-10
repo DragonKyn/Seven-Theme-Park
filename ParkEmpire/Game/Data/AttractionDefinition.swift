@@ -30,6 +30,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
 
     var category: BuildCategory { .attraction }
 
+    var previewAppearance: BuildingAppearance? { appearance }
+
     /// Coarse label used in the build menu and ride inspector.
     var thrillLabel: String {
         switch excitement {

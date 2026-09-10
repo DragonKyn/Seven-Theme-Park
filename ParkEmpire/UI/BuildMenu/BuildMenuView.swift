@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Category tabs plus the placeable items in the chosen category.
 struct BuildMenuView: View {
@@ -135,18 +136,22 @@ private struct BuildItemCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(definition.displayName)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                Text(CurrencyFormatter.short(definition.purchasePrice))
-                    .font(.system(size: 11, design: .rounded))
-                    .foregroundStyle(affordable ? Theme.accent : Theme.danger)
-                Text("\(definition.footprint.width)×\(definition.footprint.height) tiles")
-                    .font(.system(size: 9))
-                    .foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 7) {
+                thumbnail
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(definition.displayName)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                    Text(CurrencyFormatter.short(definition.purchasePrice))
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(affordable ? Theme.accent : Theme.danger)
+                    Text("\(definition.footprint.width)×\(definition.footprint.height) tiles")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
-            .frame(width: 108, alignment: .leading)
+            .frame(width: 142, alignment: .leading)
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -159,4 +164,26 @@ private struct BuildItemCard: View {
             .foregroundStyle(Theme.textPrimary)
         }
     }
+
+    /// The same artwork the map draws, so what you pick is what you get.
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let appearance = definition.previewAppearance {
+            Image(uiImage: BuildingArtwork.previewImage(
+                for: appearance,
+                size: CGSize(width: BuildItemCard.thumbnailSide,
+                             height: BuildItemCard.thumbnailSide)))
+                .resizable()
+                .frame(width: 38, height: 38)
+        } else {
+            // Walkways have no artwork; show the terrain colour instead.
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color(red: 0.87, green: 0.84, blue: 0.76))
+                .frame(width: 38, height: 38)
+        }
+    }
+
+    /// Rendered larger than it is shown so the artwork stays crisp on a
+    /// high-density screen.
+    private static let thumbnailSide: CGFloat = 114
 }
