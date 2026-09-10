@@ -109,13 +109,12 @@ final class ParkScene: SKScene {
         view.addGestureRecognizer(tap)
     }
 
-    /// In build mode a single finger draws and two fingers move the camera, so
-    /// the player can lay a run of walkway in one gesture.
+    /// A one-finger drag moves the camera in every mode except explicit
+    /// drawing, so looking around the park can never place anything by
+    /// accident. While drawing, one finger paints and two move the camera.
     private func updateGestureModes() {
         guard let controller else { return }
-        let isPainting = controller.build.isActive
-            && !controller.build.isDemolishing
-            && controller.selectedDefinition?.category == .path
+        let isPainting = controller.canDraw && controller.build.isDrawing
 
         guard isPainting != paintPan?.isEnabled else { return }
         paintPan?.isEnabled = isPainting

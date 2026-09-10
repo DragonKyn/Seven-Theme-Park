@@ -38,6 +38,26 @@ struct BuildMenuView: View {
 
                 Spacer(minLength: 0)
 
+                if controller.canDraw {
+                    Button {
+                        controller.toggleDrawing()
+                    } label: {
+                        Label("Draw", systemImage: controller.build.isDrawing
+                              ? "hand.draw.fill"
+                              : "hand.draw")
+                            .labelStyle(.iconOnly)
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 40, height: 32)
+                            .foregroundStyle(controller.build.isDrawing ? Color.black : Theme.textPrimary)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(controller.build.isDrawing
+                                          ? Theme.accentWarm
+                                          : Color.white.opacity(0.10))
+                            )
+                    }
+                }
+
                 Button {
                     controller.enterDemolishMode()
                 } label: {
@@ -94,10 +114,13 @@ struct BuildMenuView: View {
         if let reason = controller.build.ghostReason, controller.build.ghost != nil {
             return reason
         }
-        if controller.selectedDefinition?.category == .path {
-            return "Tap to place a walkway, or drag one finger to draw a run. Two fingers move the map."
+        if controller.build.isDrawing {
+            return "Drawing: drag one finger to lay a run of walkway. Two fingers move the map."
         }
-        return "Tap the map to place. Buildings must touch a walkway."
+        if controller.canDraw {
+            return "Tap to place a walkway. Drag moves the map. Turn on Draw to lay a run."
+        }
+        return "Tap the map to place. Drag moves the map. Buildings must touch a walkway."
     }
 }
 

@@ -96,6 +96,7 @@ final class GameController: ObservableObject {
         if selectedDefinition?.category != category {
             build.selectedID = GameContent.buildables(in: category, unlockLevel: state.unlockLevel).first?.id
         }
+        build.isDrawing = false
     }
 
     func exitBuildMode() {
@@ -105,11 +106,24 @@ final class GameController: ObservableObject {
     func select(definitionID: String) {
         build.selectedID = definitionID
         build.isDemolishing = false
+        if !canDraw { build.isDrawing = false }
+    }
+
+    /// Only walkways are worth dragging out in a run; everything else is
+    /// placed one tap at a time.
+    var canDraw: Bool {
+        build.isActive && !build.isDemolishing && selectedDefinition?.category == .path
+    }
+
+    func toggleDrawing() {
+        guard canDraw else { return }
+        build.isDrawing.toggle()
     }
 
     func enterDemolishMode() {
         build.isActive = true
         build.isDemolishing = true
+        build.isDrawing = false
         build.selectedID = nil
     }
 
@@ -175,7 +189,7 @@ final class GameController: ObservableObject {
 
     /// Paint a run of path tiles as the finger drags.
     func paint(at coord: GridCoord) {
-        guard build.isActive, !build.isDemolishing,
+        guard build.isActive, build.isDrawing, !build.isDemolishing,
               let definition = selectedDefinition,
               definition.category == .path else { return }
         _ = state.place(definition, at: coord)
@@ -371,6 +385,9 @@ final class GameController: ObservableObject {
 struct BuildState {
     var isActive = false
     var isDemolishing = false
+    /// While drawing, a one-finger drag paints walkway instead of moving the
+    /// camera. Off by default so dragging the map is never destructive.
+    var isDrawing = false
     var category: BuildCategory = .path
     var selectedID: String?
     var ghost: GridCoord?
