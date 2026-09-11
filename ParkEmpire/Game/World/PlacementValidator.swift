@@ -35,6 +35,18 @@ enum PlacementValidator {
             if tile.terrain == .entrance { return .invalid("That is the entrance") }
             if tile.terrain != .grass { return .invalid("Clear the ground here first") }
             if tile.buildingID != nil { return .invalid("Something is in the way") }
+        } else if definition.laysCoasterTrack {
+            // Goes on bare ground or on track already laid, and brings its own
+            // rails either way.
+            for coord in rect.coords {
+                guard let tile = map.tile(at: coord) else { return .invalid("Outside the park") }
+                guard tile.terrain == .grass || tile.terrain.isCoasterTrack else {
+                    return .invalid("Needs clear ground or coaster track")
+                }
+                guard !tile.isOccupied else {
+                    return .invalid("Something is already here")
+                }
+            }
         } else if let bed = definition.bedTerrain {
             // Built on top of something rather than beside it: every tile it
             // covers has to be that terrain, and free.

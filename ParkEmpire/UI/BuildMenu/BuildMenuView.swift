@@ -240,9 +240,12 @@ private struct BuildItemCard: View {
             // rather than squaring them off into a smudge.
             Image(uiImage: CoasterElementArtwork.previewImage(
                 for: element.motif,
-                size: CGSize(width: 132, height: 66)))
+                size: CGSize(width: CGFloat(element.footprint.width) * 44,
+                             height: CGFloat(element.visualHeight) * 44),
+                trackY: element.trackLine))
                 .resizable()
-                .frame(width: 44, height: 22)
+                .frame(width: CGFloat(element.footprint.width) * 11,
+                       height: CGFloat(element.visualHeight) * 11)
         } else if let appearance = definition.previewAppearance {
             Image(uiImage: BuildingArtwork.previewImage(
                 for: appearance,

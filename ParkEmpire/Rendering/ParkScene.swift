@@ -503,18 +503,19 @@ final class ParkScene: SKScene {
             guard elementNodes[element.id] == nil, let definition = element.definition else { continue }
 
             // Drawn the way round it was designed and then turned, so a
-            // rotated loop is not a squashed one.
+            // rotated loop is not a squashed one, and drawn taller than the
+            // ground it covers so a loop has room to be a loop.
             let drawn = element.size.rotated(by: element.rotation)
             let pixelSize = CGSize(width: CGFloat(drawn.width) * Self.tileSide,
-                                   height: CGFloat(drawn.height) * Self.tileSide)
+                                   height: CGFloat(definition.visualHeight) * Self.tileSide)
 
-            let node = SKSpriteNode(texture: CoasterElementArtwork.texture(for: definition.motif,
-                                                                          size: pixelSize))
+            let node = SKSpriteNode(texture: CoasterElementArtwork.texture(
+                for: definition.motif,
+                size: pixelSize,
+                trackY: definition.trackLine))
             node.size = pixelSize
             node.zRotation = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
-            node.position = CGPoint(
-                x: (CGFloat(element.origin.x) + CGFloat(element.size.width) / 2) * Self.tileSide,
-                y: (CGFloat(element.origin.y) + CGFloat(element.size.height) / 2) * Self.tileSide)
+            node.position = elementSpriteCentre(element, definition: definition)
             trainLayer.addChild(node)
             elementNodes[element.id] = node
         }
@@ -549,6 +550,102 @@ final class ParkScene: SKScene {
                   elements: state.trackElements)
     }
 
+    /// The line a train actually runs, with every element's own geometry
+    /// spliced in where the route passes through one.
+    ///
+    /// Before this, an element was a picture painted over track the train drove
+    /// straight through, which is why a loop felt like scenery. The element
+    /// hands out the same points it draws itself with, so the train goes round
+    /// the loop, over the jump and down the helix.
+    private func ridePoints(for route: TrackNetwork.Route,
+                            elements: [TrackElement]) -> [CGPoint] {
+        guard !elements.isEmpty else { return route.tiles.map(tileCentre) }
+
+        var points: [CGPoint] = []
+        var index = 0
+
+        while index < route.tiles.count {
+            let tile = route.tiles[index]
+            guard let element = elements.first(where: { $0.rect.contains(tile) }),
+                  let definition = element.definition else {
+                points.append(tileCentre(tile))
+                index += 1
+                continue
+            }
+
+            // However many of the next tiles belong to this same element.
+            var span = 1
+            while index + span < route.tiles.count,
+                  element.rect.contains(route.tiles[index + span]) {
+                span += 1
+            }
+
+            let path = worldPath(of: element, definition: definition)
+            // The route may cross the element either way round.
+            let entry = tileCentre(tile)
+            let fromStart = hypot(path[0].x - entry.x, path[0].y - entry.y)
+            let fromEnd = hypot(path[path.count - 1].x - entry.x,
+                                path[path.count - 1].y - entry.y)
+            points.append(contentsOf: fromStart <= fromEnd ? path : path.reversed())
+
+            index += span
+        }
+
+        return points
+    }
+
+    /// An element's drawn centreline, in scene coordinates.
+    ///
+    /// The sprite is drawn at its visual size, turned, and pushed up out of its
+    /// footprint; the points are put through exactly the same transform, which
+    /// is what keeps the train on the rails that were drawn for it.
+    private func worldPath(of element: TrackElement,
+                           definition: CoasterElementDefinition) -> [CGPoint] {
+        let drawn = element.size.rotated(by: element.rotation)
+        let design = CGSize(width: CGFloat(drawn.width) * Self.tileSide,
+                            height: CGFloat(definition.visualHeight) * Self.tileSide)
+        let raw = CoasterElementArtwork.centreline(for: definition.motif,
+                                                   size: design,
+                                                   trackY: definition.trackLine)
+
+        let centre = elementSpriteCentre(element, definition: definition)
+        let angle = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
+        let cosine = cos(angle)
+        let sine = sin(angle)
+
+        return raw.map { point in
+            // Texture space runs y downward from the top-left corner; the
+            // sprite's own space runs y upward from its middle.
+            let localX = point.x - design.width / 2
+            let localY = design.height / 2 - point.y
+            return CGPoint(x: centre.x + localX * cosine - localY * sine,
+                           y: centre.y + localX * sine + localY * cosine)
+        }
+    }
+
+    /// Where an element's sprite sits. It is taller than its footprint, so it
+    /// is pushed up by the difference, in whichever direction is up once the
+    /// element has been turned.
+    private func elementSpriteCentre(_ element: TrackElement,
+                                     definition: CoasterElementDefinition) -> CGPoint {
+        let footCentre = CGPoint(
+            x: (CGFloat(element.origin.x) + CGFloat(element.size.width) / 2) * Self.tileSide,
+            y: (CGFloat(element.origin.y) + CGFloat(element.size.height) / 2) * Self.tileSide)
+
+        let drawn = element.size.rotated(by: element.rotation)
+        let overhang = CGFloat(definition.visualHeight - drawn.height) / 2 * Self.tileSide
+        guard overhang != 0 else { return footCentre }
+
+        let angle = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
+        return CGPoint(x: footCentre.x - sin(angle) * overhang,
+                       y: footCentre.y + cos(angle) * overhang)
+    }
+
+    private func tileCentre(_ coord: GridCoord) -> CGPoint {
+        CGPoint(x: (CGFloat(coord.x) + 0.5) * Self.tileSide,
+                y: (CGFloat(coord.y) + 0.5) * Self.tileSide)
+    }
+
     /// Puts a train on every circuit that has something to serve it.
     ///
     /// The railway and the coaster are the same problem with different
@@ -575,37 +672,21 @@ final class ParkScene: SKScene {
             // them off makes the train curve through a corner the way the
             // rails are drawn, rather than pivoting on the spot at the end of
             // the turn.
-            let points = PathMotion.smoothed(route.tiles.map {
-                CGPoint(x: (CGFloat($0.x) + 0.5) * Self.tileSide,
-                        y: (CGFloat($0.y) + 0.5) * Self.tileSide)
-            }, closed: route.isLoop)
+            // Elements have already put their own curves in, so those are
+            // smoothed less: rounding a loop again only softens it.
+            let points = PathMotion.smoothed(ridePoints(for: route, elements: elements),
+                                             closed: route.isLoop,
+                                             iterations: elements.isEmpty ? 2 : 1)
             // A tile a second or so, which reads as a park train rather than
             // as something anybody would ride for the speed.
             let isLoop = route.isLoop
-            // A line is stored one way, and the train covers it twice a cycle,
-            // so it needs twice as long to run at the same speed as a loop.
-            // A coaster is meant to be quick and a park train is not.
+            // A coaster is meant to be quick and a park train is not, and a
+            // line is covered twice a cycle. Paced off the line the train
+            // actually runs rather than off the tiles, because an element can
+            // add a great deal of track without adding a single tile.
             let pace = coaster ? 0.34 : 0.85
-            let duration = Double(route.tiles.count) * (isLoop ? pace : pace * 2)
-
-            // Which points sit on a loop, a hill or a corkscrew, so the train
-            // can react as it crosses one.
-            // How much the train reacts on each tile. A jump throws it much
-            // further than a hill does, so the reaction comes from whichever
-            // element that tile happens to be under.
-            var flair: [CGFloat]?
-            if coaster && isLoop && !elements.isEmpty {
-                var intensity: [GridCoord: CGFloat] = [:]
-                for element in elements {
-                    guard let strength = element.definition?.intensity else { continue }
-                    for coord in element.rect.coords {
-                        intensity[coord] = max(intensity[coord] ?? 1, strength)
-                    }
-                }
-                let perTile = max(1, points.count / max(route.tiles.count, 1))
-                let swell = route.tiles.map { intensity[$0] ?? 1 }
-                flair = (0..<points.count).map { swell[min($0 / perTile, swell.count - 1)] }
-            }
+            let span = Double(PathMotion.ringLength(of: points) / Self.tileSide)
+            let duration = span * (isLoop ? pace : pace * 2)
 
             // On a loop the lead car pulls the rest, each starting a tile
             // further back round the ring. On a dead-ended line it is a
@@ -642,11 +723,7 @@ final class ParkScene: SKScene {
                     let back = (carriage * perTile) % points.count
                     let offset = (points.count - back) % points.count
                     let carPath = Array(points[offset...] + points[..<offset])
-                    let carFlair = flair.map { Array($0[offset...] + $0[..<offset]) }
-                    PathMotion.drive(node,
-                                     around: carPath,
-                                     duration: duration,
-                                     flair: carFlair)
+                    PathMotion.drive(node, around: carPath, duration: duration)
                 } else {
                     let run = PathMotion.shuttleRun(along: points,
                                                     carIndex: carriage,
@@ -1116,8 +1193,24 @@ final class ParkScene: SKScene {
         }
 
         if let element = definition as? CoasterElementDefinition {
-            art.texture = CoasterElementArtwork.texture(for: element.motif, size: drawnSize)
-        } else if let appearance = definition.previewAppearance {
+            // The preview is drawn at the element's full height, so what the
+            // player lines up is the shape they will get.
+            let previewSize = CGSize(width: drawnSize.width,
+                                     height: CGFloat(element.visualHeight) * Self.tileSide)
+            art.texture = CoasterElementArtwork.texture(for: element.motif,
+                                                        size: previewSize,
+                                                        trackY: element.trackLine)
+            art.size = previewSize
+            art.zRotation = -CGFloat(((pending.rotation % 4) + 4) % 4) * .pi / 2
+            art.position = pendingElementCentre(pending, definition: element)
+            art.isHidden = false
+            art.colorBlendFactor = valid ? 0 : 0.55
+            art.color = ParkPalette.ghostInvalid
+            drawFrame(valid: valid, size: groundSize, centre: centre)
+            return
+        }
+
+        if let appearance = definition.previewAppearance {
             art.texture = BuildingArtwork.bodyTexture(for: appearance, size: drawnSize)
         } else {
             art.texture = SpriteFactory.buildingTexture(colour: ParkPalette.ghostValid, size: drawnSize)
@@ -1131,6 +1224,12 @@ final class ParkScene: SKScene {
         art.colorBlendFactor = valid ? 0 : 0.55
         art.color = ParkPalette.ghostInvalid
 
+        drawFrame(valid: valid, size: groundSize, centre: centre)
+    }
+
+    /// The pulsing outline round the ground a placement would take up. Pulsing
+    /// so an unconfirmed placement is never mistaken for something built.
+    private func drawFrame(valid: Bool, size: CGSize, centre: CGPoint) {
         let frame: SKSpriteNode
         if let existing = previewOutline {
             frame = existing
@@ -1140,8 +1239,6 @@ final class ParkScene: SKScene {
             overlayLayer.addChild(frame)
             previewOutline = frame
 
-            // A slow pulse, so an unconfirmed placement never gets mistaken
-            // for something already built.
             let grow = SKAction.scale(to: 1.04, duration: 0.6)
             let shrink = SKAction.scale(to: 1.0, duration: 0.6)
             grow.timingMode = .easeInEaseOut
@@ -1151,11 +1248,24 @@ final class ParkScene: SKScene {
 
         frame.texture = SpriteFactory.outlineTexture(
             colour: valid ? ParkPalette.previewValid : ParkPalette.ghostInvalid,
-            size: groundSize,
+            size: size,
             lineWidth: 4)
-        frame.size = groundSize
+        frame.size = size
         frame.position = centre
         frame.isHidden = false
+    }
+
+    /// Where an element's preview sprite sits: pushed up out of its footprint
+    /// by the same amount the placed one will be.
+    private func pendingElementCentre(_ pending: PendingPlacement,
+                                      definition: CoasterElementDefinition) -> CGPoint {
+        let footprint = definition.footprint(rotatedBy: pending.rotation)
+        let element = TrackElement(id: UUID(),
+                                   definitionID: definition.id,
+                                   origin: pending.origin,
+                                   size: footprint,
+                                   rotation: pending.rotation)
+        return elementSpriteCentre(element, definition: definition)
     }
 
     private func hidePendingPreview() {

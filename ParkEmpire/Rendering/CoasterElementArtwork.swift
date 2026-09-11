@@ -1,212 +1,234 @@
 import SpriteKit
 import UIKit
 
-/// Draws the coaster elements: the loops, corkscrews and jumps that sit on
-/// track the player has laid.
+/// Draws the coaster elements, and hands out the exact line a train should
+/// follow through one.
 ///
-/// These are drawn across their whole footprint rather than tile by tile,
-/// which is the entire point of them. A vertical loop across three tiles can
-/// be a loop; a vertical loop inside one tile is a doodle.
+/// The drawing and the path are the same list of points. That is the whole
+/// point of this file: before, an element was a picture of a loop painted over
+/// track the train drove straight through, which is why they felt like
+/// decoration rather than ride.
+///
+/// An element is drawn taller than the ground it occupies. A loop across three
+/// tiles of track needs height to be a loop, so the sprite reaches up out of
+/// its footprint and the track line runs along the bottom of it.
 enum CoasterElementArtwork {
 
-    static func texture(for motif: CoasterElementMotif, size: CGSize) -> SKTexture {
-        SpriteFactory.texture(key: "element-\(motif.rawValue)-\(Int(size.width))x\(Int(size.height))",
-                              size: size) { context, size in
-            switch motif {
-            case .verticalLoop: drawVerticalLoop(context, size)
-            case .corkscrew: drawCorkscrew(context, size)
-            case .airtimeHills: drawAirtimeHills(context, size)
-            case .jump: drawJump(context, size)
-            case .helixTower: drawHelixTower(context, size)
+    /// Where the track runs through a drawing, as a share of its height. The
+    /// footprint sits at the bottom; everything above it is the element.
+    static func trackLine(footprintHeight: Int, visualHeight: Int) -> CGFloat {
+        let visual = CGFloat(max(visualHeight, 1))
+        return (visual - CGFloat(footprintHeight) / 2) / visual
+    }
+
+    // MARK: - The line
+
+    /// The centreline of an element, in texture space, entering at the left
+    /// edge and leaving at the right edge on the track line.
+    static func centreline(for motif: CoasterElementMotif,
+                           size: CGSize,
+                           trackY: CGFloat) -> [CGPoint] {
+        let line = size.height * trackY
+        switch motif {
+        case .airtimeHills: return hills(size, line)
+        case .verticalLoop: return loop(size, line)
+        case .corkscrew: return corkscrew(size, line)
+        case .jump: return jump(size, line)
+        case .helixTower: return helix(size, line)
+        }
+    }
+
+    private static func hills(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
+        var points = [CGPoint(x: 0, y: line)]
+        let humps = 3
+        let rise = min(line - size.height * 0.08, size.height * 0.44)
+        for index in 0..<humps {
+            let from = size.width * CGFloat(index) / CGFloat(humps)
+            let to = size.width * CGFloat(index + 1) / CGFloat(humps)
+            points += quad(from: CGPoint(x: from, y: line),
+                           control: CGPoint(x: (from + to) / 2, y: line - rise * 2),
+                           to: CGPoint(x: to, y: line),
+                           steps: 12)
+        }
+        return points
+    }
+
+    private static func loop(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
+        let radius = min(size.width * 0.34, (line - size.height * 0.08) / 2)
+        let centre = CGPoint(x: size.width / 2, y: line - radius)
+
+        var points = [CGPoint(x: 0, y: line),
+                      CGPoint(x: centre.x - radius * 0.9, y: line)]
+        // Entered and left at the foot, travelling the same way both times, so
+        // the train goes up the far side first the way a real loop is run.
+        let steps = 44
+        for step in 0...steps {
+            let angle = CGFloat.pi / 2 - CGFloat(step) / CGFloat(steps) * .pi * 2
+            points.append(CGPoint(x: centre.x + cos(angle) * radius,
+                                  y: centre.y + sin(angle) * radius))
+        }
+        points.append(CGPoint(x: centre.x + radius * 0.9, y: line))
+        points.append(CGPoint(x: size.width, y: line))
+        return points
+    }
+
+    private static func corkscrew(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
+        let radiusX = size.width * 0.12
+        let radiusY = min(size.width * 0.12, (line - size.height * 0.10) / 2)
+        var points = [CGPoint(x: 0, y: line)]
+
+        for index in 0..<2 {
+            let centre = CGPoint(x: size.width * (0.30 + 0.38 * CGFloat(index)),
+                                 y: line - radiusY)
+            points.append(CGPoint(x: centre.x - radiusX, y: line))
+            let steps = 30
+            for step in 0...steps {
+                let angle = CGFloat.pi - CGFloat(step) / CGFloat(steps) * .pi * 2
+                points.append(CGPoint(x: centre.x + cos(angle) * radiusX,
+                                      y: centre.y + sin(angle) * radiusY))
             }
+            points.append(CGPoint(x: centre.x + radiusX, y: line))
+        }
+        points.append(CGPoint(x: size.width, y: line))
+        return points
+    }
+
+    private static func jump(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
+        let lip = line - min(size.height * 0.30, line - size.height * 0.20)
+        var points = [CGPoint(x: 0, y: line)]
+        points += quad(from: CGPoint(x: size.width * 0.20, y: line),
+                       control: CGPoint(x: size.width * 0.30, y: line),
+                       to: CGPoint(x: size.width * 0.36, y: lip),
+                       steps: 8)
+        // Through the air. The train is unsupported here, which is the point.
+        points += quad(from: CGPoint(x: size.width * 0.36, y: lip),
+                       control: CGPoint(x: size.width * 0.50, y: lip - size.height * 0.34),
+                       to: CGPoint(x: size.width * 0.64, y: lip),
+                       steps: 14)
+        points += quad(from: CGPoint(x: size.width * 0.64, y: lip),
+                       control: CGPoint(x: size.width * 0.70, y: line),
+                       to: CGPoint(x: size.width * 0.80, y: line),
+                       steps: 8)
+        points.append(CGPoint(x: size.width, y: line))
+        return points
+    }
+
+    private static func helix(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
+        let centre = CGPoint(x: size.width / 2, y: line)
+        let outer = min(size.width, size.height) * 0.38
+        var points = [CGPoint(x: 0, y: line)]
+
+        let steps = 96
+        for step in 0...steps {
+            let progress = CGFloat(step) / CGFloat(steps)
+            let angle = .pi + progress * .pi * 2 * 3
+            let radius = outer * (1 - progress * 0.55)
+            points.append(CGPoint(x: centre.x + cos(angle) * radius,
+                                  y: centre.y + sin(angle) * radius * 0.68))
+        }
+        points.append(CGPoint(x: size.width, y: line))
+        return points
+    }
+
+    /// Samples a quadratic curve. The weights are named because the one-line
+    /// form is more than Swift's type checker will take.
+    private static func quad(from: CGPoint,
+                             control: CGPoint,
+                             to: CGPoint,
+                             steps: Int) -> [CGPoint] {
+        (0...steps).map { step -> CGPoint in
+            let t = CGFloat(step) / CGFloat(steps)
+            let inverse: CGFloat = 1 - t
+            let fromWeight: CGFloat = inverse * inverse
+            let controlWeight: CGFloat = 2 * inverse * t
+            let toWeight: CGFloat = t * t
+            let x: CGFloat = fromWeight * from.x + controlWeight * control.x + toWeight * to.x
+            let y: CGFloat = fromWeight * from.y + controlWeight * control.y + toWeight * to.y
+            return CGPoint(x: x, y: y)
+        }
+    }
+
+    // MARK: - The picture
+
+    static func texture(for motif: CoasterElementMotif,
+                        size: CGSize,
+                        trackY: CGFloat) -> SKTexture {
+        SpriteFactory.texture(
+            key: "element-\(motif.rawValue)-\(Int(size.width))x\(Int(size.height))-\(Int(trackY * 100))",
+            size: size) { context, size in
+            draw(motif, size: size, trackY: trackY)
         }
     }
 
     /// The same image for the build menu, so what you pick is what you get.
-    static func previewImage(for motif: CoasterElementMotif, size: CGSize) -> UIImage {
-        if let cached = previews["\(motif.rawValue)-\(Int(size.width))"] { return cached }
-        let image = UIGraphicsImageRenderer(size: size).image { rendererContext in
-            switch motif {
-            case .verticalLoop: drawVerticalLoop(rendererContext.cgContext, size)
-            case .corkscrew: drawCorkscrew(rendererContext.cgContext, size)
-            case .airtimeHills: drawAirtimeHills(rendererContext.cgContext, size)
-            case .jump: drawJump(rendererContext.cgContext, size)
-            case .helixTower: drawHelixTower(rendererContext.cgContext, size)
-            }
+    static func previewImage(for motif: CoasterElementMotif,
+                             size: CGSize,
+                             trackY: CGFloat) -> UIImage {
+        let key = "\(motif.rawValue)-\(Int(size.width))x\(Int(size.height))"
+        if let cached = previews[key] { return cached }
+        let image = UIGraphicsImageRenderer(size: size).image { _ in
+            draw(motif, size: size, trackY: trackY)
         }
-        previews["\(motif.rawValue)-\(Int(size.width))"] = image
+        previews[key] = image
         return image
     }
 
     private static var previews: [String: UIImage] = [:]
 
-    // MARK: - Drawing helpers
+    private static func draw(_ motif: CoasterElementMotif, size: CGSize, trackY: CGFloat) {
+        let points = centreline(for: motif, size: size, trackY: trackY)
+        guard points.count > 1 else { return }
 
-    /// Track is always drawn twice: a dark tie bed, then the rail on top. It
-    /// is what makes a stroked line read as track rather than as a pen mark.
-    private static func layTrack(_ path: UIBezierPath, _ size: CGSize, weight: CGFloat = 1) {
-        ParkPalette.coasterTie.setStroke()
-        path.lineWidth = max(2.5, size.height * 0.17 * weight)
-        path.lineCapStyle = .round
-        path.stroke()
+        let path = UIBezierPath()
+        path.move(to: points[0])
+        for point in points.dropFirst() { path.addLine(to: point) }
 
-        ParkPalette.coasterRail.setStroke()
-        path.lineWidth = max(1, size.height * 0.075 * weight)
-        path.stroke()
-    }
-
-    /// Uprights down to the ground under a raised piece.
-    private static func supports(_ points: [CGPoint], _ size: CGSize) {
-        let deck = size.height * 0.94
+        // Uprights first, so the track sits on top of them. Every few points
+        // is enough to read as a structure without becoming a fence.
+        let deck = size.height * trackY
         let legs = UIBezierPath()
-        for point in points where point.y < deck - 3 {
+        for (index, point) in points.enumerated() where index % 6 == 0 && point.y < deck - 4 {
             legs.move(to: point)
             legs.addLine(to: CGPoint(x: point.x, y: deck))
         }
-        ParkPalette.colour(.slate).withAlphaComponent(0.55).setStroke()
-        legs.lineWidth = max(1, size.width * 0.010)
+        // Thicker than a hairline: these are steel columns, not pencil marks.
+        ParkPalette.coasterSupport.setStroke()
+        legs.lineWidth = max(1.5, size.height * 0.030)
         legs.stroke()
+
+        // A spine along the track line, which is what the columns stand on.
+        let spine = UIBezierPath()
+        spine.move(to: CGPoint(x: 0, y: deck))
+        spine.addLine(to: CGPoint(x: size.width, y: deck))
+        ParkPalette.coasterSupport.setStroke()
+        spine.lineWidth = max(1.5, size.height * 0.026)
+        spine.stroke()
+
+        // Ties, then rail. The same two-pass stroke the track tiles use, so an
+        // element and the track it sits on read as one railway.
+        ParkPalette.coasterTie.setStroke()
+        path.lineWidth = max(3, size.height * 0.115)
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        path.stroke()
+
+        ParkPalette.coasterRail.setStroke()
+        path.lineWidth = max(1.5, size.height * 0.050)
+        path.stroke()
+
+        if motif == .jump { markGap(size: size, trackY: trackY) }
     }
 
-    // MARK: - Elements
-
-    /// A full vertical loop: in along the bottom, up and over, and out the
-    /// far side. The crossing in the middle is what says loop.
-    private static func drawVerticalLoop(_ context: CGContext, _ size: CGSize) {
-        let baseline = size.height * 0.82
-        let centre = CGPoint(x: size.width * 0.5, y: size.height * 0.44)
-        let radius = min(size.width * 0.30, size.height * 0.36)
-
-        supports([CGPoint(x: size.width * 0.30, y: baseline - radius * 0.2),
-                  CGPoint(x: size.width * 0.70, y: baseline - radius * 0.2)], size)
-
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: baseline))
-        path.addLine(to: CGPoint(x: size.width * 0.34, y: baseline))
-        // Round the loop, entered and left at its foot travelling the same way.
-        let steps = 40
-        for step in 0...steps {
-            let angle = CGFloat.pi / 2 - CGFloat(step) / CGFloat(steps) * .pi * 2
-            path.addLine(to: CGPoint(x: centre.x + cos(angle) * radius,
-                                     y: centre.y + sin(angle) * radius))
-        }
-        path.addLine(to: CGPoint(x: size.width * 0.66, y: baseline))
-        path.addLine(to: CGPoint(x: size.width, y: baseline))
-        layTrack(path, size)
-    }
-
-    /// Two barrel rolls: a pair of flattened rings strung along the run, with
-    /// the track threading through both.
-    private static func drawCorkscrew(_ context: CGContext, _ size: CGSize) {
-        let baseline = size.height * 0.78
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: baseline))
-
-        let radiusX = size.width * 0.13
-        let radiusY = size.height * 0.30
-        for index in 0..<2 {
-            let centre = CGPoint(x: size.width * (0.31 + 0.34 * CGFloat(index)),
-                                 y: size.height * 0.46)
-            path.addLine(to: CGPoint(x: centre.x - radiusX, y: baseline))
-            let steps = 30
-            for step in 0...steps {
-                let angle = CGFloat.pi - CGFloat(step) / CGFloat(steps) * .pi * 2
-                path.addLine(to: CGPoint(x: centre.x + cos(angle) * radiusX,
-                                         y: centre.y + sin(angle) * radiusY))
-            }
-            path.addLine(to: CGPoint(x: centre.x + radiusX, y: baseline))
-        }
-        path.addLine(to: CGPoint(x: size.width, y: baseline))
-
-        supports([CGPoint(x: size.width * 0.18, y: baseline - size.height * 0.1),
-                  CGPoint(x: size.width * 0.50, y: baseline - size.height * 0.1),
-                  CGPoint(x: size.width * 0.82, y: baseline - size.height * 0.1)], size)
-        layTrack(path, size)
-    }
-
-    /// A run of humps. Nothing clever, and every circuit wants some.
-    private static func drawAirtimeHills(_ context: CGContext, _ size: CGSize) {
-        let baseline = size.height * 0.76
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: baseline))
-
-        let humps = 3
-        var crests: [CGPoint] = []
-        for index in 0..<humps {
-            let from = size.width * CGFloat(index) / CGFloat(humps)
-            let to = size.width * CGFloat(index + 1) / CGFloat(humps)
-            let crest = CGPoint(x: (from + to) / 2, y: size.height * 0.26)
-            crests.append(crest)
-            path.addQuadCurve(to: CGPoint(x: to, y: baseline),
-                              controlPoint: CGPoint(x: crest.x, y: size.height * 0.02))
-        }
-
-        supports(crests.map { CGPoint(x: $0.x, y: baseline - size.height * 0.12) }, size)
-        layTrack(path, size)
-    }
-
-    /// A ramp, a gap, and a ramp, with the arc the train takes marked over it.
-    private static func drawJump(_ context: CGContext, _ size: CGSize) {
-        let baseline = size.height * 0.80
-
-        let approach = UIBezierPath()
-        approach.move(to: CGPoint(x: 0, y: baseline))
-        approach.addLine(to: CGPoint(x: size.width * 0.22, y: baseline))
-        approach.addQuadCurve(to: CGPoint(x: size.width * 0.36, y: size.height * 0.50),
-                              controlPoint: CGPoint(x: size.width * 0.32, y: baseline))
-
-        let landing = UIBezierPath()
-        landing.move(to: CGPoint(x: size.width, y: baseline))
-        landing.addLine(to: CGPoint(x: size.width * 0.78, y: baseline))
-        landing.addQuadCurve(to: CGPoint(x: size.width * 0.64, y: size.height * 0.50),
-                             controlPoint: CGPoint(x: size.width * 0.68, y: baseline))
-
-        supports([CGPoint(x: size.width * 0.30, y: size.height * 0.58),
-                  CGPoint(x: size.width * 0.70, y: size.height * 0.58)], size)
-        layTrack(approach, size)
-        layTrack(landing, size)
-
-        // The flight path, dashed, because there is nothing under it.
-        let flight = UIBezierPath()
-        flight.move(to: CGPoint(x: size.width * 0.36, y: size.height * 0.50))
-        flight.addQuadCurve(to: CGPoint(x: size.width * 0.64, y: size.height * 0.50),
-                            controlPoint: CGPoint(x: size.width * 0.50, y: size.height * 0.10))
-        flight.setLineDash([size.width * 0.03, size.width * 0.025], count: 2, phase: 0)
-        flight.lineWidth = max(1, size.height * 0.045)
-        ParkPalette.coasterRail.withAlphaComponent(0.75).setStroke()
-        flight.stroke()
-
-        // Hazard marks in the gap.
-        ParkPalette.coasterRail.withAlphaComponent(0.4).setFill()
+    /// Hazard marks under a jump, so the gap reads as deliberate.
+    private static func markGap(size: CGSize, trackY: CGFloat) {
+        let deck = size.height * trackY
+        ParkPalette.coasterRail.withAlphaComponent(0.45).setFill()
         for index in 0..<3 {
             let mark = CGRect(x: size.width * (0.42 + 0.07 * CGFloat(index)),
-                              y: baseline + size.height * 0.04,
-                              width: size.width * 0.04,
-                              height: size.height * 0.10)
+                              y: deck + size.height * 0.04,
+                              width: size.width * 0.035,
+                              height: size.height * 0.07)
             UIBezierPath(rect: mark).fill()
         }
-    }
-
-    /// A descending spiral, drawn as three rings of shrinking radius so the
-    /// track reads as going down as well as round.
-    private static func drawHelixTower(_ context: CGContext, _ size: CGSize) {
-        let centre = CGPoint(x: size.width * 0.5, y: size.height * 0.5)
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: size.height * 0.5))
-
-        let turns = 3
-        let steps = 100
-        let outer = min(size.width, size.height) * 0.40
-        for step in 0...steps {
-            let progress = CGFloat(step) / CGFloat(steps)
-            let angle = .pi + progress * .pi * 2 * CGFloat(turns)
-            let radius = outer * (1 - progress * 0.55)
-            path.addLine(to: CGPoint(x: centre.x + cos(angle) * radius,
-                                     y: centre.y + sin(angle) * radius * 0.72))
-        }
-        path.addLine(to: CGPoint(x: size.width, y: size.height * 0.5))
-
-        supports([CGPoint(x: centre.x, y: centre.y)], size)
-        layTrack(path, size, weight: 0.8)
     }
 }

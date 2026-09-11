@@ -398,17 +398,25 @@ enum BuildingArtwork {
                                         _ primary: UIColor,
                                         _ secondary: UIColor,
                                         _ accent: UIColor) {
-        let ground = CGRect(origin: .zero, size: size)
-            .insetBy(dx: size.width * 0.05, dy: size.height * 0.06)
-        withShadow(context) {
-            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.14), secondary)
-        }
-
+        // No slab. The grass runs under the structure, which is what makes a
+        // coaster read as standing in the park rather than on a board.
         let track = trackRect(in: size)
-        // Sleepers first, then the rail on top, so the rail reads continuous.
-        stroke(UIBezierPath(ovalIn: track), ParkPalette.colour(.charcoal),
-               width: max(2, size.height * 0.075))
-        stroke(UIBezierPath(ovalIn: track), accent, width: max(1, size.height * 0.035))
+
+        // Columns round the outside of the loop, with a rail along their feet.
+        let columns = UIBezierPath()
+        for index in 0..<10 {
+            let angle = CGFloat(index) / 10 * .pi * 2
+            let point = CGPoint(x: track.midX + cos(angle) * track.width / 2,
+                                y: track.midY + sin(angle) * track.height / 2)
+            columns.move(to: point)
+            columns.addLine(to: CGPoint(x: point.x, y: point.y + size.height * 0.07))
+        }
+        stroke(columns, ParkPalette.coasterSupport, width: max(1.5, size.width * 0.014))
+
+        // Ties first, then the rail on top, so the rail reads continuous.
+        stroke(UIBezierPath(ovalIn: track), ParkPalette.coasterTie,
+               width: max(2.5, size.height * 0.090))
+        stroke(UIBezierPath(ovalIn: track), accent, width: max(1.5, size.height * 0.042))
 
         // Station shed on the near side of the loop.
         let station = CGRect(x: track.midX - size.width * 0.13,
@@ -1130,12 +1138,9 @@ enum BuildingArtwork {
                                            _ primary: UIColor,
                                            _ secondary: UIColor,
                                            _ accent: UIColor) {
-        let ground = CGRect(origin: .zero, size: size)
-            .insetBy(dx: size.width * 0.03, dy: size.height * 0.06)
-        withShadow(context) {
-            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.16), secondary)
-        }
-
+        // No slab: a chairlift is two towers and a wire, and the grass runs
+        // under it.
+        //
         // Two cables between the tower heads: chairs go out along one and come
         // back along the other, the way a chairlift actually works.
         let head = size.height * 0.30
@@ -1147,17 +1152,33 @@ enum BuildingArtwork {
             stroke(path, ParkPalette.colour(.charcoal), width: max(1, size.height * 0.020))
         }
 
-        // Towers, with a boarding platform under each.
+        // Towers, splayed at the foot like a real lift pylon, with a boarding
+        // platform under each.
         for x in [CGFloat(0.14), CGFloat(0.86)] {
-            let mast = UIBezierPath()
-            mast.move(to: CGPoint(x: size.width * x, y: head - size.height * 0.06))
-            mast.addLine(to: CGPoint(x: size.width * x, y: size.height * 0.80))
-            stroke(mast, accent, width: max(2, size.width * 0.030))
+            let top = CGPoint(x: size.width * x, y: head - size.height * 0.06)
+            let foot = size.height * 0.82
+
+            let legs = UIBezierPath()
+            for spread in [CGFloat(-0.045), CGFloat(0.045)] {
+                legs.move(to: top)
+                legs.addLine(to: CGPoint(x: size.width * (x + spread), y: foot))
+            }
+            // Two rungs across the legs.
+            for height in [CGFloat(0.45), CGFloat(0.72)] {
+                let y = top.y + (foot - top.y) * height
+                let half = size.width * 0.045 * height
+                legs.move(to: CGPoint(x: size.width * x - half, y: y))
+                legs.addLine(to: CGPoint(x: size.width * x + half, y: y))
+            }
+            stroke(legs, accent, width: max(1.5, size.width * 0.016))
 
             let platform = CGRect(x: size.width * x - size.width * 0.10,
-                                  y: size.height * 0.76,
-                                  width: size.width * 0.20, height: size.height * 0.16)
-            fill(UIBezierPath(roundedRect: platform, cornerRadius: platform.height * 0.3), primary)
+                                  y: size.height * 0.80,
+                                  width: size.width * 0.20, height: size.height * 0.15)
+            withShadow(context) {
+                fill(UIBezierPath(roundedRect: platform, cornerRadius: platform.height * 0.3),
+                     primary)
+            }
         }
     }
 
@@ -1327,15 +1348,10 @@ enum BuildingArtwork {
                                          _ primary: UIColor,
                                          _ secondary: UIColor,
                                          _ accent: UIColor) {
-        let ground = CGRect(origin: .zero, size: size)
-            .insetBy(dx: size.width * 0.03, dy: size.height * 0.04)
-        withShadow(context) {
-            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.10), secondary)
-        }
-
-        // Planting round the edges, which is what stops a brown trough on
-        // brown ground reading as one shape. Fixed positions, so the same
-        // flume always looks the same.
+        // No slab: the park's own grass runs under the flume, and the planting
+        // below sits on it.
+        //
+        // Fixed positions, so the same flume always looks the same.
         let bushes: [(CGFloat, CGFloat, CGFloat)] = [
             (0.10, 0.62, 0.9), (0.17, 0.72, 0.7), (0.44, 0.86, 1.0),
             (0.52, 0.72, 0.7), (0.40, 0.36, 0.8), (0.86, 0.34, 1.0),
@@ -1371,9 +1387,16 @@ enum BuildingArtwork {
         for (index, point) in points.enumerated() where index % 4 == 0 && point.y < deck - 6 {
             trestles.move(to: point)
             trestles.addLine(to: CGPoint(x: point.x, y: deck))
+            // A cross-brace halfway down each leg, which is what timber
+            // trestles actually look like and what stops them reading as
+            // scratches.
+            trestles.move(to: CGPoint(x: point.x - size.width * 0.014,
+                                      y: (point.y + deck) / 2))
+            trestles.addLine(to: CGPoint(x: point.x + size.width * 0.014,
+                                         y: (point.y + deck) / 2))
         }
-        stroke(trestles, ParkPalette.colour(.brown).withAlphaComponent(0.5),
-               width: max(1, size.width * 0.009))
+        stroke(trestles, ParkPalette.flumeTimber.withAlphaComponent(0.75),
+               width: max(1.5, size.width * 0.014))
 
         let channel = UIBezierPath()
         channel.move(to: points[0])
@@ -1716,34 +1739,51 @@ enum BuildingArtwork {
                                             _ primary: UIColor,
                                             _ secondary: UIColor,
                                             _ accent: UIColor) {
-        let ground = CGRect(origin: .zero, size: size)
-            .insetBy(dx: size.width * 0.02, dy: size.height * 0.03)
-        withShadow(context) {
-            fill(UIBezierPath(roundedRect: ground, cornerRadius: ground.height * 0.10), secondary)
-        }
-
+        // No ground slab. A coaster is a structure standing on the park, not a
+        // painted rectangle, and the grass should run under it.
         let points = megaCoasterPoints(in: size)
         guard points.count > 2 else { return }
 
-        // Supports first, so the track sits on top of them. Every few points
-        // is enough to read as a structure without becoming a fence.
         let deck = size.height * 0.97
-        let supports = UIBezierPath()
+
+        // Columns first, so the track sits on top of them. Thick enough to
+        // read as steel: a hairline looked like a pencil sketch.
+        let columns = UIBezierPath()
         for (index, point) in points.enumerated() where index % 5 == 0 && point.y < deck - 4 {
-            supports.move(to: point)
-            supports.addLine(to: CGPoint(x: point.x, y: deck))
+            columns.move(to: point)
+            columns.addLine(to: CGPoint(x: point.x, y: deck))
         }
-        stroke(supports, ParkPalette.colour(.slate).withAlphaComponent(0.55),
+        stroke(columns, ParkPalette.coasterSupport, width: max(1.5, size.width * 0.016))
+
+        // Cross-bracing between the columns, which is most of what makes a
+        // coaster read as built rather than drawn.
+        let bracing = UIBezierPath()
+        var previous: CGPoint?
+        for (index, point) in points.enumerated() where index % 5 == 0 && point.y < deck - 8 {
+            if let last = previous, abs(point.x - last.x) < size.width * 0.22 {
+                bracing.move(to: CGPoint(x: last.x, y: (last.y + deck) / 2))
+                bracing.addLine(to: CGPoint(x: point.x, y: (point.y + deck) / 2))
+            }
+            previous = point
+        }
+        stroke(bracing, ParkPalette.coasterSupport.withAlphaComponent(0.55),
                width: max(1, size.width * 0.008))
+
+        // A ground beam the columns stand on.
+        let beam = UIBezierPath()
+        beam.move(to: CGPoint(x: size.width * 0.03, y: deck))
+        beam.addLine(to: CGPoint(x: size.width * 0.97, y: deck))
+        stroke(beam, ParkPalette.coasterSupport, width: max(1.5, size.height * 0.020))
 
         let track = UIBezierPath()
         track.move(to: points[0])
         for point in points.dropFirst() { track.addLine(to: point) }
         track.close()
 
-        // Ties, then the rail on top, the same way the railway tiles are drawn.
-        stroke(track, ParkPalette.colour(.charcoal), width: max(2.5, size.height * 0.030))
-        stroke(track, accent, width: max(1, size.height * 0.013))
+        // Ties, then the rail on top, the same way the railway tiles are
+        // drawn. Heavier than before: this is the flagship ride in the park.
+        stroke(track, ParkPalette.coasterTie, width: max(3, size.height * 0.042))
+        stroke(track, accent, width: max(1.5, size.height * 0.019))
 
         // Station shed over the bottom-left straight, where the train boards.
         let station = CGRect(x: size.width * 0.05, y: size.height * 0.84,

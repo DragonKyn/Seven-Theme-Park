@@ -63,6 +63,11 @@ extension GameState {
                 size: elementDefinition.footprint(rotatedBy: rotation),
                 rotation: rotation
             )
+            // Lays its own rails, so an element can be dropped on bare ground
+            // and joined up afterwards.
+            for coord in element.rect.coords {
+                map.setTerrain(.coasterTrack, at: coord)
+            }
             trackElements.append(element)
             // Claiming the tiles is what stops two elements being stacked on
             // one another; the terrain underneath stays track either way.

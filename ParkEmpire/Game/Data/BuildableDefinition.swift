@@ -56,8 +56,10 @@ protocol BuildableDefinition {
     /// Whether it has to sit against coaster track.
     var requiresCoasterTrackAccess: Bool { get }
     /// Terrain this is built on top of rather than beside. A boat ride goes on
-    /// the water; a loop goes on the track it loops.
+    /// the water.
     var bedTerrain: TerrainType? { get }
+    /// Whether placing this lays coaster track under itself.
+    var laysCoasterTrack: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
     /// terrain rather than an object, and there is nothing to draw.
     var previewAppearance: BuildingAppearance? { get }
@@ -81,6 +83,7 @@ extension BuildableDefinition {
     var requiresTrackAccess: Bool { false }
     var requiresCoasterTrackAccess: Bool { false }
     var bedTerrain: TerrainType? { nil }
+    var laysCoasterTrack: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }
 

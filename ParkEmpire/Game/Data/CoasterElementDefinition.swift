@@ -17,15 +17,26 @@ struct CoasterElementDefinition: BuildableDefinition, Identifiable {
     /// How hard the train is thrown as it crosses. 1 is no reaction.
     let intensity: CGFloat
     let footprint: GridSize
+    /// How many tiles tall the drawing is. An element reaches up out of the
+    /// ground it occupies: a loop over three tiles of track needs height to be
+    /// a loop, and the track line runs along the bottom of the picture.
+    let visualHeight: Int
     let unlockLevel: Int
     let motif: CoasterElementMotif
 
+    /// Where the track runs through the drawing.
+    var trackLine: CGFloat {
+        CoasterElementArtwork.trackLine(footprintHeight: footprint.height,
+                                        visualHeight: visualHeight)
+    }
+
     var category: BuildCategory { .coaster }
 
-    /// It goes on track rather than beside it, so the usual walkway rule does
-    /// not apply and a bed of track does instead.
+    /// It brings its own track. Making the player lay a run of track first and
+    /// then drop an element on exactly the right tiles was fiddly and easy to
+    /// get wrong; an element lays whatever it needs under itself.
     var requiresPathAccess: Bool { false }
-    var bedTerrain: TerrainType? { .coasterTrack }
+    var laysCoasterTrack: Bool { true }
 
     var previewAppearance: BuildingAppearance? { nil }
 }
@@ -50,6 +61,7 @@ enum CoasterElementContent {
             thrill: 14,
             intensity: 1.22,
             footprint: GridSize(3, 1),
+            visualHeight: 2,
             unlockLevel: 1,
             motif: .airtimeHills
         ),
@@ -61,6 +73,7 @@ enum CoasterElementContent {
             thrill: 26,
             intensity: 1.55,
             footprint: GridSize(3, 1),
+            visualHeight: 3,
             unlockLevel: 1,
             motif: .verticalLoop
         ),
@@ -72,6 +85,7 @@ enum CoasterElementContent {
             thrill: 28,
             intensity: 1.40,
             footprint: GridSize(2, 2),
+            visualHeight: 2,
             unlockLevel: 2,
             motif: .helixTower
         ),
@@ -83,6 +97,7 @@ enum CoasterElementContent {
             thrill: 30,
             intensity: 1.45,
             footprint: GridSize(4, 1),
+            visualHeight: 2,
             unlockLevel: 2,
             motif: .corkscrew
         ),
@@ -94,6 +109,7 @@ enum CoasterElementContent {
             thrill: 34,
             intensity: 1.85,
             footprint: GridSize(3, 1),
+            visualHeight: 2,
             unlockLevel: 3,
             motif: .jump
         )
