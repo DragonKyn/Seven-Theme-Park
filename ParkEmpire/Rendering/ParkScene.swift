@@ -62,7 +62,21 @@ final class ParkScene: SKScene {
     private var litterIntensity: [GridCoord: Int] = [:]
     private var renderedLitterGeneration = -1
     private var trainNodes: [SKSpriteNode] = []
+    /// Coaster cars, remembered along with the ride they belong to, so a
+    /// change of colour or car type can be painted onto the train that is
+    /// already running instead of building a new one.
+    private var coasterCars: [CoasterCar] = []
+    /// The colour and car type each coaster's train is currently drawn in.
+    private var renderedLivery: [UUID: String] = [:]
     private var renderedTrackGeneration = -1
+
+    /// One car of a coaster train, and what it needs to be repainted.
+    private struct CoasterCar {
+        let node: SKSpriteNode
+        let attraction: UUID
+        let isLeading: Bool
+        let size: CGSize
+    }
     private var labelsVisible = true
     /// Camera scale beyond which building names are hidden. Bigger numbers are
     /// further out, because the camera scales the world down as it zooms out.
@@ -516,6 +530,9 @@ final class ParkScene: SKScene {
             node.size = pixelSize
             node.zRotation = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
             node.position = elementSpriteCentre(element, definition: definition)
+            // Structure first, train on top of it. A loop drawn over the cars
+            // hides the very thing it was bought to show off.
+            node.zPosition = -1
             trainLayer.addChild(node)
             elementNodes[element.id] = node
         }
@@ -534,11 +551,15 @@ final class ParkScene: SKScene {
     /// tile at a time and a half-updated route would send a locomotive across
     /// the grass.
     private func syncTrains(state: GameState) {
+        repaintCoasters(state: state)
+
         guard state.map.generation != renderedTrackGeneration else { return }
         renderedTrackGeneration = state.map.generation
 
         for node in trainNodes { node.removeFromParent() }
         trainNodes.removeAll()
+        coasterCars.removeAll()
+        renderedLivery.removeAll()
 
         runTrains(on: state.trackNetwork,
                   servedBy: state.attractions.filter { $0.baseDefinition?.kind == .transport },
@@ -548,6 +569,30 @@ final class ParkScene: SKScene {
                   servedBy: state.attractions.filter { $0.baseDefinition?.kind == .custom },
                   coaster: true,
                   elements: state.trackElements)
+    }
+
+    /// Repaints coaster trains in place when the player picks a new colour or
+    /// car type.
+    ///
+    /// Swapping a texture leaves the actions running, so the train keeps going
+    /// round and simply changes colour underneath the player. Rebuilding it
+    /// sent every car back to the station, which made choosing a colour feel
+    /// like a punishment.
+    private func repaintCoasters(state: GameState) {
+        guard !coasterCars.isEmpty else { return }
+
+        for attraction in state.attractions where attraction.baseDefinition?.kind == .custom {
+            let key = "\(attraction.livery.rawValue)|\(attraction.carStyle.rawValue)"
+            guard renderedLivery[attraction.id] != key else { continue }
+            renderedLivery[attraction.id] = key
+
+            for car in coasterCars where car.attraction == attraction.id {
+                car.node.texture = SpriteFactory.coasterCarTexture(isLeading: car.isLeading,
+                                                                   style: attraction.carStyle,
+                                                                   colour: attraction.livery,
+                                                                   size: car.size)
+            }
+        }
     }
 
     /// The line a train actually runs, with every element's own geometry
@@ -714,7 +759,17 @@ final class ParkScene: SKScene {
                 // The rear locomotive faces the other way, which is what makes
                 // a set that runs equally well in both directions read as one.
                 if isTailLocomotive { node.xScale = -1 }
+                // Above the element structures, which sit at -1.
+                node.zPosition = 1
                 trainLayer.addChild(node)
+
+                if coaster, let ride = served.first {
+                    coasterCars.append(CoasterCar(node: node,
+                                                  attraction: ride.id,
+                                                  isLeading: carriage == 0,
+                                                  size: carSize))
+                    renderedLivery[ride.id] = "\(ride.livery.rawValue)|\(ride.carStyle.rawValue)"
+                }
 
                 if isLoop {
                     // Smoothing multiplied the points, so a carriage sits a

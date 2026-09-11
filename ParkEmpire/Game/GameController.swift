@@ -386,16 +386,15 @@ final class GameController: ObservableObject {
     func setCoasterLivery(_ colour: ParkColour, attractionID: UUID) {
         guard let index = state.attractionIndex(id: attractionID) else { return }
         state.attractions[index].livery = colour
-        // The train is rebuilt from the map generation, so nudge it to make
-        // the scene notice a change that is not on the map at all.
-        state.bumpDecor()
+        // No map nudge here on purpose. The scene repaints the cars that are
+        // already running, so the train changes colour mid-circuit instead of
+        // being rebuilt back at the station.
         refreshUI()
     }
 
     func setCoasterCarStyle(_ style: CoasterCarStyle, attractionID: UUID) {
         guard let index = state.attractionIndex(id: attractionID) else { return }
         state.attractions[index].carStyle = style
-        state.bumpDecor()
         refreshUI()
     }
 
