@@ -88,7 +88,16 @@ final class DemandSystem {
         case .senior: cashRange = 50...140
         }
         let spendingScale = 0.7 + personality.spending / 100 * 0.6
-        let startingCash = state.rng.double(cashRange) * spendingScale
+        // Spending money, plus the price of the ticket on top.
+        //
+        // Somebody who has decided the gate is worth it brings the gate money
+        // with them; they do not pay for it out of their lunch. Taking
+        // admission out of a guest's pocket money meant a park charging near
+        // the cap admitted a crowd with nothing left to spend, and every shop
+        // and booth in it stood empty. Demand is still what an expensive park
+        // pays for, through `admissionWillingness` below.
+        let spendingMoney = state.rng.double(cashRange) * spendingScale
+        let startingCash = spendingMoney + state.admissionPrice
 
         let speedScale: Double
         switch age {
