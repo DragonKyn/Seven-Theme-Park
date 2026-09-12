@@ -72,6 +72,34 @@ struct AttractionInspectorView: View {
                             .padding(.vertical, 1)
                         }
 
+                        Text("TRACK")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 7) {
+                                ForEach(CoasterContent.liveries, id: \.rawValue) { colour in
+                                    Button {
+                                        controller.setCoasterTrackColour(colour)
+                                    } label: {
+                                        Circle()
+                                            .fill(Color(ParkPalette.colour(colour)))
+                                            .frame(width: 24, height: 24)
+                                            .overlay(
+                                                Circle().strokeBorder(
+                                                    colour == controller.state.coasterTrackColour
+                                                        ? Color.white
+                                                        : Color.black.opacity(0.25),
+                                                    lineWidth: colour == controller.state.coasterTrackColour ? 3 : 1)
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 1)
+                        }
+                        Text("Repaints every piece of coaster track in the park.")
+                            .font(.system(size: 10, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+
                         Text("CARS")
                             .font(.system(size: 9, weight: .bold, design: .rounded))
                             .foregroundStyle(Theme.textSecondary)

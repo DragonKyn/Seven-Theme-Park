@@ -56,6 +56,9 @@ final class FacilitySystem {
                                    state: GameState,
                                    now: Double) {
         switch kind {
+        case .game:
+            playGame(facilityIndex: facilityIndex, guestIndex: guestIndex, state: state, now: now)
+
         case .bathroom:
             // Judged on the state it was in when they walked in.
             if state.facilities[facilityIndex].isDirty {
@@ -79,6 +82,34 @@ final class FacilitySystem {
         case .souvenir, .bench:
             break
         }
+    }
+
+    /// Settles a go on a carnival booth.
+    ///
+    /// Winning is the whole point of the things: the prize is carried for the
+    /// rest of the visit, which is what makes a midway read as a midway rather
+    /// than as a row of shops nobody leaves with anything from.
+    private func playGame(facilityIndex: Int,
+                          guestIndex: Int,
+                          state: GameState,
+                          now: Double) {
+        guard let definition = state.facilities[facilityIndex].definition else { return }
+
+        guard state.rng.chance(definition.winChance) else {
+            state.guests[guestIndex].adjustHappiness(-Balance.happinessGameLoss)
+            let (text, mood) = ThoughtCatalog.gameLost(game: definition.displayName)
+            state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
+            return
+        }
+
+        let prize = GuestPrize.random(using: &state.rng)
+        state.guests[guestIndex].prize = prize
+        state.guests[guestIndex].prizesWon += 1
+        state.guests[guestIndex].adjustHappiness(Balance.happinessGameWin)
+        state.statistics.prizesWonTotal += 1
+
+        let (text, mood) = ThoughtCatalog.gameWon(prize: prize.displayName)
+        state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
     }
 
     /// Positive `hunger`/`thirst`/`bathroom` values *reduce* those needs;
@@ -185,6 +216,7 @@ final class FacilitySystem {
         case .food: state.statistics.foodSoldTotal += 1
         case .drink: state.statistics.drinksSoldTotal += 1
         case .souvenir: state.statistics.souvenirsSoldTotal += 1
+        case .game: state.statistics.gamesPlayedTotal += 1
         case .bathroom, .bench, .bin: break
         }
 
@@ -196,6 +228,8 @@ final class FacilitySystem {
         case .food: return .food
         case .drink: return .drinks
         case .souvenir: return .souvenirs
+        // A go on a booth is a souvenir sold before it is won.
+        case .game: return .souvenirs
         default: return .other
         }
     }

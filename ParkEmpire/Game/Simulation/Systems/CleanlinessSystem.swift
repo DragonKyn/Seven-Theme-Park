@@ -15,12 +15,24 @@ final class CleanlinessSystem {
             $0.definition?.kind == .bin && $0.isOpen && !$0.isFull
         }
 
+        // Where the guards are standing. Gathered once rather than per guest,
+        // and usually empty.
+        let guards = state.staff.filter { $0.role == .security }.map(\.position)
+
         for index in state.guests.indices {
             guard state.guests[index].isActive else { continue }
             applyLitterDisgust(index: index, state: state, dt: dt)
             guard state.guests[index].carryingTrash > 0 else { continue }
             state.guests[index].trashCarriedFor += dt
-            maybeDropLitter(index: index, state: state, dt: dt, hasUsableBin: hasUsableBin, now: now)
+            let watched = guards.contains {
+                SimMath.distance($0, state.guests[index].position) <= Balance.securityRadius
+            }
+            maybeDropLitter(index: index,
+                            state: state,
+                            dt: dt,
+                            hasUsableBin: hasUsableBin,
+                            watched: watched,
+                            now: now)
         }
     }
 
@@ -40,12 +52,15 @@ final class CleanlinessSystem {
                                  state: GameState,
                                  dt: Double,
                                  hasUsableBin: Bool,
+                                 watched: Bool,
                                  now: Double) {
         let guest = state.guests[index]
         let impatience = min(1, guest.trashCarriedFor / Balance.trashPatience)
         let tidiness = guest.personality.cleanlinessSensitivity / 100
         var chance = Balance.litterDropChancePerSecond * impatience * (1.6 - tidiness) * dt
         if !hasUsableBin { chance *= 2.5 }
+        // Nobody drops a wrapper in front of a guard.
+        if watched { chance *= (1 - Balance.securityLitterDeterrence) }
 
         guard state.rng.chance(chance) else { return }
 

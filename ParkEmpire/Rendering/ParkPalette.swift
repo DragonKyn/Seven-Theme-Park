@@ -22,6 +22,7 @@ enum ParkPalette {
     static let bathroom = UIColor(red: 0.63, green: 0.53, blue: 0.86, alpha: 1)
     static let bench = UIColor(red: 0.68, green: 0.52, blue: 0.36, alpha: 1)
     static let shop = UIColor(red: 0.92, green: 0.62, blue: 0.78, alpha: 1)
+    static let game = UIColor(red: 0.95, green: 0.45, blue: 0.20, alpha: 1)
 
     static let ghostValid = UIColor(red: 0.30, green: 0.85, blue: 0.45, alpha: 0.55)
     /// Round a placement that is lined up and legal. Brighter than the plain
@@ -37,6 +38,13 @@ enum ParkPalette {
     static let coasterBed = UIColor(red: 0.30, green: 0.33, blue: 0.40, alpha: 1)
     static let coasterSupport = UIColor(red: 0.55, green: 0.58, blue: 0.64, alpha: 0.95)
     static let coasterRail = UIColor(red: 0.98, green: 0.72, blue: 0.28, alpha: 1)
+
+    /// The rail colour the player has chosen for their coasters, or the stock
+    /// orange when they have not chosen one.
+    static func coasterRail(for colour: ParkColour?) -> UIColor {
+        guard let colour else { return coasterRail }
+        return self.colour(colour)
+    }
     static let coasterTie = UIColor(red: 0.20, green: 0.22, blue: 0.28, alpha: 1)
 
     static let rail = UIColor(red: 0.72, green: 0.73, blue: 0.75, alpha: 1)
@@ -75,12 +83,14 @@ enum ParkPalette {
     static let janitor = UIColor(red: 0.30, green: 0.72, blue: 0.62, alpha: 1)
     static let mechanic = UIColor(red: 0.98, green: 0.62, blue: 0.15, alpha: 1)
     static let entertainer = UIColor(red: 0.85, green: 0.36, blue: 0.72, alpha: 1)
+    static let security = UIColor(red: 0.24, green: 0.38, blue: 0.72, alpha: 1)
 
     static func colour(for role: StaffRole) -> UIColor {
         switch role {
         case .janitor: return janitor
         case .mechanic: return mechanic
         case .entertainer: return entertainer
+        case .security: return security
         }
     }
 
@@ -91,6 +101,7 @@ enum ParkPalette {
         case .bathroom: return bathroom
         case .bench: return bench
         case .souvenir: return shop
+        case .game: return game
         case .bin: return bin
         }
     }

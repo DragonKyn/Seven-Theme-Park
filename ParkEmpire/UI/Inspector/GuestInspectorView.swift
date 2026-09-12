@@ -61,6 +61,12 @@ struct GuestInspectorView: View {
                     StatRow(label: "Rides experienced", value: "\(guest.ridesRidden)")
                     StatRow(label: "Purchases", value: "\(guest.purchases)")
                     StatRow(label: "Money spent", value: CurrencyFormatter.exact(guest.moneySpent))
+                    if let prize = guest.prizeName {
+                        StatRow(label: "Carrying", value: prize.capitalized)
+                    }
+                    if guest.prizesWon > 0 {
+                        StatRow(label: "Prizes won", value: "\(guest.prizesWon)")
+                    }
                 }
             }
 

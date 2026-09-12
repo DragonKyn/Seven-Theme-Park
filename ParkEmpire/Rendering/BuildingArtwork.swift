@@ -73,6 +73,13 @@ enum BuildingArtwork {
         case .coasterStation: drawCoasterStation(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)
+        case .basketballGame: drawBasketballGame(context, size, primary, secondary, accent)
+        case .waterRaceGame: drawWaterRaceGame(context, size, primary, secondary, accent)
+        case .balloonGame: drawBalloonGame(context, size, primary, secondary, accent)
+        case .targetGame: drawTargetGame(context, size, primary, secondary, accent)
+        case .moleGame: drawMoleGame(context, size, primary, secondary, accent)
+        case .strengthTester: drawStrengthTester(context, size, primary, secondary, accent)
+        case .ringTossGame: drawRingTossGame(context, size, primary, secondary, accent)
         case .burgerStall: drawBurgerStall(context, size, primary, secondary, accent)
         case .pizzaStall: drawPizzaStall(context, size, primary, secondary, accent)
         case .drinkKiosk: drawDrinkKiosk(context, size, primary, secondary, accent)
@@ -114,6 +121,8 @@ enum BuildingArtwork {
         // Four lanes, four mats. One mat on a four-lane slide looks like the
         // other three are shut.
         case .carpetSlide: return 4
+        // Three holes on the board, so one is always up.
+        case .moleGame: return 3
         default: return 1
         }
     }
@@ -153,6 +162,8 @@ enum BuildingArtwork {
             case .carpetSlide: drawMat(context, size, primary, secondary, accent)
             case .hauntedHouse: drawGhost(context, size, primary, secondary, accent)
             case .fountain:  drawFountainJet(context, size, primary, secondary, accent)
+            case .moleGame:  drawMole(context, size, variant)
+            case .strengthTester: drawStrikerPuck(context, size, accent)
             default:         break
             }
         }
@@ -203,6 +214,10 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.20, height: shortest * 0.26)
         case .fountain:
             return CGSize(width: shortest * 0.30, height: shortest * 0.42)
+        case .moleGame:
+            return CGSize(width: shortest * 0.15, height: shortest * 0.17)
+        case .strengthTester:
+            return CGSize(width: shortest * 0.16, height: shortest * 0.09)
         default:
             return .zero
         }
@@ -210,19 +225,19 @@ enum BuildingArtwork {
 
     // MARK: - Shared drawing helpers
 
-    private static func fill(_ path: UIBezierPath, _ colour: UIColor) {
+    static func fill(_ path: UIBezierPath, _ colour: UIColor) {
         colour.setFill()
         path.fill()
     }
 
-    private static func stroke(_ path: UIBezierPath, _ colour: UIColor, width: CGFloat) {
+    static func stroke(_ path: UIBezierPath, _ colour: UIColor, width: CGFloat) {
         colour.setStroke()
         path.lineWidth = width
         path.stroke()
     }
 
     /// A soft drop shadow so buildings sit above the grass rather than on it.
-    private static func withShadow(_ context: CGContext, _ body: () -> Void) {
+    static func withShadow(_ context: CGContext, _ body: () -> Void) {
         context.saveGState()
         context.setShadow(offset: CGSize(width: 0, height: 2),
                           blur: 4,

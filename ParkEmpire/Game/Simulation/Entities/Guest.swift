@@ -134,6 +134,12 @@ struct Guest: Codable, Identifiable {
     /// they carry it without finding one, the likelier they are to drop it.
     var carryingTrash: Int = 0
     var trashCarriedFor: Double = 0
+    /// What they won at a carnival booth, if anything. Carried for the rest of
+    /// the visit and drawn in their hand.
+    var prize: GuestPrize?
+    /// How many booths they have won at, so a guest who keeps winning stops
+    /// being drawn under a pile of bears.
+    var prizesWon: Int = 0
     var thoughts: [GuestThought] = []
     /// Set when the guest decides to go home; recorded on departure.
     var departureReason: String?
@@ -198,6 +204,8 @@ extension Guest {
         purchases = container.value(.purchases, or: 0)
         carryingTrash = container.value(.carryingTrash, or: 0)
         trashCarriedFor = container.value(.trashCarriedFor, or: 0)
+        prize = container.optionalValue(.prize)
+        prizesWon = container.value(.prizesWon, or: 0)
         thoughts = container.value(.thoughts, or: [])
         departureReason = container.optionalValue(.departureReason)
     }

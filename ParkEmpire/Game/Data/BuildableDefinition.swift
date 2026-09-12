@@ -5,6 +5,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
     case path
     case attraction
     case shop
+    case games
     case facility
     case coaster
     case transport
@@ -17,6 +18,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .path: return "Paths"
         case .attraction: return "Rides"
         case .shop: return "Food & Retail"
+        case .games: return "Games"
         case .facility: return "Guest Services"
         case .coaster: return "Coasters"
         case .transport: return "Transport"
@@ -29,6 +31,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .path: return "square.grid.3x3"
         case .attraction: return "sparkles"
         case .shop: return "cart"
+        case .games: return "target"
         case .facility: return "figure.stand"
         // A swooping line, which is what track looks like. The rolling
         // figure it had before is a wheelchair symbol.

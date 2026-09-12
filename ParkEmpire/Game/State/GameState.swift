@@ -36,6 +36,10 @@ final class GameState: Codable {
     /// The colour every employee's uniform is drawn in. Park-wide rather than
     /// per-employee: it is a decision about the park, not about a person.
     var uniformColour: ParkColour = .teal
+    /// The colour every piece of coaster track is painted. Park-wide, like the
+    /// uniform: repainting one circuit and not the next looked like a mistake
+    /// rather than a choice.
+    var coasterTrackColour: ParkColour = .amber
     /// How much of the car park outside the gate has been paved, 0 to
     /// `CarParkContent.maxLevel`.
     var carParkLevel: Int = 0
@@ -100,6 +104,7 @@ final class GameState: Codable {
         alerts = container.value(.alerts, or: [])
         admissionPrice = container.value(.admissionPrice, or: Balance.defaultAdmissionPrice)
         uniformColour = container.value(.uniformColour, or: .teal)
+        coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)

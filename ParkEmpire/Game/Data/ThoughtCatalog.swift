@@ -69,6 +69,14 @@ enum ThoughtCatalog {
         return ("\(formatted) to get in seems reasonable.", .neutral)
     }
 
+    static func gameWon(prize: String) -> (String, ThoughtMood) {
+        ("I won a \(prize)!", .positive)
+    }
+
+    static func gameLost(game: String) -> (String, ThoughtMood) {
+        ("So close at \(game). One more go.", .neutral)
+    }
+
     static func outOfMoney() -> (String, ThoughtMood) {
         ("I'm out of money.", .negative)
     }

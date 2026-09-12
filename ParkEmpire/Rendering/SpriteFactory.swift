@@ -314,14 +314,17 @@ enum SpriteFactory {
         }
     }
 
+    /// `rail` repaints coaster track. A railway's rails are steel whatever the
+    /// player picks: a green railway line is not a decision anybody wants.
     static func trackTileTexture(connections: Int,
                                  side: CGFloat,
-                                 coaster: Bool = false) -> SKTexture {
+                                 coaster: Bool = false,
+                                 rail: ParkColour? = nil) -> SKTexture {
         let bed = coaster ? ParkPalette.coasterBed : ParkPalette.ballast
         let tie = coaster ? ParkPalette.coasterTie : ParkPalette.sleeper
-        let railColour = coaster ? ParkPalette.coasterRail : ParkPalette.rail
+        let railColour = coaster ? ParkPalette.coasterRail(for: rail) : ParkPalette.rail
 
-        return texture(key: "track-\(coaster ? "c" : "r")-\(connections)-\(side)",
+        return texture(key: "track-\(coaster ? "c" : "r")-\(connections)-\(side)-\(rail?.rawValue ?? "stock")",
                        size: CGSize(width: side, height: side)) { _, size in
             bed.setFill()
             UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()

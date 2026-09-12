@@ -110,6 +110,13 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    /// Repaints every piece of coaster track in the park, and the loops and
+    /// corkscrews bolted to it.
+    func setCoasterTrackColour(_ colour: ParkColour) {
+        state.coasterTrackColour = colour
+        refreshUI()
+    }
+
     // MARK: - Building
 
     var selectedDefinition: BuildableDefinition? {

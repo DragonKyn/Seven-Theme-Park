@@ -35,6 +35,9 @@ enum PersonArtwork {
         /// 1.0 is an adult. Children and seniors are drawn shorter rather than
         /// drawn again.
         let heightScale: CGFloat
+        /// Something won at a carnival booth, carried under the arm. Nil for
+        /// everybody who has not won anything, which is most of the park.
+        var prize: GuestPrize? = nil
     }
 
     /// Where the parts of a drawn figure ended up, so a caller can hang a
@@ -114,8 +117,112 @@ enum PersonArtwork {
         hair.fill()
 
         drawHeadwear(look, head: head, context: context, size: size)
+        drawPrize(look, body: body)
 
         return Layout(head: head, body: body, bottom: bottom)
+    }
+
+    /// A prize tucked under the near arm.
+    ///
+    /// On the left, because staff carry their tools on the right and a guest
+    /// and an employee are the same body underneath. Small and bold rather
+    /// than detailed: at this size what has to read is "that person won
+    /// something", not which animal it is.
+    private static func drawPrize(_ look: Look, body: CGRect) {
+        guard let prize = look.prize else { return }
+
+        let unit = body.width
+        let colour = ParkPalette.colour(prize.colour)
+        let outline = UIColor.black.withAlphaComponent(0.32)
+        let outlineWidth = max(0.5, unit * 0.07)
+        // Just inside the body's edge: any further out and the prize is
+        // clipped by the edge of the sprite.
+        let centre = CGPoint(x: body.minX + unit * 0.06, y: body.midY + unit * 0.10)
+
+        func blob(_ rect: CGRect, _ fill: UIColor, oval: Bool = true) {
+            let path = oval
+                ? UIBezierPath(ovalIn: rect)
+                : UIBezierPath(roundedRect: rect, cornerRadius: rect.height * 0.3)
+            fill.setFill()
+            path.fill()
+            outline.setStroke()
+            path.lineWidth = outlineWidth
+            path.stroke()
+        }
+
+        let torso = unit * 0.46
+        let head = unit * 0.34
+
+        switch prize.kind {
+        case .star:
+            let points = 5
+            let outer = unit * 0.34
+            let star = UIBezierPath()
+            for step in 0..<(points * 2) {
+                let radius = step % 2 == 0 ? outer : outer * 0.44
+                let angle = -CGFloat.pi / 2 + CGFloat(step) * .pi / CGFloat(points)
+                let point = CGPoint(x: centre.x + cos(angle) * radius,
+                                    y: centre.y + sin(angle) * radius)
+                if step == 0 { star.move(to: point) } else { star.addLine(to: point) }
+            }
+            star.close()
+            colour.setFill()
+            star.fill()
+            outline.setStroke()
+            star.lineWidth = outlineWidth
+            star.stroke()
+
+        case .ball:
+            let side = unit * 0.56
+            let ball = CGRect(x: centre.x - side / 2, y: centre.y - side / 2,
+                              width: side, height: side)
+            blob(ball, colour)
+            let stripe = UIBezierPath()
+            stripe.move(to: CGPoint(x: ball.minX + side * 0.12, y: ball.midY))
+            stripe.addQuadCurve(to: CGPoint(x: ball.maxX - side * 0.12, y: ball.midY),
+                                controlPoint: CGPoint(x: ball.midX, y: ball.minY))
+            UIColor.white.withAlphaComponent(0.85).setStroke()
+            stripe.lineWidth = max(0.5, unit * 0.10)
+            stripe.stroke()
+
+        case .duck:
+            blob(CGRect(x: centre.x - torso / 2, y: centre.y - torso * 0.20,
+                        width: torso, height: torso * 0.80), colour)
+            blob(CGRect(x: centre.x - head * 0.20, y: centre.y - head * 0.72,
+                        width: head, height: head), colour)
+            blob(CGRect(x: centre.x + head * 0.52, y: centre.y - head * 0.34,
+                        width: head * 0.44, height: head * 0.28),
+                 ParkPalette.colour(.orange), oval: false)
+
+        case .bear, .dog, .bunny:
+            blob(CGRect(x: centre.x - torso / 2, y: centre.y - torso * 0.10,
+                        width: torso, height: torso * 0.92), colour)
+            blob(CGRect(x: centre.x - head / 2, y: centre.y - head * 0.74,
+                        width: head, height: head), colour)
+
+            // The ears are the whole difference between the three of them.
+            let ear = head * 0.44
+            switch prize.kind {
+            case .bunny:
+                for dx in [-head * 0.22, head * 0.22] {
+                    blob(CGRect(x: centre.x + dx - ear * 0.26,
+                                y: centre.y - head * 1.28,
+                                width: ear * 0.52, height: ear * 1.30), colour)
+                }
+            case .dog:
+                for dx in [-head * 0.46, head * 0.46] {
+                    blob(CGRect(x: centre.x + dx - ear * 0.30,
+                                y: centre.y - head * 0.66,
+                                width: ear * 0.60, height: ear * 1.00), colour)
+                }
+            default:
+                for dx in [-head * 0.38, head * 0.38] {
+                    blob(CGRect(x: centre.x + dx - ear / 2,
+                                y: centre.y - head * 0.92,
+                                width: ear, height: ear), colour)
+                }
+            }
+        }
     }
 
     private static func drawHeadwear(_ look: Look,

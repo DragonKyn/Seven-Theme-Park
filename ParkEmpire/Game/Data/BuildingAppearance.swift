@@ -74,6 +74,15 @@ enum BuildingMotif: String, Codable {
     case stall
     /// Small booth with a domed top.
     case kiosk
+    /// Carnival booths. Each is the same counter with a different game
+    /// behind it, which is what a row of them looks like in life.
+    case basketballGame
+    case waterRaceGame
+    case balloonGame
+    case targetGame
+    case moleGame
+    case strengthTester
+    case ringTossGame
     /// Booths with a board saying what they sell.
     case burgerStall
     case pizzaStall
@@ -118,12 +127,17 @@ enum BuildingMotif: String, Codable {
         case .hauntedHouse: return .hover
         case .wavePool: return .surf
         case .fountain: return .bob
+        // The two booths with something to watch. The rest are a backdrop for
+        // the guests standing at them.
+        case .moleGame: return .pop
+        case .strengthTester: return .rise
         // The station itself is still; what moves is the train, and that runs
         // on the player's own track rather than round the building.
         case .trainStation: return .none
         case .mirrorMaze, .coasterStation: return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
+             .basketballGame, .waterRaceGame, .balloonGame, .targetGame, .ringTossGame,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
             return .none
         }
@@ -151,6 +165,8 @@ enum BuildingMotion: String, Codable {
     case race
     /// Several vehicles crossing an arena and colliding.
     case bumper
+    /// Up out of a hole, and straight back down again.
+    case pop
 }
 
 /// Named colours the park is drawn from. Naming them rather than storing raw

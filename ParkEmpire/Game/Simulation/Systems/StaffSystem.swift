@@ -142,7 +142,46 @@ final class StaffSystem {
                 return .entertain(spot)
             }
             return nil
+
+        case .security:
+            // The gate most of the time, because that is where guests arrive
+            // and where a guard is worth the most; a lap of the park the rest
+            // of the time, so the uniform is seen somewhere other than the
+            // front door.
+            if !state.rng.chance(Balance.securityPatrolChance),
+               let post = gatePost(map: map, state: state, claimed: claimed, distance: distance) {
+                return .patrol(post)
+            }
+            if let spot = randomReachableTile(map: map, field: field, state: state) {
+                return .patrol(spot)
+            }
+            if let post = gatePost(map: map, state: state, claimed: claimed, distance: distance) {
+                return .patrol(post)
+            }
+            return nil
         }
+    }
+
+    /// A spot to stand near the front gate that nobody else has taken.
+    private func gatePost(map: ParkMap,
+                          state: GameState,
+                          claimed: Set<StaffJob>,
+                          distance: (GridCoord) -> Int?) -> GridCoord? {
+        let gate = map.entranceCoord
+        let reach = Balance.securityGateRadius
+        var posts: [GridCoord] = []
+
+        for dx in -reach...reach {
+            for dy in 0...reach {
+                let coord = GridCoord(gate.x + dx, gate.y + dy)
+                guard map.isWalkable(coord), distance(coord) != nil else { continue }
+                guard !claimed.contains(.patrol(coord)) else { continue }
+                posts.append(coord)
+            }
+        }
+
+        guard !posts.isEmpty else { return nil }
+        return posts[state.rng.int(0...(posts.count - 1))]
     }
 
     private func randomReachableTile(map: ParkMap, field: [Int], state: GameState) -> GridCoord? {
@@ -182,7 +221,7 @@ final class StaffSystem {
 
     private func destinationTiles(for job: StaffJob, state: GameState, map: ParkMap) -> [GridCoord] {
         switch job {
-        case .cleanLitter(let coord), .entertain(let coord):
+        case .cleanLitter(let coord), .entertain(let coord), .patrol(let coord):
             return map.isWalkable(coord) ? [coord] : []
         case .serviceFacility(let id):
             guard let facility = state.facility(id: id) else { return [] }
@@ -241,6 +280,15 @@ final class StaffSystem {
             state.staff[staffIndex].workTimer = Balance.inspectionDuration / state.staff[staffIndex].workRate
         case .entertain:
             state.staff[staffIndex].workTimer = 25
+        case .patrol(let coord):
+            // A post at the gate is held far longer than a spot out in the
+            // park, which is what makes the gate the guard's home.
+            let gate = state.map.entranceCoord
+            let atGate = abs(coord.x - gate.x) <= Balance.securityGateRadius
+                && abs(coord.y - gate.y) <= Balance.securityGateRadius
+            state.staff[staffIndex].workTimer = atGate
+                ? Balance.securityPostDuration
+                : Balance.securityPatrolDuration
         case .cleanLitter, .serviceFacility:
             state.staff[staffIndex].workTimer = 0
         }
@@ -259,7 +307,7 @@ final class StaffSystem {
             return state.attraction(id: id)?.isBroken == true
         case .inspectRide(let id):
             return state.attraction(id: id)?.isInspectionOverdue == true
-        case .entertain:
+        case .entertain, .patrol:
             return true
         }
     }
@@ -313,6 +361,13 @@ final class StaffSystem {
             if state.staff[staffIndex].workTimer <= 0 {
                 finish(staffIndex: staffIndex, state: state, now: now)
             }
+
+        case .patrol:
+            state.staff[staffIndex].workTimer -= dt
+            reassureNearbyGuests(staffIndex: staffIndex, state: state, dt: dt)
+            if state.staff[staffIndex].workTimer <= 0 {
+                finish(staffIndex: staffIndex, state: state, now: now)
+            }
         }
     }
 
@@ -324,6 +379,20 @@ final class StaffSystem {
         for index in state.guests.indices where state.guests[index].isActive {
             let distance = SimMath.distance(state.guests[index].position, centre)
             guard distance <= radius else { continue }
+            state.guests[index].adjustHappiness(boost)
+        }
+    }
+
+    /// A guard on a post makes the people around them feel looked after. A
+    /// smaller lift than an entertainer's, over a wider circle: nobody comes
+    /// to a park for the security, but they notice when there is none.
+    private func reassureNearbyGuests(staffIndex: Int, state: GameState, dt: Double) {
+        let centre = state.staff[staffIndex].position
+        let radius = Balance.securityRadius
+        let boost = Balance.securityHappinessPerSecond * dt
+
+        for index in state.guests.indices where state.guests[index].isActive {
+            guard SimMath.distance(state.guests[index].position, centre) <= radius else { continue }
             state.guests[index].adjustHappiness(boost)
         }
     }

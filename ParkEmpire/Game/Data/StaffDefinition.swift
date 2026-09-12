@@ -4,6 +4,7 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     case janitor
     case mechanic
     case entertainer
+    case security
 
     var id: String { rawValue }
 }
@@ -39,6 +40,14 @@ enum StaffContent {
             hiringCost: 900,
             dailyWage: 95,
             symbolName: "wrench.and.screwdriver.fill"
+        ),
+        StaffDefinition(
+            role: .security,
+            displayName: "Security Guard",
+            summary: "Stands at the gate and walks the park. Guests behave better, and feel safer, where one is stood.",
+            hiringCost: 750,
+            dailyWage: 85,
+            symbolName: "shield.fill"
         ),
         StaffDefinition(
             role: .entertainer,

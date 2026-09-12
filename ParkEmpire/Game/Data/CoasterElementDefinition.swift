@@ -80,12 +80,14 @@ enum CoasterElementContent {
         CoasterElementDefinition(
             id: "element.helix",
             displayName: "Helix Tower",
-            summary: "A tight descending spiral. Takes a square of track and gives back a long, heavy turn.",
+            summary: "A tight climbing spiral. Two tiles of track go in, and a long, heavy turn comes out.",
             purchasePrice: 4_200,
             thrill: 28,
             intensity: 1.40,
-            footprint: GridSize(2, 2),
-            visualHeight: 2,
+            // One row deep, like every other element. A two-deep footprint put
+            // the rails on the seam between its rows rather than on the track.
+            footprint: GridSize(2, 1),
+            visualHeight: 3,
             unlockLevel: 2,
             motif: .helixTower
         ),

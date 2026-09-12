@@ -63,6 +63,9 @@ struct GuestDetail: Identifiable {
     let thrillPreference: Double
     let patience: Double
     let spending: Double
+    /// What they are carrying home from the midway, if anything.
+    let prizeName: String?
+    let prizesWon: Int
 
     init(guest: Guest, state: GameState) {
         id = guest.id
@@ -83,6 +86,8 @@ struct GuestDetail: Identifiable {
         thrillPreference = guest.personality.thrillPreference
         patience = guest.personality.patience
         spending = guest.personality.spending
+        prizeName = guest.prize?.displayName
+        prizesWon = guest.prizesWon
         activityText = GuestDetail.describe(activity: guest.activity, state: state)
     }
 
@@ -329,6 +334,8 @@ struct StaffDetail: Identifiable {
             return "inspecting \(state.attraction(id: id)?.name ?? "a ride")"
         case .entertain:
             return "entertaining the crowd"
+        case .patrol:
+            return "keeping an eye on things"
         }
     }
 }

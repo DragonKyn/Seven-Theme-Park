@@ -14,11 +14,16 @@ import UIKit
 /// its footprint and the track line runs along the bottom of it.
 enum CoasterElementArtwork {
 
-    /// Where the track runs through a drawing, as a share of its height. The
-    /// footprint sits at the bottom; everything above it is the element.
+    /// Where the track runs through a drawing, as a share of its height.
+    ///
+    /// Always half a tile up from the bottom, which is the middle of the row
+    /// of track the element stands on. Measuring from the middle of the
+    /// footprint instead put a two-deep element's rails on the seam between
+    /// its two rows, which is half a tile above the track the train is
+    /// actually running.
     static func trackLine(footprintHeight: Int, visualHeight: Int) -> CGFloat {
         let visual = CGFloat(max(visualHeight, 1))
-        return (visual - CGFloat(footprintHeight) / 2) / visual
+        return (visual - 0.5) / visual
     }
 
     // MARK: - The line
@@ -113,19 +118,36 @@ enum CoasterElementArtwork {
         return points
     }
 
+    /// A spiral that stands above the track rather than lying on it: a ramp up
+    /// off the rails, two and a half turns climbing a tower, and a ramp back
+    /// down. Drawn flat on the track line it read as a scribble on the ground.
     private static func helix(_ size: CGSize, _ line: CGFloat) -> [CGPoint] {
-        let centre = CGPoint(x: size.width / 2, y: line)
-        let outer = min(size.width, size.height) * 0.38
-        var points = [CGPoint(x: 0, y: line)]
+        let centre = CGPoint(x: size.width / 2, y: line - size.height * 0.34)
+        let radiusX = size.width * 0.32
+        let radiusY = size.height * 0.15
+        let climb = size.height * 0.16
 
-        let steps = 96
+        var points = [CGPoint(x: 0, y: line)]
+        let start = CGPoint(x: centre.x - radiusX, y: centre.y + radiusY)
+        points += quad(from: CGPoint(x: size.width * 0.08, y: line),
+                       control: CGPoint(x: size.width * 0.20, y: line),
+                       to: start,
+                       steps: 10)
+
+        let steps = 84
+        var last = start
         for step in 0...steps {
             let progress = CGFloat(step) / CGFloat(steps)
-            let angle = .pi + progress * .pi * 2 * 3
-            let radius = outer * (1 - progress * 0.55)
-            points.append(CGPoint(x: centre.x + cos(angle) * radius,
-                                  y: centre.y + sin(angle) * radius * 0.68))
+            let angle = CGFloat.pi + progress * .pi * 2 * 2.5
+            last = CGPoint(x: centre.x + cos(angle) * radiusX,
+                           y: centre.y + sin(angle) * radiusY - climb * progress)
+            points.append(last)
         }
+
+        points += quad(from: last,
+                       control: CGPoint(x: size.width * 0.84, y: line),
+                       to: CGPoint(x: size.width * 0.94, y: line),
+                       steps: 10)
         points.append(CGPoint(x: size.width, y: line))
         return points
     }
@@ -152,11 +174,13 @@ enum CoasterElementArtwork {
 
     static func texture(for motif: CoasterElementMotif,
                         size: CGSize,
-                        trackY: CGFloat) -> SKTexture {
+                        trackY: CGFloat,
+                        rail: ParkColour? = nil) -> SKTexture {
         SpriteFactory.texture(
-            key: "element-\(motif.rawValue)-\(Int(size.width))x\(Int(size.height))-\(Int(trackY * 100))",
+            key: "element-\(motif.rawValue)-\(Int(size.width))x\(Int(size.height))"
+                + "-\(Int(trackY * 100))-\(rail?.rawValue ?? "stock")",
             size: size) { context, size in
-            draw(motif, size: size, trackY: trackY)
+            draw(motif, size: size, trackY: trackY, rail: rail)
         }
     }
 
@@ -175,7 +199,10 @@ enum CoasterElementArtwork {
 
     private static var previews: [String: UIImage] = [:]
 
-    private static func draw(_ motif: CoasterElementMotif, size: CGSize, trackY: CGFloat) {
+    private static func draw(_ motif: CoasterElementMotif,
+                             size: CGSize,
+                             trackY: CGFloat,
+                             rail: ParkColour? = nil) {
         let points = centreline(for: motif, size: size, trackY: trackY)
         guard points.count > 1 else { return }
 
@@ -212,17 +239,17 @@ enum CoasterElementArtwork {
         path.lineJoinStyle = .round
         path.stroke()
 
-        ParkPalette.coasterRail.setStroke()
+        ParkPalette.coasterRail(for: rail).setStroke()
         path.lineWidth = max(1.5, size.height * 0.050)
         path.stroke()
 
-        if motif == .jump { markGap(size: size, trackY: trackY) }
+        if motif == .jump { markGap(size: size, trackY: trackY, rail: rail) }
     }
 
     /// Hazard marks under a jump, so the gap reads as deliberate.
-    private static func markGap(size: CGSize, trackY: CGFloat) {
+    private static func markGap(size: CGSize, trackY: CGFloat, rail: ParkColour?) {
         let deck = size.height * trackY
-        ParkPalette.coasterRail.withAlphaComponent(0.45).setFill()
+        ParkPalette.coasterRail(for: rail).withAlphaComponent(0.45).setFill()
         for index in 0..<3 {
             let mark = CGRect(x: size.width * (0.42 + 0.07 * CGFloat(index)),
                               y: deck + size.height * 0.04,

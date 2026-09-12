@@ -218,6 +218,31 @@ final class BuildingNode: SKSpriteNode {
             down.timingMode = .easeInEaseOut
             node.run(.repeatForever(.sequence([up, down])))
 
+        case .pop:
+            // Three moles, three holes, each on its own beat, so the board is
+            // never still and never all up at once.
+            let holes: [(x: CGFloat, y: CGFloat, delay: TimeInterval)] = [
+                (-0.22, 0.02, 0),
+                (0.02, -0.08, 0.7),
+                (0.24, 0.06, 1.3)
+            ]
+            let hole = holes[index % holes.count]
+            node.position = CGPoint(x: buildingSize.width * hole.x,
+                                    y: buildingSize.height * hole.y)
+            node.anchorPoint = CGPoint(x: 0.5, y: 0)
+            node.yScale = 0.05
+            let up = SKAction.scaleY(to: 1.0, duration: 0.22)
+            up.timingMode = .easeOut
+            let down = SKAction.scaleY(to: 0.05, duration: 0.18)
+            down.timingMode = .easeIn
+            node.run(.sequence([
+                .wait(forDuration: hole.delay),
+                .repeatForever(.sequence([up,
+                                          .wait(forDuration: 0.5),
+                                          down,
+                                          .wait(forDuration: 1.3)]))
+            ]))
+
         case .launch:
             applyLaunch(to: node, buildingSize: buildingSize)
 

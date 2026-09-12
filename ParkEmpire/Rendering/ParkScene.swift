@@ -41,6 +41,9 @@ final class ParkScene: SKScene {
     /// Which mood each guest sprite is currently drawn with, so the texture is
     /// only swapped when the mood actually changes.
     private var guestMood: [UUID: GuestMood] = [:]
+    /// What each guest is currently drawn carrying, for the same reason: a
+    /// prize won at a booth has to change the sprite, and nothing else does.
+    private var guestPrize: [UUID: GuestPrize] = [:]
     /// The last thought each guest has already had a bubble for.
     private var shownThought: [UUID: UUID] = [:]
     /// Bubbles currently on screen. Held so the cap can be enforced without a
@@ -69,6 +72,9 @@ final class ParkScene: SKScene {
     /// The colour and car type each coaster's train is currently drawn in.
     private var renderedLivery: [UUID: String] = [:]
     private var renderedTrackGeneration = -1
+    /// The colour the coaster track and its elements are currently painted.
+    private var renderedTrackColour: ParkColour?
+    private var renderedElementColour: ParkColour?
 
     /// One car of a coaster train, and what it needs to be repainted.
     private struct CoasterCar {
@@ -364,6 +370,15 @@ final class ParkScene: SKScene {
         if tileNodes.isEmpty {
             buildTileNodes(state: state)
         }
+        // Repainting the track is not a change to the map, so it has to force
+        // its own pass. Every tile is re-examined, which is the same work one
+        // path tile already costs and happens only when a colour is picked.
+        if renderedTrackColour != state.coasterTrackColour {
+            renderedTrackColour = state.coasterTrackColour
+            for index in tileAppearance.indices { tileAppearance[index] = -1 }
+            renderedMapGeneration = -1
+        }
+
         guard state.map.generation != renderedMapGeneration else { return }
         renderedMapGeneration = state.map.generation
 
@@ -377,7 +392,10 @@ final class ParkScene: SKScene {
             let code = appearanceCode(for: tile, at: coord, map: state.map)
             guard tileAppearance[index] != code else { continue }
             tileAppearance[index] = code
-            tileNodes[index].texture = texture(for: tile, at: coord, map: state.map)
+            tileNodes[index].texture = texture(for: tile,
+                                               at: coord,
+                                               map: state.map,
+                                               rail: state.coasterTrackColour)
         }
     }
 
@@ -441,7 +459,8 @@ final class ParkScene: SKScene {
                                                    map: state.map)
             let node = SKSpriteNode(texture: texture(for: state.map.tile(at: coord) ?? Tile(),
                                                      at: coord,
-                                                     map: state.map))
+                                                     map: state.map,
+                                                     rail: state.coasterTrackColour))
             node.size = CGSize(width: Self.tileSide, height: Self.tileSide)
             node.position = CGPoint(x: (CGFloat(coord.x) + 0.5) * Self.tileSide,
                                     y: (CGFloat(coord.y) + 0.5) * Self.tileSide)
@@ -476,7 +495,10 @@ final class ParkScene: SKScene {
     /// Ground is drawn per tile rather than as a flat colour: grass has tufts
     /// on it, paving has joints, water has a shore, and track is drawn from
     /// what it joins on to.
-    private func texture(for tile: Tile, at coord: GridCoord, map: ParkMap) -> SKTexture {
+    private func texture(for tile: Tile,
+                         at coord: GridCoord,
+                         map: ParkMap,
+                         rail: ParkColour? = nil) -> SKTexture {
         let variant = tileVariant(at: coord)
 
         switch tile.terrain {
@@ -494,7 +516,8 @@ final class ParkScene: SKScene {
             let connections = trackConnections(at: coord, map: map)
             return SpriteFactory.trackTileTexture(connections: connections,
                                                   side: Self.tileSide,
-                                                  coaster: tile.terrain.isCoasterTrack)
+                                                  coaster: tile.terrain.isCoasterTrack,
+                                                  rail: rail)
         }
     }
 
@@ -510,11 +533,12 @@ final class ParkScene: SKScene {
     /// Loops, corkscrews and jumps sitting on the track. Like scenery, they
     /// never change once placed, so this only adds and removes.
     private func syncTrackElements(state: GameState) {
+        let rail = state.coasterTrackColour
         var seen = Set<UUID>()
 
         for element in state.trackElements {
             seen.insert(element.id)
-            guard elementNodes[element.id] == nil, let definition = element.definition else { continue }
+            guard let definition = element.definition else { continue }
 
             // Drawn the way round it was designed and then turned, so a
             // rotated loop is not a squashed one, and drawn taller than the
@@ -522,11 +546,23 @@ final class ParkScene: SKScene {
             let drawn = element.size.rotated(by: element.rotation)
             let pixelSize = CGSize(width: CGFloat(drawn.width) * Self.tileSide,
                                    height: CGFloat(definition.visualHeight) * Self.tileSide)
+            // Built only when it is wanted: this runs every frame, and a
+            // texture key is a string.
+            func artwork() -> SKTexture {
+                CoasterElementArtwork.texture(for: definition.motif,
+                                              size: pixelSize,
+                                              trackY: definition.trackLine,
+                                              rail: rail)
+            }
 
-            let node = SKSpriteNode(texture: CoasterElementArtwork.texture(
-                for: definition.motif,
-                size: pixelSize,
-                trackY: definition.trackLine))
+            if let existing = elementNodes[element.id] {
+                // Already on the map. The only thing that can change under it
+                // is the colour of the rails.
+                if renderedElementColour != rail { existing.texture = artwork() }
+                continue
+            }
+
+            let node = SKSpriteNode(texture: artwork())
             node.size = pixelSize
             node.zRotation = -CGFloat(((element.rotation % 4) + 4) % 4) * .pi / 2
             node.position = elementSpriteCentre(element, definition: definition)
@@ -536,6 +572,8 @@ final class ParkScene: SKScene {
             trainLayer.addChild(node)
             elementNodes[element.id] = node
         }
+
+        renderedElementColour = rail
 
         for (id, node) in elementNodes where !seen.contains(id) {
             node.removeFromParent()
@@ -936,11 +974,13 @@ final class ParkScene: SKScene {
                 node = SKSpriteNode(texture: GuestArtwork.texture(for: guest.appearance,
                                                                   age: guest.ageCategory,
                                                                   mood: mood,
+                                                                  prize: guest.prize,
                                                                   height: height))
                 node.size = guestSize
                 guestLayer.addChild(node)
                 guestNodes[guest.id] = node
                 guestMood[guest.id] = mood
+                guestPrize[guest.id] = guest.prize
             }
 
             // Guests inside a ride or a building are not drawn.
@@ -950,11 +990,13 @@ final class ParkScene: SKScene {
             }
             node.isHidden = false
 
-            if guestMood[guest.id] != mood {
+            if guestMood[guest.id] != mood || guestPrize[guest.id] != guest.prize {
                 guestMood[guest.id] = mood
+                guestPrize[guest.id] = guest.prize
                 node.texture = GuestArtwork.texture(for: guest.appearance,
                                                     age: guest.ageCategory,
                                                     mood: mood,
+                                                    prize: guest.prize,
                                                     height: height)
             }
 
@@ -967,6 +1009,7 @@ final class ParkScene: SKScene {
             node.removeFromParent()
             guestNodes.removeValue(forKey: id)
             guestMood.removeValue(forKey: id)
+            guestPrize.removeValue(forKey: id)
             shownThought.removeValue(forKey: id)
         }
     }
@@ -1252,9 +1295,11 @@ final class ParkScene: SKScene {
             // player lines up is the shape they will get.
             let previewSize = CGSize(width: drawnSize.width,
                                      height: CGFloat(element.visualHeight) * Self.tileSide)
-            art.texture = CoasterElementArtwork.texture(for: element.motif,
-                                                        size: previewSize,
-                                                        trackY: element.trackLine)
+            art.texture = CoasterElementArtwork.texture(
+                for: element.motif,
+                size: previewSize,
+                trackY: element.trackLine,
+                rail: controller.state.coasterTrackColour)
             art.size = previewSize
             art.zRotation = -CGFloat(((pending.rotation % 4) + 4) % 4) * .pi / 2
             art.position = pendingElementCentre(pending, definition: element)

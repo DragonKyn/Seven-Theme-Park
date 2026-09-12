@@ -15,15 +15,17 @@ enum GuestArtwork {
     static func texture(for appearance: GuestAppearance,
                         age: AgeCategory,
                         mood: GuestMood,
+                        prize: GuestPrize? = nil,
                         height: CGFloat) -> SKTexture {
         let size = CGSize(width: height * aspect * PersonArtwork.supersample,
                           height: height * PersonArtwork.supersample)
         let key = "guest-\(appearance.shirt.rawValue)-\(appearance.hair.rawValue)"
             + "-\(appearance.skin.rawValue)-\(appearance.hat.rawValue)"
             + "-\(age.rawValue)-\(mood.rawValue)-\(Int(size.height))"
+            + "-\(prize.map { "\($0.kind.rawValue)\($0.colour.rawValue)" } ?? "none")"
 
         return SpriteFactory.texture(key: key, size: size) { context, size in
-            PersonArtwork.draw(look(for: appearance, age: age),
+            PersonArtwork.draw(look(for: appearance, age: age, prize: prize),
                                tint: moodColour(mood),
                                context: context,
                                size: size)
@@ -31,7 +33,8 @@ enum GuestArtwork {
     }
 
     private static func look(for appearance: GuestAppearance,
-                             age: AgeCategory) -> PersonArtwork.Look {
+                             age: AgeCategory,
+                             prize: GuestPrize?) -> PersonArtwork.Look {
         // Children are shorter and seniors slightly stooped, drawn as a scale
         // rather than as separate artwork.
         let heightScale: CGFloat
@@ -57,7 +60,8 @@ enum GuestArtwork {
             headwearColour: appearance.hat == .sunHat
                 ? ParkPalette.colour(.cream)
                 : ParkPalette.colour(appearance.shirt),
-            heightScale: heightScale)
+            heightScale: heightScale,
+            prize: prize)
     }
 
     private static func moodColour(_ mood: GuestMood) -> UIColor {

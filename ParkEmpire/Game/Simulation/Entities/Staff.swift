@@ -11,6 +11,8 @@ enum StaffJob: Codable, Hashable {
     case inspectRide(UUID)
     /// Entertainers head towards a spot and perform there.
     case entertain(GridCoord)
+    /// Security stand at a spot and keep an eye on it.
+    case patrol(GridCoord)
 }
 
 enum StaffActivity: Codable, Hashable {

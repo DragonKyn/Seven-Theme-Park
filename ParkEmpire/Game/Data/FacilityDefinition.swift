@@ -4,13 +4,15 @@ enum FacilityKind: String, Codable {
     case food
     case drink
     case souvenir
+    /// A carnival booth: pay, play, and maybe walk away with a prize.
+    case game
     case bathroom
     case bench
     case bin
 
     /// Kinds that take the guest's money and therefore expose a price control.
     var sellsGoods: Bool {
-        self == .food || self == .drink || self == .souvenir
+        self == .food || self == .drink || self == .souvenir || self == .game
     }
 
     /// Park furniture: it stands on the walkway rather than beside it, and
@@ -67,9 +69,16 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     let unlockLevel: Int
     /// How the placed building is drawn.
     let appearance: BuildingAppearance
+    /// How often a guest walks away from a carnival booth with a prize.
+    /// Ignored by everything that is not a game.
+    var winChance: Double = 0
 
     var category: BuildCategory {
-        kind.sellsGoods ? .shop : .facility
+        switch kind {
+        case .game: return .games
+        case .food, .drink, .souvenir: return .shop
+        case .bathroom, .bench, .bin: return .facility
+        }
     }
 
     /// Furniture goes on the path. Everything else goes beside it.

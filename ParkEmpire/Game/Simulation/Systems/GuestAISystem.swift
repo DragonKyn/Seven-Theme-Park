@@ -229,6 +229,18 @@ final class GuestAISystem {
                 guard guest.cash >= facility.price else { continue }
                 score = 90 * (guest.happiness / 100) * willingness(guest, facility, definition)
 
+            case .game:
+                guard guest.cash >= facility.price else { continue }
+                // Children drag their parents to these, big spenders can't
+                // walk past one, and a guest already carrying a bear has
+                // rather less to prove.
+                var appetite = 0.55 + guest.personality.spending / 180
+                if guest.ageCategory == .child { appetite *= 1.7 }
+                if guest.prize != nil { appetite *= 0.4 }
+                let mood = 0.35 + guest.happiness / 150
+                let fairness = willingness(guest, facility, definition)
+                score = 130 * appetite * mood * fairness
+
             case .bench:
                 let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)
                 score = 220 * pow(tiredness, 2) + guest.nausea * 0.9

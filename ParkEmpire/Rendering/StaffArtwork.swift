@@ -31,6 +31,7 @@ enum StaffArtwork {
             case .janitor: drawBroom(layout: layout, size: size)
             case .mechanic: drawWrench(layout: layout, size: size, context: context)
             case .entertainer: drawBalloons(layout: layout, size: size)
+            case .security: drawSecurityMarkings(layout: layout)
             }
         }
     }
@@ -50,6 +51,11 @@ enum StaffArtwork {
         case .entertainer:
             headwear = .partyHat
             headwearColour = ParkPalette.colour(.red)
+        case .security:
+            // A peaked cap in the park's own colour. The word on the shirt is
+            // what says which job it is.
+            headwear = .cap
+            headwearColour = shirt
         }
 
         return PersonArtwork.Look(
@@ -62,6 +68,53 @@ enum StaffArtwork {
     }
 
     // MARK: - Tools
+
+    /// SECURITY across the chest, and again on a band over the shoulders so
+    /// the word is there whichever way the guard is facing.
+    ///
+    /// At map zoom this is a pale bar on a dark shirt, which is exactly what a
+    /// printed shirt looks like from across a park; zoomed in, it is the word.
+    private static func drawSecurityMarkings(layout: PersonArtwork.Layout) {
+        let body = layout.body
+
+        // Shoulder band: the back of the shirt, seen over the top.
+        let band = CGRect(x: body.minX, y: body.minY,
+                          width: body.width, height: body.height * 0.22)
+        UIColor.black.withAlphaComponent(0.22).setFill()
+        UIBezierPath(rect: band).fill()
+        label("SECURITY", in: band.insetBy(dx: body.width * 0.04, dy: band.height * 0.18))
+
+        // Chest.
+        let chest = CGRect(x: body.minX, y: body.midY - body.height * 0.04,
+                           width: body.width, height: body.height * 0.26)
+        label("SECURITY", in: chest.insetBy(dx: body.width * 0.04, dy: chest.height * 0.16))
+    }
+
+    /// Draws a word scaled to fill the rect it is given. Sized from the rect
+    /// rather than set in points, because a sprite is drawn at whatever size
+    /// the map asks for.
+    private static func label(_ text: String, in rect: CGRect) {
+        guard rect.width > 2, rect.height > 2 else { return }
+
+        let font = UIFont.systemFont(ofSize: rect.height, weight: .heavy)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: ParkPalette.colour(.cream),
+            .kern: -rect.height * 0.06
+        ]
+        let measured = (text as NSString).size(withAttributes: attributes)
+        guard measured.width > 0 else { return }
+
+        // Squeezed horizontally to fit the shirt rather than shrunk, so the
+        // word stays as tall as the band it is printed on.
+        let scale = rect.width / measured.width
+        let context = UIGraphicsGetCurrentContext()
+        context?.saveGState()
+        context?.translateBy(x: rect.minX, y: rect.midY - measured.height / 2)
+        context?.scaleBy(x: scale, y: 1)
+        (text as NSString).draw(at: .zero, withAttributes: attributes)
+        context?.restoreGState()
+    }
 
     /// A long handle down the right-hand side with a block of bristles at the
     /// foot. At this size the bristles are the whole silhouette.

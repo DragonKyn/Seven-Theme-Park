@@ -148,6 +148,14 @@ enum Balance {
     static let inspectionConditionBonus: Double = 8
     static let happinessRideBrokeDown: Double = 14
 
+    // MARK: - Carnival games
+
+    /// Happiness a guest gains from winning a prize, and loses from a go that
+    /// came to nothing. Winning is worth far more than losing costs, which is
+    /// why a midway is a good thing to own.
+    static let happinessGameWin: Double = 16
+    static let happinessGameLoss: Double = 3
+
     // MARK: - Staff
 
     static let staffWalkSpeed: Double = 1.9
@@ -156,6 +164,18 @@ enum Balance {
     /// Radius in tiles over which an entertainer lifts guest happiness.
     static let entertainerRadius: Double = 4.5
     static let entertainerHappinessPerSecond: Double = 0.55
+    /// Radius in tiles over which a security guard reassures guests.
+    static let securityRadius: Double = 5.0
+    static let securityHappinessPerSecond: Double = 0.30
+    /// How much less likely a guest is to drop rubbish with a guard in sight.
+    static let securityLitterDeterrence: Double = 0.35
+    /// Sim-seconds a guard stands at a post before moving on.
+    static let securityPostDuration: Double = 55
+    static let securityPatrolDuration: Double = 18
+    /// How often a guard picks somewhere other than the gate to stand.
+    static let securityPatrolChance: Double = 0.30
+    /// How far from the gate a guard's post can be.
+    static let securityGateRadius: Int = 5
     /// Maximum staff of all roles.
     static let maxStaff = 40
 

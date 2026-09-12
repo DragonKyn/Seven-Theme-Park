@@ -17,6 +17,9 @@ struct ParkStatistics: Codable {
     var drinksSoldTotal: Int = 0
     var souvenirsSoldTotal: Int = 0
     var transportTripsTotal: Int = 0
+    /// Goes on carnival booths, and prizes those goes produced.
+    var gamesPlayedTotal: Int = 0
+    var prizesWonTotal: Int = 0
 
     /// Counts of the reason guests gave for leaving, used for "common complaint".
     var departureReasons: [String: Int] = [:]
@@ -56,6 +59,8 @@ extension ParkStatistics {
         foodSoldTotal = container.value(.foodSoldTotal, or: 0)
         drinksSoldTotal = container.value(.drinksSoldTotal, or: 0)
         souvenirsSoldTotal = container.value(.souvenirsSoldTotal, or: 0)
+        gamesPlayedTotal = container.value(.gamesPlayedTotal, or: 0)
+        prizesWonTotal = container.value(.prizesWonTotal, or: 0)
         transportTripsTotal = container.value(.transportTripsTotal, or: 0)
         departureReasons = container.value(.departureReasons, or: [:])
     }
