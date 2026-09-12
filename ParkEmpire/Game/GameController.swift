@@ -618,6 +618,11 @@ final class GameController: ObservableObject {
         FinanceSnapshot(ledger: state.ledger)
     }
 
+    /// The columns behind the finance chart.
+    func makeFinanceSeries(range: FinanceRange) -> [FinancePoint] {
+        FinanceSeriesBuilder.points(from: state.ledger.history, range: range)
+    }
+
     func makeDashboardSnapshot() -> DashboardSnapshot {
         DashboardSnapshot(state: state, ratingComponents: engine.ratingBreakdown(state: state))
     }

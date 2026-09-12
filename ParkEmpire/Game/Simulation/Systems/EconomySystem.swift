@@ -5,8 +5,24 @@ final class EconomySystem {
 
     func update(state: GameState, dt: Double) {
         chargeUtilities(state: state, dt: dt)
+        sampleLedger(state: state)
         checkDayRollover(state: state)
         checkWarnings(state: state)
+    }
+
+    /// Files the books once every park hour, which is what the finance chart
+    /// is drawn from. Twelve points a day: enough to see the lunchtime rush,
+    /// few enough to keep in a save.
+    private func sampleLedger(state: GameState) {
+        let interval = Balance.dayLength / 12
+        let index = Int(state.clock.simTime / interval)
+        guard index > state.lastLedgerSampleIndex else { return }
+
+        // Catching up after a long pause would file a dozen empty hours, so
+        // only the hour just finished is recorded.
+        state.lastLedgerSampleIndex = index
+        let hour = 9 + (index % 12)
+        state.ledger.takeSample(day: state.clock.elapsedDayNumber, hour: hour)
     }
 
     /// Running the park costs money whether or not anyone visits.

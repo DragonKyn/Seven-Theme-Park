@@ -61,6 +61,8 @@ final class GameState: Codable {
     var spawnAccumulator: Double = 0
     var currentArrivalsPerMinute: Double = 0
     var nextRatingUpdate: Double = 0
+    /// Which park hour the books were last filed for.
+    var lastLedgerSampleIndex: Int = 0
     var nextAchievementCheck: Double = 0
     /// Map generation the tracked rides were last measured against.
     var trackedRideGeneration: Int = -1
@@ -114,6 +116,7 @@ final class GameState: Codable {
         spawnAccumulator = container.value(.spawnAccumulator, or: 0)
         currentArrivalsPerMinute = container.value(.currentArrivalsPerMinute, or: 0)
         nextRatingUpdate = container.value(.nextRatingUpdate, or: 0)
+        lastLedgerSampleIndex = container.value(.lastLedgerSampleIndex, or: 0)
         nextAchievementCheck = container.value(.nextAchievementCheck, or: 0)
         trackedRideGeneration = container.value(.trackedRideGeneration, or: -1)
         ratingComponents = container.value(.ratingComponents, or: [:])

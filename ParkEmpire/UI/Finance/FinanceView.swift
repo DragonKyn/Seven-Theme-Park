@@ -4,11 +4,23 @@ struct FinanceView: View {
     @ObservedObject var controller: GameController
     @Environment(\.dismiss) private var dismiss
 
+    @State private var range: FinanceRange = .today
+    /// The three totals to start with. The cost breakdown is a tap away and
+    /// stays out of the way until it is wanted.
+    @State private var visible: Set<FinanceSeriesKind> = [.profit, .revenue, .expenses]
+
     var body: some View {
         let snapshot = controller.makeFinanceSnapshot()
 
         NavigationStack {
             List {
+                Section("Trend") {
+                    FinanceChartView(points: controller.makeFinanceSeries(range: range),
+                                     range: $range,
+                                     visible: $visible)
+                        .padding(.vertical, 4)
+                }
+
                 Section("Today") {
                     summaryRow(label: "Revenue", value: snapshot.todayTotalRevenue, tint: .green)
                     summaryRow(label: "Expenses", value: snapshot.todayTotalExpenses, tint: .red)
