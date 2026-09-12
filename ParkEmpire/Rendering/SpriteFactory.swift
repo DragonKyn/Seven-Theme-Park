@@ -12,6 +12,7 @@ enum SpriteFactory {
 
     static func clearCache() {
         cache.removeAll()
+        GuestArtwork.clearCache()
     }
 
     /// Flat tile with a subtle inset border.
@@ -675,7 +676,15 @@ enum SpriteFactory {
                         size: CGSize,
                         draw: (CGContext, CGSize) -> Void) -> SKTexture {
         if let cached = cache[key] { return cached }
+        let texture = render(size: size, draw: draw)
+        cache[key] = texture
+        return texture
+    }
 
+    /// Draws a texture without keeping it. For artwork with too many possible
+    /// combinations to cache forever — a crowd of guests, where every one is
+    /// dressed differently — the caller keeps its own bounded cache instead.
+    static func render(size: CGSize, draw: (CGContext, CGSize) -> Void) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { rendererContext in
             draw(rendererContext.cgContext, size)
@@ -683,7 +692,6 @@ enum SpriteFactory {
 
         let texture = SKTexture(image: image)
         texture.filteringMode = .nearest
-        cache[key] = texture
         return texture
     }
 }

@@ -6,6 +6,11 @@ import UIKit
 /// Guests and staff are the same body with different clothes and different
 /// things in their hands, so the body lives here and the two callers add what
 /// makes them recognisable.
+///
+/// Everything is built out of a handful of rounded shapes, because a figure is
+/// about nineteen points tall on the map. What has to survive that size, in
+/// order: the silhouette, the shirt colour, the face, and only then the
+/// details somebody who zooms in will find.
 enum PersonArtwork {
 
     /// How much bigger a figure is drawn than the sprite it fills, so it
@@ -20,10 +25,23 @@ enum PersonArtwork {
         case cap
         /// Wide brim, for sun and for gardening.
         case sunHat
+        /// Brim with no crown.
+        case visor
+        /// Headband with two pom-poms on springs.
+        case bobbleBand
         /// Rounded shell with a ridge, for anyone near machinery.
         case hardHat
         /// Cone with a pompom.
         case partyHat
+    }
+
+    /// How the face is drawn. Three states, like the mood pad under the
+    /// figure, because a continuous range of expressions is unreadable at
+    /// this size.
+    enum Expression {
+        case happy
+        case neutral
+        case sad
     }
 
     struct Look {
@@ -35,8 +53,13 @@ enum PersonArtwork {
         /// 1.0 is an adult. Children and seniors are drawn shorter rather than
         /// drawn again.
         let heightScale: CGFloat
-        /// Something won at a carnival booth, carried under the arm. Nil for
-        /// everybody who has not won anything, which is most of the park.
+        /// Trousers, shorts or a skirt.
+        var bottoms: UIColor = UIColor(red: 0.32, green: 0.35, blue: 0.42, alpha: 1)
+        var pattern: GuestAppearance.ShirtPattern = .plain
+        var accessory: GuestAppearance.Accessory = .none
+        var expression: Expression = .neutral
+        /// Something won at a carnival booth, carried under the arm or hugged
+        /// in front. Nil for everybody who has not won anything.
         var prize: GuestPrize? = nil
     }
 
@@ -90,12 +113,30 @@ enum PersonArtwork {
         let outline = UIColor.black.withAlphaComponent(0.32)
         let outlineWidth = max(1, figureHeight * 0.04)
 
+        drawPack(look, body: body, figureHeight: figureHeight, outline: outline)
+        drawLegs(look, body: body, bottom: bottom, figureHeight: figureHeight, outline: outline)
+
+        // Torso: shirt, then whatever is printed on it, then the legwear
+        // showing below the hem, all clipped to the one silhouette.
         let bodyPath = UIBezierPath(roundedRect: body, cornerRadius: bodyWidth * 0.30)
         look.shirt.setFill()
         bodyPath.fill()
+
+        context.saveGState()
+        bodyPath.addClip()
+        drawShirtPattern(look, body: body)
+        let hem = CGRect(x: body.minX, y: body.maxY - body.height * 0.30,
+                         width: body.width, height: body.height * 0.30)
+        look.bottoms.setFill()
+        UIBezierPath(rect: hem).fill()
+        context.restoreGState()
+
         outline.setStroke()
         bodyPath.lineWidth = outlineWidth
         bodyPath.stroke()
+
+        drawArms(look, body: body, figureHeight: figureHeight, outline: outline)
+        drawStrap(look, body: body, figureHeight: figureHeight, outline: outline)
 
         let headPath = UIBezierPath(ovalIn: head)
         skinColour(look.skin).setFill()
@@ -116,18 +157,224 @@ enum PersonArtwork {
         hairColour(look.hair).setFill()
         hair.fill()
 
+        drawFace(look, head: head)
         drawHeadwear(look, head: head, context: context, size: size)
         drawPrize(look, body: body)
 
         return Layout(head: head, body: body, bottom: bottom)
     }
 
+    // MARK: - The body
+
+    /// Two legs and two shoes below the hem. Barely a few pixels each, and
+    /// they are most of what makes a figure read as standing rather than as a
+    /// coloured capsule.
+    private static func drawLegs(_ look: Look,
+                                 body: CGRect,
+                                 bottom: CGFloat,
+                                 figureHeight: CGFloat,
+                                 outline: UIColor) {
+        let legWidth = figureHeight * 0.075
+        let legTop = body.maxY - figureHeight * 0.02
+        let footY = bottom - figureHeight * 0.02
+
+        for dx in [-figureHeight * 0.085, figureHeight * 0.085] {
+            let leg = CGRect(x: body.midX + dx - legWidth / 2,
+                             y: legTop,
+                             width: legWidth,
+                             height: footY - legTop)
+            skinColour(look.skin).setFill()
+            UIBezierPath(rect: leg).fill()
+
+            let shoe = CGRect(x: leg.minX - legWidth * 0.25,
+                              y: footY - figureHeight * 0.035,
+                              width: legWidth * 1.5,
+                              height: figureHeight * 0.05)
+            ParkPalette.colour(.charcoal).setFill()
+            UIBezierPath(ovalIn: shoe).fill()
+        }
+    }
+
+    /// Arms down the sides of the torso.
+    private static func drawArms(_ look: Look,
+                                 body: CGRect,
+                                 figureHeight: CGFloat,
+                                 outline: UIColor) {
+        let armWidth = figureHeight * 0.065
+        let armTop = body.minY + body.height * 0.26
+
+        for x in [body.minX - armWidth * 0.45, body.maxX - armWidth * 0.55] {
+            let arm = CGRect(x: x, y: armTop,
+                             width: armWidth, height: body.height * 0.62)
+            let path = UIBezierPath(roundedRect: arm, cornerRadius: armWidth / 2)
+            look.shirt.setFill()
+            path.fill()
+            // The forearm shows below a short sleeve.
+            let hand = CGRect(x: arm.minX, y: arm.maxY - arm.height * 0.34,
+                              width: armWidth, height: arm.height * 0.34)
+            skinColour(look.skin).setFill()
+            UIBezierPath(roundedRect: hand, cornerRadius: armWidth / 2).fill()
+            outline.setStroke()
+            path.lineWidth = max(0.5, figureHeight * 0.022)
+            path.stroke()
+        }
+    }
+
+    /// Stripes or an open jacket, drawn inside the torso's own outline.
+    private static func drawShirtPattern(_ look: Look, body: CGRect) {
+        switch look.pattern {
+        case .plain:
+            return
+
+        case .stripes:
+            UIColor.white.withAlphaComponent(0.55).setFill()
+            for index in 0..<2 {
+                let band = CGRect(x: body.minX,
+                                  y: body.minY + body.height * (0.20 + 0.24 * CGFloat(index)),
+                                  width: body.width,
+                                  height: body.height * 0.12)
+                UIBezierPath(rect: band).fill()
+            }
+
+        case .vest:
+            UIColor.black.withAlphaComponent(0.22).setFill()
+            let panel = CGRect(x: body.midX - body.width * 0.16,
+                               y: body.minY,
+                               width: body.width * 0.32,
+                               height: body.height)
+            UIBezierPath(rect: panel).fill()
+        }
+    }
+
+    /// The bulk of a backpack, behind the shoulders. Drawn before the body so
+    /// only its edges show, which is how a pack looks from the front.
+    private static func drawPack(_ look: Look,
+                                 body: CGRect,
+                                 figureHeight: CGFloat,
+                                 outline: UIColor) {
+        guard look.accessory == .backpack else { return }
+        let pack = CGRect(x: body.minX - figureHeight * 0.045,
+                          y: body.minY + body.height * 0.10,
+                          width: body.width + figureHeight * 0.09,
+                          height: body.height * 0.62)
+        let path = UIBezierPath(roundedRect: pack, cornerRadius: pack.width * 0.24)
+        ParkPalette.colour(.brown).setFill()
+        path.fill()
+        outline.setStroke()
+        path.lineWidth = max(0.5, figureHeight * 0.022)
+        path.stroke()
+    }
+
+    /// What is worn over the shirt: backpack straps, or a camera on its strap.
+    private static func drawStrap(_ look: Look,
+                                  body: CGRect,
+                                  figureHeight: CGFloat,
+                                  outline: UIColor) {
+        switch look.accessory {
+        case .none, .sunglasses:
+            return
+
+        case .backpack:
+            ParkPalette.colour(.charcoal).setFill()
+            for dx in [-body.width * 0.24, body.width * 0.24] {
+                let strap = CGRect(x: body.midX + dx - body.width * 0.055,
+                                   y: body.minY + body.height * 0.06,
+                                   width: body.width * 0.11,
+                                   height: body.height * 0.52)
+                UIBezierPath(roundedRect: strap, cornerRadius: strap.width * 0.4).fill()
+            }
+
+        case .camera:
+            let strap = UIBezierPath()
+            strap.move(to: CGPoint(x: body.midX - body.width * 0.26,
+                                   y: body.minY + body.height * 0.06))
+            strap.addLine(to: CGPoint(x: body.midX, y: body.midY))
+            strap.addLine(to: CGPoint(x: body.midX + body.width * 0.26,
+                                      y: body.minY + body.height * 0.06))
+            ParkPalette.colour(.charcoal).setStroke()
+            strap.lineWidth = max(0.5, figureHeight * 0.020)
+            strap.stroke()
+
+            let camera = CGRect(x: body.midX - body.width * 0.20,
+                                y: body.midY - body.height * 0.04,
+                                width: body.width * 0.40,
+                                height: body.height * 0.22)
+            ParkPalette.colour(.charcoal).setFill()
+            UIBezierPath(roundedRect: camera, cornerRadius: camera.height * 0.25).fill()
+            let lens = min(camera.width, camera.height) * 0.52
+            ParkPalette.colour(.slate).setFill()
+            UIBezierPath(ovalIn: CGRect(x: camera.midX - lens / 2,
+                                        y: camera.midY - lens / 2,
+                                        width: lens, height: lens)).fill()
+        }
+    }
+
+    // MARK: - The face
+
+    /// Two eyes and a mouth that follows the mood.
+    ///
+    /// This is the single biggest thing that makes a crowd read as people. The
+    /// pad under a guest already says how they feel from across the park; the
+    /// face says it when the player has zoomed in to find out why.
+    private static func drawFace(_ look: Look, head: CGRect) {
+        let eye = head.width * 0.10
+        let eyeY = head.midY + head.height * 0.04
+
+        if look.accessory == .sunglasses {
+            let lensWidth = head.width * 0.30
+            let lensHeight = head.height * 0.20
+            ParkPalette.colour(.charcoal).setFill()
+            for dx in [-head.width * 0.18, head.width * 0.18] {
+                let lens = CGRect(x: head.midX + dx - lensWidth / 2,
+                                  y: eyeY - lensHeight * 0.45,
+                                  width: lensWidth, height: lensHeight)
+                UIBezierPath(roundedRect: lens, cornerRadius: lensHeight * 0.4).fill()
+            }
+            UIBezierPath(rect: CGRect(x: head.midX - head.width * 0.07,
+                                      y: eyeY - lensHeight * 0.10,
+                                      width: head.width * 0.14,
+                                      height: lensHeight * 0.20)).fill()
+        } else {
+            ParkPalette.colour(.charcoal).setFill()
+            for dx in [-head.width * 0.17, head.width * 0.17] {
+                UIBezierPath(ovalIn: CGRect(x: head.midX + dx - eye / 2,
+                                            y: eyeY - eye / 2,
+                                            width: eye, height: eye * 1.15)).fill()
+            }
+        }
+
+        let mouth = UIBezierPath()
+        let mouthY = head.midY + head.height * 0.24
+        let halfWidth = head.width * 0.16
+
+        switch look.expression {
+        case .happy:
+            mouth.move(to: CGPoint(x: head.midX - halfWidth, y: mouthY - head.height * 0.03))
+            mouth.addQuadCurve(to: CGPoint(x: head.midX + halfWidth, y: mouthY - head.height * 0.03),
+                               controlPoint: CGPoint(x: head.midX, y: mouthY + head.height * 0.12))
+        case .neutral:
+            mouth.move(to: CGPoint(x: head.midX - halfWidth * 0.7, y: mouthY))
+            mouth.addLine(to: CGPoint(x: head.midX + halfWidth * 0.7, y: mouthY))
+        case .sad:
+            mouth.move(to: CGPoint(x: head.midX - halfWidth, y: mouthY + head.height * 0.05))
+            mouth.addQuadCurve(to: CGPoint(x: head.midX + halfWidth, y: mouthY + head.height * 0.05),
+                               controlPoint: CGPoint(x: head.midX, y: mouthY - head.height * 0.09))
+        }
+
+        ParkPalette.colour(.charcoal).setStroke()
+        mouth.lineWidth = max(0.5, head.width * 0.075)
+        mouth.lineCapStyle = .round
+        mouth.stroke()
+    }
+
+    // MARK: - Prizes
+
     /// A prize the guest won, carried where its size allows.
     ///
     /// A small one is tucked under the near arm, on the left, because staff
     /// carry their tools on the right and a guest and an employee are the same
     /// body underneath. A giant one will not go under an arm at all, so it is
-    /// held in front with both arms round it, drawn over the chest.
+    /// held in front with both arms round it.
     ///
     /// Bold rather than detailed: at this size what has to read is "that
     /// person won something big", not which animal it is.
@@ -139,7 +386,6 @@ enum PersonArtwork {
         let outline = UIColor.black.withAlphaComponent(0.32)
         let outlineWidth = max(0.5, body.width * 0.07)
 
-        // Under the arm, or hugged against the chest.
         let centre = prize.size.isHugged
             ? CGPoint(x: body.midX, y: body.midY + body.width * 0.30)
             : CGPoint(x: body.minX + body.width * 0.06, y: body.midY + body.width * 0.10)
@@ -246,6 +492,8 @@ enum PersonArtwork {
         }
     }
 
+    // MARK: - Hats
+
     private static func drawHeadwear(_ look: Look,
                                      head: CGRect,
                                      context: CGContext,
@@ -273,6 +521,37 @@ enum PersonArtwork {
                                y: head.minY - head.height * 0.08,
                                width: head.width * 0.68, height: head.height * 0.38)
             UIBezierPath(ovalIn: crown).fill()
+
+        case .visor:
+            // Brim and a band, with the top of the head left bare.
+            let brim = CGRect(x: head.minX - head.width * 0.16,
+                              y: head.minY + head.height * 0.20,
+                              width: head.width * 1.32, height: head.height * 0.16)
+            look.headwearColour.setFill()
+            UIBezierPath(ovalIn: brim).fill()
+            let band = CGRect(x: head.minX + head.width * 0.04,
+                              y: head.minY + head.height * 0.12,
+                              width: head.width * 0.92, height: head.height * 0.14)
+            UIBezierPath(roundedRect: band, cornerRadius: band.height * 0.5).fill()
+
+        case .bobbleBand:
+            let band = UIBezierPath()
+            band.move(to: CGPoint(x: head.minX + head.width * 0.10,
+                                  y: head.minY + head.height * 0.24))
+            band.addQuadCurve(to: CGPoint(x: head.maxX - head.width * 0.10,
+                                          y: head.minY + head.height * 0.24),
+                              controlPoint: CGPoint(x: head.midX, y: head.minY - head.height * 0.06))
+            look.headwearColour.setStroke()
+            band.lineWidth = max(0.5, head.width * 0.09)
+            band.stroke()
+
+            let bobble = head.width * 0.26
+            look.headwearColour.setFill()
+            for dx in [-head.width * 0.30, head.width * 0.30] {
+                UIBezierPath(ovalIn: CGRect(x: head.midX + dx - bobble / 2,
+                                            y: head.minY - head.height * 0.26,
+                                            width: bobble, height: bobble)).fill()
+            }
 
         case .hardHat:
             let shell = CGRect(x: head.minX - head.width * 0.10,

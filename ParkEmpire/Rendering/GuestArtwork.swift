@@ -12,6 +12,22 @@ enum GuestArtwork {
 
     // MARK: - Guests
 
+    /// Guest sprites have their own cache rather than the shared one.
+    ///
+    /// A guest is a shirt, a pattern, legwear, hair, skin, a hat, an
+    /// accessory, an age, a mood and possibly a prize. There are millions of
+    /// combinations and a park admits new people all day, so caching them
+    /// forever is a slow leak. The oldest are dropped once the crowd on screen
+    /// has been served, which costs a redraw and nothing else.
+    private static var cache: [String: SKTexture] = [:]
+    private static var order: [String] = []
+    private static let cacheLimit = 1_200
+
+    static func clearCache() {
+        cache.removeAll()
+        order.removeAll()
+    }
+
     static func texture(for appearance: GuestAppearance,
                         age: AgeCategory,
                         mood: GuestMood,
@@ -21,19 +37,32 @@ enum GuestArtwork {
                           height: height * PersonArtwork.supersample)
         let key = "guest-\(appearance.shirt.rawValue)-\(appearance.hair.rawValue)"
             + "-\(appearance.skin.rawValue)-\(appearance.hat.rawValue)"
+            + "-\(appearance.bottoms.rawValue)-\(appearance.pattern.rawValue)"
+            + "-\(appearance.accessory.rawValue)"
             + "-\(age.rawValue)-\(mood.rawValue)-\(Int(size.height))"
             + "-\(prize.map { "\($0.kind.rawValue)\($0.colour.rawValue)\($0.size.rawValue)" } ?? "none")"
 
-        return SpriteFactory.texture(key: key, size: size) { context, size in
-            PersonArtwork.draw(look(for: appearance, age: age, prize: prize),
+        if let cached = cache[key] { return cached }
+
+        let texture = SpriteFactory.render(size: size) { context, size in
+            PersonArtwork.draw(look(for: appearance, age: age, mood: mood, prize: prize),
                                tint: moodColour(mood),
                                context: context,
                                size: size)
         }
+
+        cache[key] = texture
+        order.append(key)
+        if order.count > cacheLimit {
+            for stale in order.prefix(cacheLimit / 4) { cache.removeValue(forKey: stale) }
+            order.removeFirst(cacheLimit / 4)
+        }
+        return texture
     }
 
     private static func look(for appearance: GuestAppearance,
                              age: AgeCategory,
+                             mood: GuestMood,
                              prize: GuestPrize?) -> PersonArtwork.Look {
         // Children are shorter and seniors slightly stooped, drawn as a scale
         // rather than as separate artwork.
@@ -49,6 +78,24 @@ enum GuestArtwork {
         case .none: headwear = .none
         case .cap: headwear = .cap
         case .sunHat: headwear = .sunHat
+        case .visor: headwear = .visor
+        case .bobbleBand: headwear = .bobbleBand
+        }
+
+        // A cap matches the shirt, a sun hat is straw whatever they wear, and
+        // a novelty headband is whatever the stall had left.
+        let headwearColour: UIColor
+        switch appearance.hat {
+        case .sunHat: headwearColour = ParkPalette.colour(.cream)
+        case .bobbleBand: headwearColour = ParkPalette.colour(.pink)
+        default: headwearColour = ParkPalette.colour(appearance.shirt)
+        }
+
+        let expression: PersonArtwork.Expression
+        switch mood {
+        case .happy: expression = .happy
+        case .neutral: expression = .neutral
+        case .unhappy: expression = .sad
         }
 
         return PersonArtwork.Look(
@@ -56,11 +103,12 @@ enum GuestArtwork {
             hair: appearance.hair,
             shirt: ParkPalette.colour(appearance.shirt),
             headwear: headwear,
-            // A cap matches the shirt; a sun hat is straw whatever they wear.
-            headwearColour: appearance.hat == .sunHat
-                ? ParkPalette.colour(.cream)
-                : ParkPalette.colour(appearance.shirt),
+            headwearColour: headwearColour,
             heightScale: heightScale,
+            bottoms: ParkPalette.colour(appearance.bottoms),
+            pattern: appearance.pattern,
+            accessory: appearance.accessory,
+            expression: expression,
             prize: prize)
     }
 

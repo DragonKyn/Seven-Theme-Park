@@ -64,40 +64,26 @@ enum StaffArtwork {
             shirt: shirt,
             headwear: headwear,
             headwearColour: headwearColour,
-            heightScale: 1.0)
+            heightScale: 1.0,
+            // Work trousers, the same for everybody: the uniform is the
+            // shirt, and that is what the park's colour is for.
+            bottoms: ParkPalette.colour(.charcoal),
+            pattern: .plain,
+            accessory: role == .security ? .sunglasses : GuestAppearance.Accessory.none,
+            expression: role == .entertainer ? .happy : .neutral)
     }
 
     // MARK: - Tools
 
     /// What makes a guard read as a guard at this size: a dark peaked cap,
-    /// sunglasses, and a badge on the chest.
+    /// sunglasses and a badge. The cap and the glasses come from the figure
+    /// itself; the badge is the part only a guard has.
     ///
     /// The word SECURITY was here first and it did not work — squeezed across
-    /// a shirt a few pixels wide it was a smudge. A shield-shaped badge says
-    /// the same thing in one shape.
+    /// a shirt a few pixels wide it was a smudge. A shield says the same thing
+    /// in one shape.
     private static func drawSecurityMarkings(layout: PersonArtwork.Layout) {
-        drawSunglasses(head: layout.head)
         drawBadge(body: layout.body)
-    }
-
-    /// A single dark band across the eyes with a bridge between the lenses.
-    private static func drawSunglasses(head: CGRect) {
-        let lensWidth = head.width * 0.30
-        let lensHeight = head.height * 0.22
-        let y = head.midY - lensHeight * 0.15
-        let lens = ParkPalette.colour(.charcoal)
-
-        for dx in [-head.width * 0.19, head.width * 0.19] {
-            let rect = CGRect(x: head.midX + dx - lensWidth / 2, y: y,
-                              width: lensWidth, height: lensHeight)
-            fillPath(UIBezierPath(roundedRect: rect, cornerRadius: lensHeight * 0.4), lens)
-        }
-
-        let bridge = CGRect(x: head.midX - head.width * 0.08,
-                            y: y + lensHeight * 0.28,
-                            width: head.width * 0.16,
-                            height: lensHeight * 0.22)
-        fillPath(UIBezierPath(rect: bridge), lens)
     }
 
     /// A shield on the left breast, with a star punched into it.
