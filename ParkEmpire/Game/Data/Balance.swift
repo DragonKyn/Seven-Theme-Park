@@ -152,8 +152,10 @@ enum Balance {
 
     /// A park with fewer rides than this has nothing worth filming.
     static let influencerMinimumRides = 2
-    /// Park days between one famous visitor and the next.
-    static let influencerGapDays: ClosedRange<Double> = 1.5...3.0
+    /// Park days between one famous visitor and the next. Rare on purpose:
+    /// the post is worth noticing, and something that turns up every other
+    /// day stops being an event and becomes part of the income.
+    static let influencerGapDays: ClosedRange<Double> = 5.0...9.0
     /// What a post is worth, as extra arrivals. The floor is what any post
     /// gets; the range on top of it is decided by the ride they chose.
     static let promotionBoostFloor: Double = 0.18

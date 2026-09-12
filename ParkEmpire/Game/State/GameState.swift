@@ -48,7 +48,7 @@ final class GameState: Codable {
     var carParkLevel: Int = 0
     /// Sim time the next famous visitor may turn up, the boost their post is
     /// currently giving the park, and when it runs out.
-    var nextInfluencerAt: Double = Balance.dayLength * 0.8
+    var nextInfluencerAt: Double = Balance.dayLength * 2.5
     var promotionBoost: Double = 0
     var promotionEndsAt: Double = 0
     /// Posts that have happened but not yet been shown to the player. Kept in
@@ -120,7 +120,7 @@ final class GameState: Codable {
         scheme = container.value(.scheme, or: ParkScheme())
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
-        nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 0.8)
+        nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 2.5)
         promotionBoost = container.value(.promotionBoost, or: 0)
         promotionEndsAt = container.value(.promotionEndsAt, or: 0)
         pendingPromotions = container.value(.pendingPromotions, or: [])
