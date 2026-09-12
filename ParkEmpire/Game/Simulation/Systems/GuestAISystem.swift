@@ -231,15 +231,20 @@ final class GuestAISystem {
 
             case .game:
                 guard guest.cash >= facility.price else { continue }
-                // Children drag their parents to these, big spenders can't
-                // walk past one, and a guest already carrying a bear has
-                // rather less to prove.
-                var appetite = 0.55 + guest.personality.spending / 180
-                if guest.ageCategory == .child { appetite *= 1.7 }
-                if guest.prize != nil { appetite *= 0.4 }
-                let mood = 0.35 + guest.happiness / 150
-                let fairness = willingness(guest, facility, definition)
-                score = 130 * appetite * mood * fairness
+                // A booth is competing with the rides for the same idle
+                // guest, so it is scored like one rather than like a shop.
+                // Scored off need, the way food is, it would never win:
+                // nobody needs to knock a coconut off a post.
+                var appetite = 0.6 + guest.personality.spending / 150
+                switch guest.ageCategory {
+                case .child: appetite *= 1.9
+                case .adult: appetite *= 1.0
+                case .senior: appetite *= 0.7
+                }
+                // Somebody already carrying a bear is playing for the fun of
+                // it rather than for a prize.
+                if guest.prize != nil { appetite *= 0.45 }
+                score = 240 * appetite * willingness(guest, facility, definition)
 
             case .bench:
                 let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)

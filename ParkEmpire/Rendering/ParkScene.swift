@@ -983,8 +983,11 @@ final class ParkScene: SKScene {
                 guestPrize[guest.id] = guest.prize
             }
 
-            // Guests inside a ride or a building are not drawn.
-            if case .engaged = guest.activity {
+            // Guests inside a ride or a building are not drawn. A carnival
+            // booth is the exception: the guest is stood at the counter
+            // throwing things, and a booth whose customers vanish looks like
+            // a booth nobody is using.
+            if case .engaged(let target) = guest.activity, !isAtACounter(target, state: state) {
                 node.isHidden = true
                 continue
             }
@@ -1012,6 +1015,13 @@ final class ParkScene: SKScene {
             guestPrize.removeValue(forKey: id)
             shownThought.removeValue(forKey: id)
         }
+    }
+
+    /// Whether a guest busy with something is stood outside it in view, which
+    /// only a carnival booth is.
+    private func isAtACounter(_ target: ParkTarget, state: GameState) -> Bool {
+        guard case .facility(let id) = target else { return false }
+        return state.facility(id: id)?.definition?.kind == .game
     }
 
     /// Pops a bubble over a guest who has just thought something new.

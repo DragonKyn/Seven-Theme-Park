@@ -52,10 +52,10 @@ enum StaffArtwork {
             headwear = .partyHat
             headwearColour = ParkPalette.colour(.red)
         case .security:
-            // A peaked cap in the park's own colour. The word on the shirt is
-            // what says which job it is.
+            // A dark peaked cap whatever the park's colours are. A guard in a
+            // pink cap is not a guard.
             headwear = .cap
-            headwearColour = shirt
+            headwearColour = ParkPalette.colour(.charcoal)
         }
 
         return PersonArtwork.Look(
@@ -69,51 +69,70 @@ enum StaffArtwork {
 
     // MARK: - Tools
 
-    /// SECURITY across the chest, and again on a band over the shoulders so
-    /// the word is there whichever way the guard is facing.
+    /// What makes a guard read as a guard at this size: a dark peaked cap,
+    /// sunglasses, and a badge on the chest.
     ///
-    /// At map zoom this is a pale bar on a dark shirt, which is exactly what a
-    /// printed shirt looks like from across a park; zoomed in, it is the word.
+    /// The word SECURITY was here first and it did not work — squeezed across
+    /// a shirt a few pixels wide it was a smudge. A shield-shaped badge says
+    /// the same thing in one shape.
     private static func drawSecurityMarkings(layout: PersonArtwork.Layout) {
-        let body = layout.body
-
-        // Shoulder band: the back of the shirt, seen over the top.
-        let band = CGRect(x: body.minX, y: body.minY,
-                          width: body.width, height: body.height * 0.22)
-        UIColor.black.withAlphaComponent(0.22).setFill()
-        UIBezierPath(rect: band).fill()
-        label("SECURITY", in: band.insetBy(dx: body.width * 0.04, dy: band.height * 0.18))
-
-        // Chest.
-        let chest = CGRect(x: body.minX, y: body.midY - body.height * 0.04,
-                           width: body.width, height: body.height * 0.26)
-        label("SECURITY", in: chest.insetBy(dx: body.width * 0.04, dy: chest.height * 0.16))
+        drawSunglasses(head: layout.head)
+        drawBadge(body: layout.body)
     }
 
-    /// Draws a word scaled to fill the rect it is given. Sized from the rect
-    /// rather than set in points, because a sprite is drawn at whatever size
-    /// the map asks for.
-    private static func label(_ text: String, in rect: CGRect) {
-        guard rect.width > 2, rect.height > 2 else { return }
+    /// A single dark band across the eyes with a bridge between the lenses.
+    private static func drawSunglasses(head: CGRect) {
+        let lensWidth = head.width * 0.30
+        let lensHeight = head.height * 0.22
+        let y = head.midY - lensHeight * 0.15
+        let lens = ParkPalette.colour(.charcoal)
 
-        let font = UIFont.systemFont(ofSize: rect.height, weight: .heavy)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: ParkPalette.colour(.cream),
-            .kern: -rect.height * 0.06
-        ]
-        let measured = (text as NSString).size(withAttributes: attributes)
-        guard measured.width > 0 else { return }
+        for dx in [-head.width * 0.19, head.width * 0.19] {
+            let rect = CGRect(x: head.midX + dx - lensWidth / 2, y: y,
+                              width: lensWidth, height: lensHeight)
+            fillPath(UIBezierPath(roundedRect: rect, cornerRadius: lensHeight * 0.4), lens)
+        }
 
-        // Squeezed horizontally to fit the shirt rather than shrunk, so the
-        // word stays as tall as the band it is printed on.
-        let scale = rect.width / measured.width
-        let context = UIGraphicsGetCurrentContext()
-        context?.saveGState()
-        context?.translateBy(x: rect.minX, y: rect.midY - measured.height / 2)
-        context?.scaleBy(x: scale, y: 1)
-        (text as NSString).draw(at: .zero, withAttributes: attributes)
-        context?.restoreGState()
+        let bridge = CGRect(x: head.midX - head.width * 0.08,
+                            y: y + lensHeight * 0.28,
+                            width: head.width * 0.16,
+                            height: lensHeight * 0.22)
+        fillPath(UIBezierPath(rect: bridge), lens)
+    }
+
+    /// A shield on the left breast, with a star punched into it.
+    private static func drawBadge(body: CGRect) {
+        let width = body.width * 0.34
+        let height = width * 1.15
+        let centre = CGPoint(x: body.minX + body.width * 0.30,
+                             y: body.minY + body.height * 0.34)
+
+        let shield = UIBezierPath()
+        shield.move(to: CGPoint(x: centre.x - width / 2, y: centre.y - height / 2))
+        shield.addLine(to: CGPoint(x: centre.x + width / 2, y: centre.y - height / 2))
+        shield.addLine(to: CGPoint(x: centre.x + width / 2, y: centre.y + height * 0.12))
+        shield.addQuadCurve(to: CGPoint(x: centre.x, y: centre.y + height / 2),
+                            controlPoint: CGPoint(x: centre.x + width * 0.42,
+                                                  y: centre.y + height * 0.44))
+        shield.addQuadCurve(to: CGPoint(x: centre.x - width / 2, y: centre.y + height * 0.12),
+                            controlPoint: CGPoint(x: centre.x - width * 0.42,
+                                                  y: centre.y + height * 0.44))
+        shield.close()
+
+        fillPath(shield, ParkPalette.colour(.amber))
+        ParkPalette.colour(.charcoal).withAlphaComponent(0.75).setStroke()
+        shield.lineWidth = max(0.5, width * 0.16)
+        shield.stroke()
+
+        let pip = width * 0.30
+        fillPath(UIBezierPath(ovalIn: CGRect(x: centre.x - pip / 2, y: centre.y - pip / 2,
+                                             width: pip, height: pip)),
+                 ParkPalette.colour(.charcoal))
+    }
+
+    private static func fillPath(_ path: UIBezierPath, _ colour: UIColor) {
+        colour.setFill()
+        path.fill()
     }
 
     /// A long handle down the right-hand side with a block of bristles at the
