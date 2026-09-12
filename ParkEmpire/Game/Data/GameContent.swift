@@ -539,7 +539,7 @@ enum GameContent {
         FacilityDefinition(
             id: "game.basketball",
             displayName: "Hoop Shot",
-            summary: "Three balls, two hoops. Cheap to play and easy to win, so guests keep coming back.",
+            summary: "Three balls, two hoops. Easy to win, so guests keep coming back — for a keyring.",
             kind: .game,
             purchasePrice: 900,
             defaultPrice: 3,
@@ -575,7 +575,7 @@ enum GameContent {
         FacilityDefinition(
             id: "game.waterrace",
             displayName: "Water Gun Race",
-            summary: "Five guests, five lanes, one winner. The queue moves fast because they all play at once.",
+            summary: "Five guests, five lanes, one winner. The queue moves fast because they all play at once, and the winner takes a big one.",
             kind: .game,
             purchasePrice: 1_500,
             defaultPrice: 4,
@@ -611,7 +611,7 @@ enum GameContent {
         FacilityDefinition(
             id: "game.ringtoss",
             displayName: "Ring Toss",
-            summary: "Older than the park itself. Looks easy from the queue and is not.",
+            summary: "Older than the park itself. Looks easy from the queue and is not, so the prizes are worth having.",
             kind: .game,
             purchasePrice: 800,
             defaultPrice: 3,
@@ -647,7 +647,7 @@ enum GameContent {
         FacilityDefinition(
             id: "game.whammy",
             displayName: "Wonder Whammy",
-            summary: "One swing of the hammer. Ring the bell and the whole queue hears it.",
+            summary: "One swing of the hammer. Ring the bell and you walk away with something you need both arms for.",
             kind: .game,
             purchasePrice: 2_200,
             defaultPrice: 6,

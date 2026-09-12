@@ -82,9 +82,12 @@ extension BuildingArtwork {
     /// walking past that there is something to win here.
     private static func hangPrizes(_ size: CGSize, body: CGRect) {
         let colours: [ParkColour] = [.pink, .cyan, .yellow, .lime]
-        let side = body.width * 0.09
+        // The big one hangs in the middle of the run, where everybody walking
+        // past looks. That is how a midway sells a game.
+        let sizes: [CGFloat] = [0.09, 0.15, 0.08, 0.11]
 
         for (index, x) in [0.08, 0.92, 0.20, 0.80].enumerated() {
+            let side = body.width * sizes[index % sizes.count]
             let centre = CGPoint(x: body.minX + body.width * CGFloat(x),
                                  y: body.minY + body.height * (index < 2 ? 0.30 : 0.26))
             let colour = ParkPalette.colour(colours[index % colours.count])

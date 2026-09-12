@@ -102,7 +102,7 @@ final class FacilitySystem {
             return
         }
 
-        let prize = GuestPrize.random(using: &state.rng)
+        let prize = GuestPrize.random(using: &state.rng, winChance: definition.winChance)
         state.guests[guestIndex].prize = prize
         state.guests[guestIndex].prizesWon += 1
         state.guests[guestIndex].adjustHappiness(Balance.happinessGameWin)

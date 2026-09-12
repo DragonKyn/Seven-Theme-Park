@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Something a guest won at a carnival booth and is now carrying around.
@@ -9,6 +10,36 @@ import Foundation
 struct GuestPrize: Codable, Equatable {
     let kind: Kind
     let colour: ParkColour
+    /// How big a thing they walked out with. The hard booths are the ones
+    /// worth queueing for, so difficulty is what decides this.
+    var size: Size = .small
+
+    enum Size: String, Codable, CaseIterable {
+        case small
+        case big
+        case giant
+
+        /// How much bigger than the smallest prize this one is drawn.
+        var scale: CGFloat {
+            switch self {
+            case .small: return 0.85
+            case .big: return 1.25
+            case .giant: return 1.60
+            }
+        }
+
+        /// A giant prize is too big to tuck under an arm, so it is carried in
+        /// front with both arms round it.
+        var isHugged: Bool { self == .giant }
+
+        var adjective: String? {
+            switch self {
+            case .small: return nil
+            case .big: return "big"
+            case .giant: return "giant"
+            }
+        }
+    }
 
     enum Kind: String, Codable, CaseIterable {
         case bear
@@ -36,15 +67,35 @@ struct GuestPrize: Codable, Equatable {
         .pink, .cyan, .yellow, .lime, .violet, .red, .orange, .teal
     ]
 
-    static func random(using generator: inout SeededGenerator) -> GuestPrize {
+    /// `winChance` is how easy the booth is. A booth nearly everybody wins at
+    /// hands out keyrings; one hardly anybody wins at hands out the bear that
+    /// takes two arms to carry, which is the whole reason to play it.
+    static func random(using generator: inout SeededGenerator,
+                       winChance: Double) -> GuestPrize {
         let kinds = Kind.allCases
-        return GuestPrize(kind: kinds[generator.int(0...(kinds.count - 1))],
-                          colour: colours[generator.int(0...(colours.count - 1))])
+        let kind = kinds[generator.int(0...(kinds.count - 1))]
+        let colour = colours[generator.int(0...(colours.count - 1))]
+
+        // Difficulty sets the odds; the roll still leaves room for a small
+        // prize off a hard booth and the occasional giant off an easy one.
+        let difficulty = 1 - min(max(winChance, 0), 1)
+        let roll = generator.double(0...1)
+        let size: Size
+        if roll < difficulty * difficulty * 0.8 {
+            size = .giant
+        } else if roll < difficulty {
+            size = .big
+        } else {
+            size = .small
+        }
+
+        return GuestPrize(kind: kind, colour: colour, size: size)
     }
 
-    /// "pink bear", for the thought a guest has on winning it.
+    /// "giant pink bear", for the thought a guest has on winning it.
     var displayName: String {
-        "\(colourName) \(kind.displayName)"
+        guard let adjective = size.adjective else { return "\(colourName) \(kind.displayName)" }
+        return "\(adjective) \(colourName) \(kind.displayName)"
     }
 
     private var colourName: String {

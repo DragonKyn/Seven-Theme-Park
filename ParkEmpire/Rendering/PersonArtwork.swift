@@ -122,22 +122,27 @@ enum PersonArtwork {
         return Layout(head: head, body: body, bottom: bottom)
     }
 
-    /// A prize tucked under the near arm.
+    /// A prize the guest won, carried where its size allows.
     ///
-    /// On the left, because staff carry their tools on the right and a guest
-    /// and an employee are the same body underneath. Small and bold rather
-    /// than detailed: at this size what has to read is "that person won
-    /// something", not which animal it is.
+    /// A small one is tucked under the near arm, on the left, because staff
+    /// carry their tools on the right and a guest and an employee are the same
+    /// body underneath. A giant one will not go under an arm at all, so it is
+    /// held in front with both arms round it, drawn over the chest.
+    ///
+    /// Bold rather than detailed: at this size what has to read is "that
+    /// person won something big", not which animal it is.
     private static func drawPrize(_ look: Look, body: CGRect) {
         guard let prize = look.prize else { return }
 
-        let unit = body.width
+        let unit = body.width * prize.size.scale
         let colour = ParkPalette.colour(prize.colour)
         let outline = UIColor.black.withAlphaComponent(0.32)
-        let outlineWidth = max(0.5, unit * 0.07)
-        // Just inside the body's edge: any further out and the prize is
-        // clipped by the edge of the sprite.
-        let centre = CGPoint(x: body.minX + unit * 0.06, y: body.midY + unit * 0.10)
+        let outlineWidth = max(0.5, body.width * 0.07)
+
+        // Under the arm, or hugged against the chest.
+        let centre = prize.size.isHugged
+            ? CGPoint(x: body.midX, y: body.midY + body.width * 0.30)
+            : CGPoint(x: body.minX + body.width * 0.06, y: body.midY + body.width * 0.10)
 
         func blob(_ rect: CGRect, _ fill: UIColor, oval: Bool = true) {
             let path = oval
@@ -156,7 +161,7 @@ enum PersonArtwork {
         switch prize.kind {
         case .star:
             let points = 5
-            let outer = unit * 0.34
+            let outer = unit * 0.30
             let star = UIBezierPath()
             for step in 0..<(points * 2) {
                 let radius = step % 2 == 0 ? outer : outer * 0.44
@@ -222,6 +227,22 @@ enum PersonArtwork {
                                 width: ear, height: ear), colour)
                 }
             }
+        }
+
+        // Two arms round a giant one, so it reads as held rather than as a
+        // second person standing in front of the first.
+        guard prize.size.isHugged else { return }
+        let armWidth = body.width * 0.16
+        for dx in [-torso * 0.52, torso * 0.52] {
+            let arm = CGRect(x: centre.x + dx - armWidth / 2,
+                             y: centre.y + torso * 0.10,
+                             width: armWidth, height: torso * 0.46)
+            let path = UIBezierPath(roundedRect: arm, cornerRadius: armWidth / 2)
+            look.shirt.setFill()
+            path.fill()
+            outline.setStroke()
+            path.lineWidth = outlineWidth
+            path.stroke()
         }
     }
 

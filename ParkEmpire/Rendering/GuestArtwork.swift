@@ -22,7 +22,7 @@ enum GuestArtwork {
         let key = "guest-\(appearance.shirt.rawValue)-\(appearance.hair.rawValue)"
             + "-\(appearance.skin.rawValue)-\(appearance.hat.rawValue)"
             + "-\(age.rawValue)-\(mood.rawValue)-\(Int(size.height))"
-            + "-\(prize.map { "\($0.kind.rawValue)\($0.colour.rawValue)" } ?? "none")"
+            + "-\(prize.map { "\($0.kind.rawValue)\($0.colour.rawValue)\($0.size.rawValue)" } ?? "none")"
 
         return SpriteFactory.texture(key: key, size: size) { context, size in
             PersonArtwork.draw(look(for: appearance, age: age, prize: prize),
