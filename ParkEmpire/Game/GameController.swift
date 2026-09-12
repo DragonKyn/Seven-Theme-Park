@@ -1,4 +1,5 @@
 import Combine
+import CoreGraphics
 import Foundation
 import SwiftUI
 
@@ -411,6 +412,40 @@ final class GameController: ObservableObject {
         guard !trimmed.isEmpty else { return }
         state.attractions[index].name = trimmed
         refreshUI()
+    }
+
+    /// Why guests are, or are not, coming to a facility.
+    ///
+    /// Judged against the guest currently closest to it, using the same rules
+    /// the guests themselves follow, so a shop nobody visits can say what is
+    /// wrong with it instead of leaving the player to guess.
+    func guestInterest(in facilityID: UUID) -> String? {
+        guard let facility = state.facility(id: facilityID) else { return nil }
+        guard let definition = facility.definition else {
+            return "This build no longer has this kind of building"
+        }
+
+        let access = state.map.accessTiles(for: facility.rect)
+        guard !access.isEmpty else { return FacilityAppeal.Verdict.noWalkway.summary }
+
+        let candidates = state.guests.filter { $0.isActive }
+        guard !candidates.isEmpty else { return "No guests in the park yet" }
+
+        // The nearest guest as the crow flies, then the real walking distance
+        // for that one: a route query per guest in the park would be far too
+        // much work for a panel that is redrawn as the park runs.
+        let centre = CGPoint(x: Double(facility.origin.x) + Double(facility.size.width) / 2,
+                             y: Double(facility.origin.y) + Double(facility.size.height) / 2)
+        guard let nearest = candidates.min(by: {
+            SimMath.distance($0.position, centre) < SimMath.distance($1.position, centre)
+        }) else { return nil }
+
+        let distance = engine.pathfinder.distance(from: nearest.tile, to: access, in: state.map)
+        return FacilityAppeal.evaluate(facility: facility,
+                                       definition: definition,
+                                       guest: nearest,
+                                       hasAccess: true,
+                                       distance: distance).summary
     }
 
     func setFacilityOpen(_ isOpen: Bool, facilityID: UUID) {

@@ -192,69 +192,23 @@ final class GuestAISystem {
         var options: [Option] = []
         let map = state.map
 
-        // --- Shops, restrooms and benches --------------------------------
+        // --- Shops, restrooms, booths and benches ------------------------
+        // Every one of these is judged by `FacilityAppeal`, which the
+        // inspector also reads, so what the player is told about a quiet shop
+        // is what the guests are actually doing.
         for facility in state.facilities {
-            guard facility.isOpen, !facility.isUnusable, let definition = facility.definition else { continue }
+            guard let definition = facility.definition else { continue }
             let access = map.accessTiles(for: facility.rect)
-            guard !access.isEmpty else { continue }
-            guard let distance = pathfinder.distance(from: guest.tile, to: access, in: map) else { continue }
+            let distance = access.isEmpty
+                ? nil
+                : pathfinder.distance(from: guest.tile, to: access, in: map)
 
-            let wait = facility.estimatedWait(definition: definition)
-            let tolerance = tolerableWait(for: guest)
-            guard wait < tolerance else { continue }
-            let queueFactor = 1 - (wait / tolerance) * 0.6
-
-            var score = 0.0
-            switch definition.kind {
-            case .bathroom:
-                score = 430 * pow(guest.bathroomNeed / 100, 3.5)
-                // A filthy restroom is a last resort rather than a destination.
-                if facility.isDirty { score *= 0.45 }
-
-            case .bin:
-                guard guest.carryingTrash > 0 else { continue }
-                // The longer they have been holding it, the more they want rid.
-                let urgency = 0.4 + min(1, guest.trashCarriedFor / 40) * 0.6
-                score = 150 * urgency
-
-            case .food:
-                guard guest.cash >= facility.price else { continue }
-                score = 260 * pow(guest.hunger / 100, 2.2) * willingness(guest, facility, definition)
-
-            case .drink:
-                guard guest.cash >= facility.price else { continue }
-                score = 250 * pow(guest.thirst / 100, 2.2) * willingness(guest, facility, definition)
-
-            case .souvenir:
-                guard guest.cash >= facility.price else { continue }
-                score = 90 * (guest.happiness / 100) * willingness(guest, facility, definition)
-
-            case .game:
-                guard guest.cash >= facility.price else { continue }
-                // A booth is competing with the rides for the same idle
-                // guest, so it is scored like one rather than like a shop.
-                // Scored off need, the way food is, it would never win:
-                // nobody needs to knock a coconut off a post.
-                var appetite = 0.6 + guest.personality.spending / 150
-                switch guest.ageCategory {
-                case .child: appetite *= 1.9
-                case .adult: appetite *= 1.0
-                case .senior: appetite *= 0.7
-                }
-                // Somebody already carrying a bear is playing for the fun of
-                // it rather than for a prize.
-                if guest.prize != nil { appetite *= 0.45 }
-                score = 240 * appetite * willingness(guest, facility, definition)
-
-            case .bench:
-                let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)
-                score = 220 * pow(tiredness, 2) + guest.nausea * 0.9
-            }
-
-            score *= proximityFactor(distance) * queueFactor
-            if score > 0.5 {
-                options.append(Option(target: .facility(facility.id), score: score, departureReason: nil))
-            }
+            guard case .wants(let score) = FacilityAppeal.evaluate(facility: facility,
+                                                                   definition: definition,
+                                                                   guest: guest,
+                                                                   hasAccess: !access.isEmpty,
+                                                                   distance: distance) else { continue }
+            options.append(Option(target: .facility(facility.id), score: score, departureReason: nil))
         }
 
         // --- Rides --------------------------------------------------------
@@ -306,14 +260,6 @@ final class GuestAISystem {
         }
 
         return options
-    }
-
-    private func willingness(_ guest: Guest,
-                             _ facility: Facility,
-                             _ definition: FacilityDefinition) -> Double {
-        GuestEconomics.purchaseWillingness(price: facility.price,
-                                           reference: definition.referencePrice,
-                                           spending: guest.personality.spending)
     }
 
     private func departureUrge(guest: Guest, state: GameState) -> (score: Double, reason: DepartureReason)? {
@@ -384,11 +330,11 @@ final class GuestAISystem {
     /// Distance falls off gently: somewhere twice as far is roughly half as
     /// appealing, but never completely ignored.
     private func proximityFactor(_ tileDistance: Int) -> Double {
-        1.0 / (1.0 + Double(tileDistance) / 12.0)
+        FacilityAppeal.proximityFactor(tileDistance)
     }
 
     private func tolerableWait(for guest: Guest) -> Double {
-        Balance.baseTolerableWait + guest.personality.patience * Balance.patienceWaitScale
+        FacilityAppeal.tolerableWait(for: guest)
     }
 
     // MARK: - Committing to a target
