@@ -72,7 +72,7 @@ enum TutorialContent {
         TutorialTip(
             id: "tip.placing",
             title: "Line it up before you pay",
-            message: "Nothing is bought until you confirm it. While a building is waiting, turn it with the rotate button and check the outline is where you want it, then tap the tick.",
+            message: "Nothing is bought until you confirm it. Drag it around the map with one finger, nudge it a tile at a time with the arrows, turn it until it faces the way you want, then tap Build it.",
             symbolName: "rotate.right.fill",
             priority: 95,
             condition: { $0.isPlacing }

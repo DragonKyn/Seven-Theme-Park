@@ -261,6 +261,30 @@ final class GameController: ObservableObject {
         return definition.footprint(rotatedBy: pending.rotation)
     }
 
+    /// Slides the waiting placement one tile.
+    ///
+    /// A building is lined up by its bottom-left corner, so a tap that lands a
+    /// tile out is awkward to correct by tapping again. This is the fix: shunt
+    /// it, look at it, shunt it again.
+    func nudgePending(dx: Int, dy: Int) {
+        guard var pending = build.pending else { return }
+        let moved = GridCoord(pending.origin.x + dx, pending.origin.y + dy)
+        guard state.map.isInside(moved) else { return }
+        pending.origin = moved
+        build.pending = pending
+        updateGhost(at: moved)
+    }
+
+    /// Puts the waiting placement somewhere else outright, for dragging it
+    /// around the map with a finger.
+    func movePending(to origin: GridCoord) {
+        guard var pending = build.pending, pending.origin != origin else { return }
+        guard state.map.isInside(origin) else { return }
+        pending.origin = origin
+        build.pending = pending
+        updateGhost(at: origin)
+    }
+
     func rotatePending() {
         guard var pending = build.pending,
               let definition = pendingDefinition,

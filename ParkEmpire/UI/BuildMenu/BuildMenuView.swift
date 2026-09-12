@@ -303,26 +303,9 @@ struct PlacementConfirmBar: View {
                 }
 
                 Spacer(minLength: 0)
-
-                if definition.canRotate {
-                    Button {
-                        controller.rotatePending()
-                    } label: {
-                        VStack(spacing: 1) {
-                            Image(systemName: "rotate.right")
-                                .font(.system(size: 14, weight: .bold))
-                            Text("Turn")
-                                .font(.system(size: 8, weight: .bold, design: .rounded))
-                        }
-                        .frame(width: 46, height: 40)
-                        .foregroundStyle(Color.black)
-                        .background(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Theme.accentWarm)
-                        )
-                    }
-                }
             }
+
+            positionControls
 
             Text(hint)
                 .font(.caption2)
@@ -363,6 +346,64 @@ struct PlacementConfirmBar: View {
         }
     }
 
+    /// Sliding and turning, side by side.
+    ///
+    /// A building is placed by its bottom-left corner, so a tap a tile out is
+    /// easy to make and used to mean starting again. These shunt it a tile at
+    /// a time; dragging it around the map does the same thing coarsely.
+    private var positionControls: some View {
+        HStack(spacing: 6) {
+            ForEach(Self.nudges) { nudge in
+                Button {
+                    controller.nudgePending(dx: nudge.dx, dy: nudge.dy)
+                } label: {
+                    Image(systemName: nudge.symbol)
+                        .font(.system(size: 13, weight: .bold))
+                        .frame(width: 38, height: 34)
+                        .foregroundStyle(Theme.textPrimary)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Theme.control)
+                        )
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if definition.canRotate {
+                Button {
+                    controller.rotatePending()
+                } label: {
+                    Label("Turn", systemImage: "rotate.right")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .padding(.horizontal, 11)
+                        .frame(height: 34)
+                        .foregroundStyle(Color.black)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(Theme.accentWarm)
+                        )
+                }
+            }
+        }
+    }
+
+    /// Up is north, which is up the screen: the map is drawn with north at the
+    /// top, so an arrow means what it points at.
+    private struct Nudge: Identifiable {
+        let symbol: String
+        let dx: Int
+        let dy: Int
+        var id: String { symbol }
+    }
+
+    private static let nudges: [Nudge] = [
+        Nudge(symbol: "arrow.left", dx: -1, dy: 0),
+        Nudge(symbol: "arrow.down", dx: 0, dy: -1),
+        Nudge(symbol: "arrow.up", dx: 0, dy: 1),
+        Nudge(symbol: "arrow.right", dx: 1, dy: 0)
+    ]
+
     @ViewBuilder
     private var thumbnail: some View {
         if let appearance = definition.previewAppearance {
@@ -380,7 +421,7 @@ struct PlacementConfirmBar: View {
 
     private var hint: String {
         if let reason = check?.reason { return reason }
-        return "Tap the map to move it. Turn it until it faces the way you want, then build it."
+        return "Drag it around the map or nudge it a tile at a time. Two fingers move the map."
     }
 }
 

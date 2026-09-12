@@ -103,6 +103,10 @@ final class ParkScene: SKScene {
 
     private var cameraPan: UIPanGestureRecognizer?
     private var paintPan: UIPanGestureRecognizer?
+    /// Where a drag of a waiting placement started, and where the placement
+    /// was at the time.
+    private var dragAnchor: GridCoord?
+    private var dragOrigin: GridCoord?
 
     private static let minCameraScale: CGFloat = 0.4
     private static let maxCameraScale: CGFloat = 2.6
@@ -195,16 +199,19 @@ final class ParkScene: SKScene {
         view.addGestureRecognizer(tap)
     }
 
-    /// A one-finger drag moves the camera in every mode except explicit
-    /// drawing, so looking around the park can never place anything by
-    /// accident. While drawing, one finger paints and two move the camera.
+    /// A one-finger drag moves the camera, so looking around the park can
+    /// never place anything by accident. Two modes take that finger for
+    /// themselves: drawing a walkway, and sliding a placement that is waiting
+    /// to be confirmed. In both, two fingers still move the camera.
     private func updateGestureModes() {
         guard let controller else { return }
         let isPainting = controller.canDraw && controller.build.isDrawing
+        let isPlacing = controller.build.pending != nil
+        let takesOneFinger = isPainting || isPlacing
 
-        guard isPainting != paintPan?.isEnabled else { return }
-        paintPan?.isEnabled = isPainting
-        cameraPan?.minimumNumberOfTouches = isPainting ? 2 : 1
+        guard takesOneFinger != paintPan?.isEnabled else { return }
+        paintPan?.isEnabled = takesOneFinger
+        cameraPan?.minimumNumberOfTouches = takesOneFinger ? 2 : 1
     }
 
     @objc private func handlePinch(_ recognizer: UIPinchGestureRecognizer) {
@@ -241,6 +248,12 @@ final class ParkScene: SKScene {
         let location = recognizer.location(in: view)
         guard let coord = tileCoord(atViewPoint: location) else { return }
 
+        // A placement waiting to be confirmed follows the finger instead.
+        if controller.build.pending != nil {
+            dragPending(to: coord, state: recognizer.state, controller: controller)
+            return
+        }
+
         switch recognizer.state {
         case .began, .changed:
             controller.updateGhost(at: coord)
@@ -249,6 +262,29 @@ final class ParkScene: SKScene {
             controller.updateGhost(at: coord)
         default:
             break
+        }
+    }
+
+    /// Slides a waiting placement under the finger.
+    ///
+    /// Moved by how far the finger has travelled rather than to wherever it
+    /// is, so the building keeps the same offset from the fingertip it had
+    /// when the drag started. Dropping the corner on the finger makes a
+    /// building jump the moment it is touched.
+    private func dragPending(to coord: GridCoord,
+                             state: UIGestureRecognizer.State,
+                             controller: GameController) {
+        switch state {
+        case .began:
+            dragAnchor = coord
+            dragOrigin = controller.build.pending?.origin
+        case .changed:
+            guard let anchor = dragAnchor, let origin = dragOrigin else { return }
+            controller.movePending(to: GridCoord(origin.x + coord.x - anchor.x,
+                                                 origin.y + coord.y - anchor.y))
+        default:
+            dragAnchor = nil
+            dragOrigin = nil
         }
     }
 
