@@ -29,7 +29,10 @@ enum FacilityAppeal {
             case .queueTooLong: return "The queue is longer than guests will wait"
             case .cannotAfford: return "Guests nearby cannot afford it"
             case .notWanted: return "Nobody nearby wants it right now"
-            case .wants(let score): return "Guests want this (appeal \(Int(score)))"
+            // No number here on purpose. The appeal score is a knob inside the
+            // simulation, and printing it invites tuning a park against a
+            // figure that means nothing outside this file.
+            case .wants: return "Guests want this"
             }
         }
     }
