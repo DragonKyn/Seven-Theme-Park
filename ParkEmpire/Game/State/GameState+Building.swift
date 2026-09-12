@@ -28,7 +28,9 @@ extension GameState {
         // Money only moves once we know the definition is one we can build.
         switch definition {
         case let terrainDefinition as TerrainDefinition:
-            map.setTerrain(terrainDefinition.terrain, at: origin)
+            map.setTerrain(terrainDefinition.terrain,
+                           at: origin,
+                           style: terrainDefinition.style)
             if terrainDefinition.beauty > 0 { refreshBeauty() }
 
         case let attractionDefinition as AttractionDefinition:
@@ -162,8 +164,10 @@ extension GameState {
         if let item = sceneryItem(at: coord) {
             return (item.definition?.purchasePrice ?? 0) * 0.5
         }
-        if let terrain = map.tile(at: coord)?.terrain,
-           let definition = GameContent.terrains.first(where: { $0.terrain == terrain }) {
+        if let tile = map.tile(at: coord),
+           let definition = GameContent.terrains.first(where: { $0.terrain == tile.terrain
+                                                                && $0.style == tile.style })
+            ?? GameContent.terrains.first(where: { $0.terrain == tile.terrain }) {
             return definition.refundValue
         }
         return 0
@@ -229,11 +233,18 @@ extension GameState {
             return true
         }
 
-        guard let tile = map.tile(at: coord),
-              let definition = GameContent.terrains.first(where: { $0.terrain == tile.terrain })
+        guard let tile = map.tile(at: coord) else { return false }
+        // Matched on the finish as well as the terrain, so taking up a
+        // boardwalk does not refund the price of plain paving.
+        let terrains = GameContent.terrains
+        guard let definition = terrains.first(where: { $0.terrain == tile.terrain
+                                                       && $0.style == tile.style })
+            ?? terrains.first(where: { $0.terrain == tile.terrain })
         else { return false }
 
-        map.setTerrain(.grass, at: coord)
+        // Taking a bridge out leaves the water it was crossing, not a hole in
+        // the pond.
+        map.setTerrain(tile.terrain == .bridge ? .water : .grass, at: coord)
         if definition.beauty > 0 { refreshBeauty() }
         ledger.receive(definition.refundValue, as: .other)
         return true

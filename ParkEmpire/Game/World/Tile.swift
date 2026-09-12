@@ -21,10 +21,19 @@ enum TerrainType: String, Codable {
     case coasterHill
     case coasterHelix
     case coasterJump
+    /// A deck over water. Walkable like a path, and the only way to cross a
+    /// pond without filling it in.
+    case bridge
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {
-        self == .path || self == .entrance
+        self == .path || self == .entrance || self == .bridge
+    }
+
+    /// Terrain guests walk along, which is drawn as one continuous route
+    /// whatever it is made of.
+    var isWalkway: Bool {
+        isWalkableTerrain
     }
 
     /// Every kind of coaster track, which all join to one another.
@@ -37,6 +46,10 @@ enum TerrainType: String, Codable {
 
 struct Tile: Codable {
     var terrain: TerrainType = .grass
+    /// Which finish this terrain is laid in: paving, brick, boardwalk or
+    /// tarmac for a walkway; the colour of the water for a pond. Terrain is
+    /// painted rather than placed, so the choice lives on the tile.
+    var style: UInt8 = 0
     /// Identifier of the building occupying this tile, if any.
     var buildingID: UUID?
     /// Whether whatever is here stops guests walking through. A bench or a
@@ -66,6 +79,7 @@ extension Tile {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         terrain = container.value(.terrain, or: .grass)
+        style = container.value(.style, or: 0)
         buildingID = container.optionalValue(.buildingID)
         blocksMovement = container.value(.blocksMovement, or: true)
         litter = container.value(.litter, or: 0)

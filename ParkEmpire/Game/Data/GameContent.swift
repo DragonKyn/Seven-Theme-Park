@@ -6,27 +6,114 @@ enum GameContent {
 
     // MARK: - Terrain
 
+    /// Walkway finishes. All the same walkway underneath: what changes is
+    /// what it is paved with, and a run can be repaved without being dug up.
     static let path = TerrainDefinition(
         id: "path.concrete",
         displayName: "Walkway",
-        summary: "Guests can only travel on walkways.",
+        summary: "Guests can only travel on walkways. Plain paving, and the cheapest way to get them anywhere.",
         purchasePrice: 25,
         refundValue: 10,
         terrain: .path,
+        placeableOn: [.grass, .path, .bridge],
         category: .path,
         beauty: 0,
         beautyRadius: 0
     )
 
+    static let brickPath = TerrainDefinition(
+        id: "path.brick",
+        displayName: "Brick Path",
+        summary: "Warmer underfoot than concrete, and it makes an old-fashioned corner of the park look deliberate.",
+        purchasePrice: 40,
+        refundValue: 15,
+        terrain: .path,
+        style: 1,
+        placeableOn: [.grass, .path, .bridge],
+        category: .path,
+        beauty: 8,
+        beautyRadius: 1
+    )
+
+    static let boardwalk = TerrainDefinition(
+        id: "path.boardwalk",
+        displayName: "Boardwalk",
+        summary: "Timber decking. Best round water, where it looks like it was always meant to be there.",
+        purchasePrice: 45,
+        refundValue: 18,
+        terrain: .path,
+        style: 2,
+        placeableOn: [.grass, .path, .bridge],
+        category: .path,
+        beauty: 10,
+        beautyRadius: 1
+    )
+
+    static let tarmac = TerrainDefinition(
+        id: "path.tarmac",
+        displayName: "Tarmac",
+        summary: "Plain, dark and hard-wearing. Cheap enough to run to the far side of the lot.",
+        purchasePrice: 20,
+        refundValue: 8,
+        terrain: .path,
+        style: 3,
+        placeableOn: [.grass, .path, .bridge],
+        category: .path,
+        beauty: 0,
+        beautyRadius: 0
+    )
+
+    static let bridge = TerrainDefinition(
+        id: "path.bridge",
+        displayName: "Bridge",
+        summary: "A deck across the water, with rails. The only way to walk guests over a pond instead of round it.",
+        purchasePrice: 160,
+        refundValue: 60,
+        terrain: .bridge,
+        placeableOn: [.water],
+        category: .path,
+        beauty: 18,
+        beautyRadius: 1
+    )
+
     static let water = TerrainDefinition(
         id: "terrain.water",
-        displayName: "Water",
-        summary: "A pond. Nothing can cross it or be built on it, and nothing else this cheap looks as good.",
+        displayName: "Pond",
+        summary: "Ordinary park water. Build a bridge if you want guests on the other side of it.",
         purchasePrice: 90,
         refundValue: 20,
         terrain: .water,
+        placeableOn: [.grass, .water],
         category: .scenery,
         beauty: 52,
+        beautyRadius: 2
+    )
+
+    static let lagoon = TerrainDefinition(
+        id: "terrain.lagoon",
+        displayName: "Lagoon",
+        summary: "Bright turquoise, for the tropical corner of the park.",
+        purchasePrice: 110,
+        refundValue: 25,
+        terrain: .water,
+        style: 1,
+        placeableOn: [.grass, .water],
+        category: .scenery,
+        beauty: 58,
+        beautyRadius: 2
+    )
+
+    static let deepWater = TerrainDefinition(
+        id: "terrain.deepwater",
+        displayName: "Deep Water",
+        summary: "Dark and still. A big expanse of it reads as a lake rather than a puddle.",
+        purchasePrice: 100,
+        refundValue: 22,
+        terrain: .water,
+        style: 2,
+        placeableOn: [.grass, .water],
+        category: .scenery,
+        beauty: 55,
         beautyRadius: 2
     )
 
@@ -58,7 +145,11 @@ enum GameContent {
 
     /// Terrain in build-menu order. All of it is drawn by dragging, so it
     /// shares the same handling everywhere the player paints a run of tiles.
-    static let terrains: [TerrainDefinition] = [path, water, track, coasterTrack]
+    static let terrains: [TerrainDefinition] = [
+        path, brickPath, boardwalk, tarmac, bridge,
+        water, lagoon, deepWater,
+        track, coasterTrack
+    ]
 
     // MARK: - Attractions
 

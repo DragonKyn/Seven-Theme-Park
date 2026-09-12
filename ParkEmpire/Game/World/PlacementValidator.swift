@@ -26,14 +26,21 @@ enum PlacementValidator {
         }
 
         if let terrainDefinition = definition as? TerrainDefinition {
-            // Terrain is only ever painted onto bare grass, so paving over a
-            // pond or flooding a walkway both need the old tile cleared first.
+            // Most terrain is painted onto bare grass. The exceptions are the
+            // ones that are a finish rather than a thing: a walkway can be
+            // repaved without being dug up, and a bridge goes on the water it
+            // is there to cross.
             guard let tile = map.tile(at: origin) else { return .invalid("Outside the park") }
-            if tile.terrain == terrainDefinition.terrain {
+            if tile.terrain == terrainDefinition.terrain && tile.style == terrainDefinition.style {
                 return .invalid("Already \(terrainDefinition.displayName.lowercased())")
             }
             if tile.terrain == .entrance { return .invalid("That is the entrance") }
-            if tile.terrain != .grass { return .invalid("Clear the ground here first") }
+            guard terrainDefinition.placeableOn.contains(tile.terrain) else {
+                if terrainDefinition.terrain == .bridge {
+                    return .invalid("Bridges go over water")
+                }
+                return .invalid("Clear the ground here first")
+            }
             if tile.buildingID != nil { return .invalid("Something is in the way") }
         } else if definition.laysCoasterTrack {
             // Goes on bare ground or on track already laid, and brings its own

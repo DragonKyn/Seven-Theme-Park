@@ -100,6 +100,13 @@ struct TerrainDefinition: BuildableDefinition {
     let refundValue: Double
     /// What the tile becomes.
     let terrain: TerrainType
+    /// Which finish of that terrain: the paving pattern, or the colour of the
+    /// water.
+    var style: UInt8 = 0
+    /// What it can be laid over. Grass for most things; a bridge only goes on
+    /// water, and a walkway finish can be laid over a walkway, which is how a
+    /// path is repaved without being dug up first.
+    var placeableOn: Set<TerrainType> = [.grass]
     let category: BuildCategory
     /// Prettiness this terrain lends the tiles around it, on the same 0-100
     /// scale scenery uses. Walkways add none; water adds a lot.

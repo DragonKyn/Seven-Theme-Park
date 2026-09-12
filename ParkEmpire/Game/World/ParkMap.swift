@@ -82,11 +82,14 @@ struct ParkMap: Codable {
 
     // MARK: - Terrain mutation
 
-    mutating func setTerrain(_ terrain: TerrainType, at coord: GridCoord) {
+    mutating func setTerrain(_ terrain: TerrainType, at coord: GridCoord, style: UInt8 = 0) {
         guard isInside(coord) else { return }
         let index = linearIndex(of: coord)
-        guard tiles[index].terrain != terrain else { return }
+        // A change of finish counts as a change: repaving a walkway in brick
+        // leaves the terrain alone and has to repaint it all the same.
+        guard tiles[index].terrain != terrain || tiles[index].style != style else { return }
         tiles[index].terrain = terrain
+        tiles[index].style = style
         generation += 1
 
         // Rubbish cannot sit on grass a guest can no longer reach.

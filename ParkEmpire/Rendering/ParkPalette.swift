@@ -112,6 +112,7 @@ enum ParkPalette {
         switch terrain {
         case .path: return path
         case .entrance: return entrance
+        case .bridge: return colour(.brown)
         case .water: return alternate ? waterAlt : water
         case .track: return ballast
         // Every coaster piece shares the one bed colour; what tells them

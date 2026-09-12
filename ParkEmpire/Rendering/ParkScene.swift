@@ -474,8 +474,12 @@ final class ParkScene: SKScene {
         case .coasterHill: terrain = 7
         case .coasterHelix: terrain = 8
         case .coasterJump: terrain = 9
+        case .bridge: terrain = 10
         }
-        return terrain * 1000 + tileVariant(at: coord) * 100 + neighbourMask(for: tile, at: coord, map: map)
+        return terrain * 100_000
+            + Int(tile.style) * 10_000
+            + tileVariant(at: coord) * 100
+            + neighbourMask(for: tile, at: coord, map: map)
     }
 
     /// Which repeat of a terrain a tile uses. Taken from the coordinate, so a
@@ -488,8 +492,27 @@ final class ParkScene: SKScene {
     private func neighbourMask(for tile: Tile, at coord: GridCoord, map: ParkMap) -> Int {
         switch tile.terrain {
         case .water: return shoreMask(at: coord, map: map)
+        case .path, .entrance, .bridge: return walkwayConnections(at: coord, map: map)
         default: return trackConnections(at: coord, map: map)
         }
+    }
+
+    /// Which of the four neighbours a guest could walk on to from here. A
+    /// walkway is drawn from this, which is what turns a right-angle into a
+    /// corner rather than two squares meeting.
+    private func walkwayConnections(at coord: GridCoord, map: ParkMap) -> Int {
+        let offsets: [(Int, GridCoord)] = [
+            (1, GridCoord(coord.x, coord.y + 1)),
+            (2, GridCoord(coord.x + 1, coord.y)),
+            (4, GridCoord(coord.x, coord.y - 1)),
+            (8, GridCoord(coord.x - 1, coord.y))
+        ]
+        var connections = 0
+        for (bit, neighbour) in offsets
+        where map.tile(at: neighbour)?.terrain.isWalkway == true {
+            connections |= bit
+        }
+        return connections
     }
 
     /// Sides of a water tile that are not more water, as north, east, south
@@ -564,11 +587,18 @@ final class ParkScene: SKScene {
         case .grass:
             return SpriteFactory.grassTexture(variant: variant, side: Self.tileSide)
         case .path:
-            return SpriteFactory.pathTexture(variant: variant, side: Self.tileSide)
+            return TerrainArtwork.walkwayTexture(connections: walkwayConnections(at: coord, map: map),
+                                                 style: tile.style,
+                                                 variant: variant,
+                                                 side: Self.tileSide)
+        case .bridge:
+            return TerrainArtwork.bridgeTexture(connections: walkwayConnections(at: coord, map: map),
+                                                side: Self.tileSide)
         case .water:
-            return SpriteFactory.waterTexture(shores: shoreMask(at: coord, map: map),
-                                              variant: variant,
-                                              side: Self.tileSide)
+            return TerrainArtwork.waterTexture(shores: shoreMask(at: coord, map: map),
+                                               style: tile.style,
+                                               variant: variant,
+                                               side: Self.tileSide)
         case .entrance:
             return SpriteFactory.tileTexture(colour: ParkPalette.entrance, side: Self.tileSide)
         case .track, .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
