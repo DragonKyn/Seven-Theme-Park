@@ -46,6 +46,14 @@ final class GameState: Codable {
     /// How much of the car park outside the gate has been paved, 0 to
     /// `CarParkContent.maxLevel`.
     var carParkLevel: Int = 0
+    /// Sim time the next famous visitor may turn up, the boost their post is
+    /// currently giving the park, and when it runs out.
+    var nextInfluencerAt: Double = Balance.dayLength * 0.8
+    var promotionBoost: Double = 0
+    var promotionEndsAt: Double = 0
+    /// Posts that have happened but not yet been shown to the player. Kept in
+    /// the save so one made as the app goes to the background is not lost.
+    var pendingPromotions: [PromotionPost] = []
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -112,6 +120,10 @@ final class GameState: Codable {
         scheme = container.value(.scheme, or: ParkScheme())
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
+        nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 0.8)
+        promotionBoost = container.value(.promotionBoost, or: 0)
+        promotionEndsAt = container.value(.promotionEndsAt, or: 0)
+        pendingPromotions = container.value(.pendingPromotions, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
@@ -285,6 +297,18 @@ final class GameState: Codable {
 
     var activeGuests: [Guest] {
         guests.filter { $0.isActive }
+    }
+
+    /// Extra arrivals a social media post is currently bringing in, as a
+    /// share. Zero once it has run its course.
+    var activePromotionBoost: Double {
+        clock.simTime < promotionEndsAt ? promotionBoost : 0
+    }
+
+    /// Park minutes left on the current post, or nil when there is none.
+    var promotionMinutesLeft: Double? {
+        guard clock.simTime < promotionEndsAt else { return nil }
+        return (promotionEndsAt - clock.simTime) / 60
     }
 
     var guestCount: Int {

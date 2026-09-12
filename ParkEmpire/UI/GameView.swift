@@ -68,6 +68,11 @@ struct GameView: View {
                 CelebrationView(award: award) { controller.dismissCelebration() }
                     .transition(.opacity)
             }
+
+            if let post = controller.promotion {
+                PromotionView(post: post) { controller.dismissPromotion() }
+                    .transition(.opacity)
+            }
         }
         .onAppear(perform: prepareScene)
         .sheet(isPresented: $showingFinance) {

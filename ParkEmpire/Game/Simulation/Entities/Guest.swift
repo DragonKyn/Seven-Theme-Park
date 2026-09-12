@@ -96,6 +96,11 @@ struct Guest: Codable, Identifiable {
     var ageCategory: AgeCategory
     var personality: GuestPersonality
     var appearance: GuestAppearance = .unknown
+    /// A visitor with an audience. They ride something, post about it, and
+    /// the park sees a rush of arrivals off the back of it.
+    var isInfluencer: Bool = false
+    /// Set once they have posted, so one visit is one post.
+    var hasPosted: Bool = false
 
     // Money
     var cash: Double
@@ -175,6 +180,8 @@ extension Guest {
         name = container.value(.name, or: "Guest")
         ageCategory = container.value(.ageCategory, or: .adult)
         appearance = container.value(.appearance, or: .unknown)
+        isInfluencer = container.value(.isInfluencer, or: false)
+        hasPosted = container.value(.hasPosted, or: false)
         personality = container.value(.personality,
                                       or: GuestPersonality(thrillPreference: 50,
                                                            patience: 50,

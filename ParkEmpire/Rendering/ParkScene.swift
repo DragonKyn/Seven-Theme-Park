@@ -35,6 +35,9 @@ final class ParkScene: SKScene {
     /// How each tile currently looks, so unchanged tiles are skipped.
     private var tileAppearance: [Int] = []
     private var buildingNodes: [UUID: BuildingNode] = [:]
+    /// What each building is currently painted as, so one that has been
+    /// repainted is rebuilt and one that has not is left alone.
+    private var renderedAppearance: [UUID: BuildingAppearance] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
     private var elementNodes: [UUID: SKSpriteNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
@@ -415,6 +418,7 @@ final class ParkScene: SKScene {
 
         for node in buildingNodes.values { node.removeFromParent() }
         buildingNodes.removeAll()
+        renderedAppearance.removeAll()
         for node in sceneryNodes.values { node.removeFromParent() }
         sceneryNodes.removeAll()
     }
@@ -901,6 +905,7 @@ final class ParkScene: SKScene {
                                     origin: attraction.origin,
                                     rotation: attraction.rotation,
                                     appearance: (attraction.definition?.appearance ?? .unknown)
+                                        .tinted(attraction.tint)
                                         .applying(state.scheme),
                                     title: attraction.name)
             node.setMotionRunning(attraction.isOperational)
@@ -932,6 +937,7 @@ final class ParkScene: SKScene {
         for (id, node) in buildingNodes where !seen.contains(id) {
             node.removeFromParent()
             buildingNodes.removeValue(forKey: id)
+            renderedAppearance.removeValue(forKey: id)
         }
     }
 
@@ -976,8 +982,13 @@ final class ParkScene: SKScene {
                               appearance: BuildingAppearance,
                               title: String) -> BuildingNode {
         if let existing = buildingNodes[id] {
-            existing.setTitle(title)
-            return existing
+            if renderedAppearance[id] == appearance {
+                existing.setTitle(title)
+                return existing
+            }
+            // Repainted since it was built, so it is drawn again.
+            existing.removeFromParent()
+            buildingNodes.removeValue(forKey: id)
         }
 
         // `size` is the ground the building takes up, already turned. The
@@ -995,6 +1006,7 @@ final class ParkScene: SKScene {
                                 y: (CGFloat(origin.y) + CGFloat(size.height) / 2) * Self.tileSide)
         buildingLayer.addChild(node)
         buildingNodes[id] = node
+        renderedAppearance[id] = appearance
         return node
     }
 
@@ -1042,11 +1054,11 @@ final class ParkScene: SKScene {
                 guestPrize[guest.id] = guest.prize
             }
 
-            // Guests inside a ride or a building are not drawn. A carnival
-            // booth is the exception: the guest is stood at the counter
-            // throwing things, and a booth whose customers vanish looks like
-            // a booth nobody is using.
-            if case .engaged(let target) = guest.activity, !isAtACounter(target, state: state) {
+            // Guests inside a ride or a building are not drawn. Furniture is
+            // the exception: somebody at a booth is stood at the counter and
+            // somebody on a bench is sat in the open, and a bench whose
+            // occupants vanish looks like a bench nobody uses.
+            if case .engaged(let target) = guest.activity, !isInTheOpen(target, state: state) {
                 node.isHidden = true
                 continue
             }
@@ -1076,11 +1088,12 @@ final class ParkScene: SKScene {
         }
     }
 
-    /// Whether a guest busy with something is stood outside it in view, which
-    /// only a carnival booth is.
-    private func isAtACounter(_ target: ParkTarget, state: GameState) -> Bool {
+    /// Whether a guest busy with something is still out in the open: playing
+    /// at a booth's counter, or sitting on a bench or at a picnic table.
+    private func isInTheOpen(_ target: ParkTarget, state: GameState) -> Bool {
         guard case .facility(let id) = target else { return false }
-        return state.facility(id: id)?.definition?.kind == .game
+        guard let kind = state.facility(id: id)?.definition?.kind else { return false }
+        return kind == .game || kind == .bench
     }
 
     /// Pops a bubble over a guest who has just thought something new.

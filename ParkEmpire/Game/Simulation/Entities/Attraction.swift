@@ -42,6 +42,9 @@ struct Attraction: Codable, Identifiable {
     /// Cosmetic, and only ever read for a custom ride.
     var livery: ParkColour = .red
     var carStyle: CoasterCarStyle = .classic
+    /// A colour the player chose for this one building, or nil to leave it in
+    /// the colours it was designed in.
+    var tint: ParkColour?
 
     var phase: RidePhase = .loading
     var phaseTimer: Double = 0
@@ -122,6 +125,7 @@ extension Attraction {
         trackThrill = container.value(.trackThrill, or: 0)
         livery = container.value(.livery, or: .red)
         carStyle = container.value(.carStyle, or: .classic)
+        tint = container.optionalValue(.tint)
         phase = container.value(.phase, or: .loading)
         phaseTimer = container.value(.phaseTimer, or: 0)
         queue = container.value(.queue, or: [])

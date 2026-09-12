@@ -25,6 +25,8 @@ final class GameController: ObservableObject {
     @Published private(set) var celebration: AchievementAward?
     /// The piece of advice currently on screen, if any.
     @Published private(set) var currentTip: TutorialTip?
+    /// A social media post about the park, waiting to be shown off.
+    @Published private(set) var promotion: PromotionPost?
 
     // MARK: - Simulation
 
@@ -449,6 +451,13 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    /// Repaints one ride. Nil puts it back to the colours it was designed in.
+    func setRideTint(_ colour: ParkColour?, attractionID: UUID) {
+        guard let index = state.attractionIndex(id: attractionID) else { return }
+        state.attractions[index].tint = colour
+        refreshUI()
+    }
+
     func setCoasterLivery(_ colour: ParkColour, attractionID: UUID) {
         guard let index = state.attractionIndex(id: attractionID) else { return }
         state.attractions[index].livery = colour
@@ -698,6 +707,9 @@ final class GameController: ObservableObject {
         if celebration == nil, !state.pendingAwards.isEmpty {
             celebration = state.pendingAwards.removeFirst()
         }
+        if promotion == nil, !state.pendingPromotions.isEmpty {
+            promotion = state.pendingPromotions.removeFirst()
+        }
         alerts = Array(state.alerts.suffix(12).reversed())
 
         if let current = selection?.identity {
@@ -750,6 +762,11 @@ final class GameController: ObservableObject {
         }
 
         return signals
+    }
+
+    /// Dismissed by the post's card once it has been read.
+    func dismissPromotion() {
+        promotion = nil
     }
 
     /// The player has read the tip on screen.

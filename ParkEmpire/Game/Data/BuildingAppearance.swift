@@ -34,6 +34,17 @@ struct BuildingAppearance: Codable, Equatable {
         return copy
     }
 
+    /// Repaints one building in a colour the player picked for it.
+    ///
+    /// Only the main colour moves: the trim and the accent are what keep a
+    /// carousel looking like a carousel whatever colour its canopy is.
+    func tinted(_ colour: ParkColour?) -> BuildingAppearance {
+        guard let colour else { return self }
+        var copy = self
+        copy.primary = colour
+        return copy
+    }
+
     /// Repaints park furniture in the park's own colours. Anything that is
     /// meant to look like itself — a tree, a ride with its own livery — is
     /// handed back unchanged.

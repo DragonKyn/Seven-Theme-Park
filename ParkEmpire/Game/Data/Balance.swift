@@ -148,6 +148,19 @@ enum Balance {
     static let inspectionConditionBonus: Double = 8
     static let happinessRideBrokeDown: Double = 14
 
+    // MARK: - Social media
+
+    /// A park with fewer rides than this has nothing worth filming.
+    static let influencerMinimumRides = 2
+    /// Park days between one famous visitor and the next.
+    static let influencerGapDays: ClosedRange<Double> = 1.5...3.0
+    /// What a post is worth, as extra arrivals. The floor is what any post
+    /// gets; the range on top of it is decided by the ride they chose.
+    static let promotionBoostFloor: Double = 0.18
+    static let promotionBoostRange: Double = 0.35
+    /// Park minutes a post keeps working for.
+    static let promotionMinutes: Double = 45
+
     // MARK: - Carnival games
 
     /// Happiness a guest gains from winning a prize, and loses from a go that

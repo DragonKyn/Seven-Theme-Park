@@ -155,6 +155,17 @@ final class AttractionSystem {
         let (text, mood) = ThoughtCatalog.afterRide(attractionName, satisfaction: satisfaction)
         state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
 
+        // A famous visitor films the first thing they ride and posts it.
+        if state.guests[guestIndex].isInfluencer,
+           !state.guests[guestIndex].hasPosted,
+           let attraction = state.attraction(id: attractionID) {
+            state.guests[guestIndex].hasPosted = true
+            PromotionSystem.post(guestIndex: guestIndex,
+                                 attraction: attraction,
+                                 state: state,
+                                 now: now)
+        }
+
         return satisfaction
     }
 }

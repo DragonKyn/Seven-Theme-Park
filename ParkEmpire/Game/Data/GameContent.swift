@@ -697,6 +697,23 @@ enum GameContent {
             appearance: BuildingAppearance(.bench, .brown, .sand, .charcoal)
         ),
         FacilityDefinition(
+            id: "facility.picnic",
+            displayName: "Picnic Table",
+            summary: "Goes on the walkway. Seats a family at once, and they eat what they bought at your stalls instead of taking it home.",
+            kind: .bench,
+            purchasePrice: 260,
+            defaultPrice: 0,
+            unitCost: 0,
+            referencePrice: 0,
+            serviceDuration: 50,
+            simultaneousCapacity: 4,
+            queueCapacity: 4,
+            relief: NeedRelief(hunger: 8, energy: 55, happiness: 4, nausea: 28),
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.picnicTable, .teal, .cream, .brown)
+        ),
+        FacilityDefinition(
             id: "facility.bin",
             displayName: "Garbage Bin",
             summary: "Goes straight on the walkway. Without bins, guests carrying rubbish drop it.",
@@ -794,17 +811,6 @@ enum GameContent {
             footprint: GridSize(1, 1),
             unlockLevel: 1,
             appearance: BuildingAppearance(.hedge, .green, .lime, .brown)
-        ),
-        SceneryDefinition(
-            id: "scenery.picnic",
-            displayName: "Picnic Table",
-            summary: "Somewhere to eat what they bought at the stall. Painted in the park's colours.",
-            purchasePrice: 220,
-            beauty: 26,
-            beautyRadius: 1,
-            footprint: GridSize(1, 1),
-            unlockLevel: 1,
-            appearance: BuildingAppearance(.picnicTable, .teal, .cream, .brown)
         ),
         SceneryDefinition(
             id: "scenery.flagpole",

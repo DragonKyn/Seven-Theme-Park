@@ -42,6 +42,48 @@ struct AttractionInspectorView: View {
                 }
             }
 
+            SectionCard(title: "Paintwork") {
+                VStack(alignment: .leading, spacing: 7) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 7) {
+                            Button {
+                                controller.setRideTint(nil, attractionID: attraction.id)
+                            } label: {
+                                Text("Stock")
+                                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                                    .padding(.horizontal, 9)
+                                    .frame(height: 24)
+                                    .foregroundStyle(attraction.tint == nil ? Color.black : Theme.textPrimary)
+                                    .background(Capsule().fill(attraction.tint == nil
+                                                               ? Theme.accent : Theme.control))
+                            }
+
+                            ForEach(CoasterContent.liveries, id: \.rawValue) { colour in
+                                Button {
+                                    controller.setRideTint(colour, attractionID: attraction.id)
+                                } label: {
+                                    Circle()
+                                        .fill(Color(ParkPalette.colour(colour)))
+                                        .frame(width: 24, height: 24)
+                                        .overlay(
+                                            Circle().strokeBorder(
+                                                colour == attraction.tint
+                                                    ? Color.white
+                                                    : Color.black.opacity(0.25),
+                                                lineWidth: colour == attraction.tint ? 3 : 1)
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.vertical, 1)
+                    }
+
+                    Text("Repaints this ride only. Stock puts it back to the colours it came in.")
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+
             if attraction.isCustomCoaster {
                 SectionCard(title: "Your coaster") {
                     VStack(alignment: .leading, spacing: 9) {

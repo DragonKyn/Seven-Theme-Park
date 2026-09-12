@@ -284,6 +284,40 @@ enum PersonArtwork {
                 UIBezierPath(roundedRect: strap, cornerRadius: strap.width * 0.4).fill()
             }
 
+        case .phone:
+            // Held up in front of the chest, screen towards us, with a
+            // broadcast arc over it. Somebody filming holds their arms up,
+            // which is what makes them readable in a crowd.
+            let phone = CGRect(x: body.midX - body.width * 0.20,
+                               y: body.minY - body.height * 0.10,
+                               width: body.width * 0.40,
+                               height: body.height * 0.46)
+            let case_ = UIBezierPath(roundedRect: phone, cornerRadius: phone.width * 0.22)
+            ParkPalette.colour(.charcoal).setFill()
+            case_.fill()
+            outline.setStroke()
+            case_.lineWidth = max(0.5, figureHeight * 0.022)
+            case_.stroke()
+
+            ParkPalette.colour(.cyan).withAlphaComponent(0.9).setFill()
+            UIBezierPath(roundedRect: phone.insetBy(dx: phone.width * 0.14,
+                                                    dy: phone.height * 0.12),
+                         cornerRadius: phone.width * 0.14).fill()
+
+            let arcs = UIBezierPath()
+            for step in 1...2 {
+                let radius = figureHeight * (0.10 + 0.06 * CGFloat(step))
+                arcs.addArc(withCenter: CGPoint(x: phone.midX, y: phone.minY),
+                            radius: radius,
+                            startAngle: .pi * 1.15,
+                            endAngle: .pi * 1.85,
+                            clockwise: true)
+                arcs.close()
+            }
+            ParkPalette.colour(.pink).withAlphaComponent(0.85).setStroke()
+            arcs.lineWidth = max(0.5, figureHeight * 0.022)
+            arcs.stroke()
+
         case .camera:
             let strap = UIBezierPath()
             strap.move(to: CGPoint(x: body.midX - body.width * 0.26,

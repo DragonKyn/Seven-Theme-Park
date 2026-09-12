@@ -56,7 +56,11 @@ final class DemandSystem {
         // can actually get here.
         let parking = CarParkContent.demandMultiplier(level: state.carParkLevel)
 
-        return SimMath.clamp(appeal * ratingFactor * priceFactor * parking,
+        // A post about the park is a short, sharp rush on top of whatever
+        // the park had already earned.
+        let promotion = 1 + state.activePromotionBoost
+
+        return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * promotion,
                              0,
                              Balance.maxArrivalsPerMinute)
     }
@@ -132,6 +136,21 @@ final class DemandSystem {
             plannedVisitLength: Balance.visitLengthBase + visitJitter
         )
         guest.appearance = GuestAppearance.random(for: age, using: &state.rng)
+
+        // Every so often, somebody with an audience.
+        if PromotionSystem.shouldAdmitInfluencer(state: state) {
+            guest.isInfluencer = true
+            // Dressed to be found in a crowd, and filming.
+            guest.appearance = GuestAppearance(shirt: .pink,
+                                               hair: guest.appearance.hair,
+                                               skin: guest.appearance.skin,
+                                               hat: .none,
+                                               bottoms: .charcoal,
+                                               pattern: .plain,
+                                               accessory: .phone)
+            guest.cash += 120
+            PromotionSystem.scheduleNext(state: state)
+        }
 
         guest.nextDecisionAt = now + 1
 

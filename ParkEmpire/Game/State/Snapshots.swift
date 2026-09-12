@@ -157,12 +157,15 @@ struct AttractionDetail: Identifiable {
     let isCustomCoaster: Bool
     let livery: ParkColour
     let carStyle: CoasterCarStyle
+    /// The colour the player picked for this one ride, if any.
+    let tint: ParkColour?
     let trackLength: Int
 
     init(attraction: Attraction) {
         isCustomCoaster = attraction.baseDefinition?.kind == .custom
         livery = attraction.livery
         carStyle = attraction.carStyle
+        tint = attraction.tint
         trackLength = attraction.trackLength
         let ridePrice = attraction.baseDefinition?.purchasePrice ?? 0
         upgrades = UpgradeContent.rideUpgrades.map { upgrade in

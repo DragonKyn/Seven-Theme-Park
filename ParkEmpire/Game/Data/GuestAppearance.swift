@@ -55,6 +55,9 @@ struct GuestAppearance: Codable, Equatable {
         case backpack
         /// On a strap round the neck, which is what marks out a visitor.
         case camera
+        /// Held up in front of them, filming. Only the park's occasional
+        /// famous visitor carries one.
+        case phone
     }
 
     /// Shirt colours guests actually wear. Deliberately not the whole palette:
