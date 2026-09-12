@@ -121,12 +121,61 @@ struct BuildMenuView: View {
                 .frame(height: 78)
             }
 
+            if !controller.build.isDemolishing && controller.styleCount > 1 {
+                styleChips
+            }
+
             Text(hintText)
                 .font(.caption2)
                 .foregroundStyle(hintIsError ? Theme.danger : Theme.textSecondary)
         }
         .padding(10)
         .panelBackground()
+    }
+
+    /// Which cut of the selected thing to build.
+    ///
+    /// Mixed is the default and the point: one catalogue entry draws four
+    /// different trees, so an avenue planted without thinking about it looks
+    /// planted rather than stamped. Picking a style is for when the player
+    /// wants a matching row.
+    private var styleChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                styleChip(nil, title: "Mixed")
+                ForEach(Array(0..<controller.styleCount), id: \.self) { index in
+                    styleChip(index, title: "Style \(index + 1)")
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+
+    private func styleChip(_ variant: Int?, title: String) -> some View {
+        let selected = controller.build.variant == variant
+        return Button {
+            controller.chooseStyle(variant)
+        } label: {
+            HStack(spacing: 4) {
+                if let variant, let appearance = controller.selectedDefinition?.previewAppearance {
+                    Image(uiImage: BuildingArtwork.previewImage(
+                        for: appearance.withVariant(variant),
+                        size: CGSize(width: 60, height: 60)))
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                } else {
+                    Image(systemName: "shuffle")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                Text(title)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+            }
+            .padding(.horizontal, 9)
+            .frame(height: 26)
+            .foregroundStyle(selected ? Color.black : Theme.textPrimary)
+            .background(Capsule().fill(selected ? Theme.accent : Theme.control))
+        }
+        .buttonStyle(.plain)
     }
 
     /// A second shelf of chips inside the ride list. The list of rides only

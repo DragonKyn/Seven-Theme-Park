@@ -785,6 +785,61 @@ enum GameContent {
             appearance: BuildingAppearance(.statue, .cream, .amber, .slate)
         ),
         SceneryDefinition(
+            id: "scenery.hedge",
+            displayName: "Hedge",
+            summary: "Edging. A run of them turns a walkway into a route rather than a line on the grass.",
+            purchasePrice: 90,
+            beauty: 16,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.hedge, .green, .lime, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.picnic",
+            displayName: "Picnic Table",
+            summary: "Somewhere to eat what they bought at the stall. Painted in the park's colours.",
+            purchasePrice: 220,
+            beauty: 26,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.picnicTable, .teal, .cream, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.flagpole",
+            displayName: "Flag Pole",
+            summary: "Flies the park's colours. Tall enough to be seen from the far side of the lot.",
+            purchasePrice: 380,
+            beauty: 40,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.flagPole, .teal, .cream, .slate)
+        ),
+        SceneryDefinition(
+            id: "scenery.arch",
+            displayName: "Garden Arch",
+            summary: "Frames a walkway. Two of them at either end of a path make it look designed.",
+            purchasePrice: 460,
+            beauty: 50,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.gardenArch, .teal, .lime, .cream)
+        ),
+        SceneryDefinition(
+            id: "scenery.clocktower",
+            displayName: "Clock Tower",
+            summary: "The tallest thing in the park nobody queues for, and the one everybody meets at.",
+            purchasePrice: 2_600,
+            beauty: 86,
+            beautyRadius: 4,
+            footprint: GridSize(2, 2),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.clockTower, .teal, .amber, .cream)
+        ),
+        SceneryDefinition(
             id: "scenery.fountain",
             displayName: "Fountain",
             summary: "The centrepiece. Nothing else lifts the look of a park this much.",

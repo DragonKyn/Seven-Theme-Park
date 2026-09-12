@@ -36,6 +36,9 @@ final class GameState: Codable {
     /// The colour every employee's uniform is drawn in. Park-wide rather than
     /// per-employee: it is a decision about the park, not about a person.
     var uniformColour: ParkColour = .teal
+    /// The two colours the park paints its own furniture in: lamps, benches,
+    /// bins, flags, arches and the clock tower.
+    var scheme = ParkScheme()
     /// The colour every piece of coaster track is painted. Park-wide, like the
     /// uniform: repainting one circuit and not the next looked like a mistake
     /// rather than a choice.
@@ -106,6 +109,7 @@ final class GameState: Codable {
         alerts = container.value(.alerts, or: [])
         admissionPrice = container.value(.admissionPrice, or: Balance.defaultAdmissionPrice)
         uniformColour = container.value(.uniformColour, or: .teal)
+        scheme = container.value(.scheme, or: ParkScheme())
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
         parkRating = container.value(.parkRating, or: 0)

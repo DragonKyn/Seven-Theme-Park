@@ -15,9 +15,12 @@ extension GameState {
     }
 
     @discardableResult
+    /// `variant` picks which cut of a shape is built; nil leaves it to
+    /// chance, which is what makes a row of trees look like a row of trees.
     func place(_ definition: BuildableDefinition,
                at origin: GridCoord,
-               rotation: Int = 0) -> Bool {
+               rotation: Int = 0,
+               variant: Int? = nil) -> Bool {
         guard placementCheck(for: definition, at: origin, rotation: rotation).isValid else {
             return false
         }
@@ -74,12 +77,15 @@ extension GameState {
             map.setBuilding(element.id, on: element.rect.coords)
 
         case let sceneryDefinition as SceneryDefinition:
+            let styles = sceneryDefinition.appearance.motif.variantCount
+            let style = variant ?? (styles > 1 ? rng.int(0...(styles - 1)) : 0)
             let item = SceneryItem(
                 id: UUID(),
                 definitionID: sceneryDefinition.id,
                 origin: origin,
                 size: sceneryDefinition.footprint(rotatedBy: rotation),
-                rotation: rotation
+                rotation: rotation,
+                variant: style
             )
             scenery.append(item)
             map.setBuilding(item.id, on: item.rect.coords)

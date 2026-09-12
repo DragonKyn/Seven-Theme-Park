@@ -10,6 +10,9 @@ struct SceneryItem: Codable, Identifiable {
     var size: GridSize
     /// Quarter turns clockwise, 0 to 3.
     var rotation: Int = 0
+    /// Which cut of this shape was planted. Picked when it is placed, kept
+    /// forever after, so an avenue of trees stays the avenue it was.
+    var variant: Int = 0
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
 
@@ -26,5 +29,6 @@ extension SceneryItem {
         origin = container.value(.origin, or: GridCoord(0, 0))
         size = container.value(.size, or: .single)
         rotation = container.value(.rotation, or: 0)
+        variant = container.value(.variant, or: 0)
     }
 }

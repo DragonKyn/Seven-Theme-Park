@@ -56,6 +56,8 @@ final class ParkScene: SKScene {
     private var staffTextures: [StaffRole: SKTexture] = [:]
     /// The uniform the cached staff textures were drawn in.
     private var renderedUniform: ParkColour?
+    /// The colours the park's furniture is currently painted in.
+    private var renderedScheme: ParkScheme?
     private var carPark: SKSpriteNode?
     private var renderedCarParkLevel = -1
     private var entranceSign: SKSpriteNode?
@@ -384,6 +386,7 @@ final class ParkScene: SKScene {
         controller.advance(realDelta: delta)
 
         if isInteractive { updateGestureModes() }
+        repaintParkFurniture(state: controller.state)
         syncTiles(state: controller.state)
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
@@ -398,6 +401,22 @@ final class ParkScene: SKScene {
             syncGhost(controller: controller)
             syncSelection(controller: controller)
         }
+    }
+
+    /// Drops every building and every piece of scenery when the park's
+    /// colours change, so they are built again in the new ones.
+    ///
+    /// Heavy-handed on purpose: this runs when a player picks a colour and
+    /// never otherwise, and a node that knows how to repaint itself is a node
+    /// that has to remember what it was painted with.
+    private func repaintParkFurniture(state: GameState) {
+        guard renderedScheme != state.scheme else { return }
+        renderedScheme = state.scheme
+
+        for node in buildingNodes.values { node.removeFromParent() }
+        buildingNodes.removeAll()
+        for node in sceneryNodes.values { node.removeFromParent() }
+        sceneryNodes.removeAll()
     }
 
     // MARK: - Tiles
@@ -881,7 +900,8 @@ final class ParkScene: SKScene {
                                     size: attraction.size,
                                     origin: attraction.origin,
                                     rotation: attraction.rotation,
-                                    appearance: attraction.definition?.appearance ?? .unknown,
+                                    appearance: (attraction.definition?.appearance ?? .unknown)
+                                        .applying(state.scheme),
                                     title: attraction.name)
             node.setMotionRunning(attraction.isOperational)
             if attraction.isBroken {
@@ -898,7 +918,8 @@ final class ParkScene: SKScene {
                                     size: facility.size,
                                     origin: facility.origin,
                                     rotation: facility.rotation,
-                                    appearance: facility.definition?.appearance ?? .unknown,
+                                    appearance: (facility.definition?.appearance ?? .unknown)
+                                        .applying(state.scheme),
                                     title: facility.name)
             if facility.isUnusable {
                 node.setBadge("!", colour: ParkPalette.broken)
@@ -923,7 +944,9 @@ final class ParkScene: SKScene {
             seen.insert(item.id)
             guard sceneryNodes[item.id] == nil else { continue }
 
-            let appearance = item.definition?.appearance ?? .unknown
+            let appearance = (item.definition?.appearance ?? .unknown)
+                .withVariant(item.variant)
+                .applying(state.scheme)
             let drawnSize = item.size.rotated(by: item.rotation)
             let pixelSize = CGSize(width: CGFloat(drawnSize.width) * Self.tileSide,
                                    height: CGFloat(drawnSize.height) * Self.tileSide)
@@ -1357,7 +1380,12 @@ final class ParkScene: SKScene {
         }
 
         if let appearance = definition.previewAppearance {
-            art.texture = BuildingArtwork.bodyTexture(for: appearance, size: drawnSize)
+            // Shown in the style and the colours it would actually be built
+            // in, so the preview is the thing rather than a picture of it.
+            let styled = appearance
+                .withVariant(controller.build.variant ?? 0)
+                .applying(controller.state.scheme)
+            art.texture = BuildingArtwork.bodyTexture(for: styled, size: drawnSize)
         } else {
             art.texture = SpriteFactory.buildingTexture(colour: ParkPalette.ghostValid, size: drawnSize)
         }

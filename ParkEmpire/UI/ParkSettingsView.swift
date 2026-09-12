@@ -39,9 +39,36 @@ struct ParkSettingsView: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Park colours") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text("MAIN")
+                                .font(.caption2.weight(.heavy))
+                                .foregroundStyle(.secondary)
+                            ColourPicker(selected: controller.state.scheme.primary) {
+                                controller.setSchemePrimary($0)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text("TRIM")
+                                .font(.caption2.weight(.heavy))
+                                .foregroundStyle(.secondary)
+                            ColourPicker(selected: controller.state.scheme.trim) {
+                                controller.setSchemeTrim($0)
+                            }
+                        }
+
+                        Text("Lamps, benches, bins, picnic tables, flags, arches, fountains and the clock tower are painted in these. Rides and plants keep their own colours.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+
                 Section("Staff uniform") {
                     VStack(alignment: .leading, spacing: 10) {
-                        UniformPicker(selected: controller.state.uniformColour) {
+                        ColourPicker(selected: controller.state.uniformColour) {
                             controller.setUniformColour($0)
                         }
                         Text("Every employee wears this. Their hat and their tools still say which job they do.")
@@ -111,7 +138,7 @@ struct ParkSettingsView: View {
 /// A row of swatches. Deliberately a fixed shortlist rather than the full
 /// palette: every colour here has to stay legible on a small figure against
 /// grass, and most of the palette does not.
-private struct UniformPicker: View {
+private struct ColourPicker: View {
     let selected: ParkColour
     let onSelect: (ParkColour) -> Void
 

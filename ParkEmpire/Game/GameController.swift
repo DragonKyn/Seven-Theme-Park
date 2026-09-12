@@ -114,6 +114,18 @@ final class GameController: ObservableObject {
         refreshUI()
     }
 
+    /// The park's own colours, which every piece of park furniture is painted
+    /// in. Changing one repaints the lot.
+    func setSchemePrimary(_ colour: ParkColour) {
+        state.scheme.primary = colour
+        refreshUI()
+    }
+
+    func setSchemeTrim(_ colour: ParkColour) {
+        state.scheme.trim = colour
+        refreshUI()
+    }
+
     /// Repaints every piece of coaster track in the park, and the loops and
     /// corkscrews bolted to it.
     func setCoasterTrackColour(_ colour: ParkColour) {
@@ -159,6 +171,18 @@ final class GameController: ObservableObject {
         build.rideGroup = group
     }
 
+    /// How many ways the selected thing can be drawn, or 1 when there is only
+    /// the one.
+    var styleCount: Int {
+        selectedDefinition?.previewAppearance?.motif.variantCount ?? 1
+    }
+
+    /// Nil means mixed: every one placed picks its own style, which is what
+    /// makes a hedge row look grown rather than extruded.
+    func chooseStyle(_ variant: Int?) {
+        build.variant = variant
+    }
+
     /// Whether turning would change anything. Only ever offered on a
     /// placement that is waiting to be confirmed, because that is the only
     /// point at which the player can see what they are turning.
@@ -178,6 +202,7 @@ final class GameController: ObservableObject {
         build.selectedID = definitionID
         build.isDemolishing = false
         build.pending = nil
+        build.variant = nil
         if !canDraw { build.isDrawing = false }
     }
 
@@ -299,7 +324,10 @@ final class GameController: ObservableObject {
     @discardableResult
     func confirmPending() -> Bool {
         guard let pending = build.pending, let definition = pendingDefinition else { return false }
-        guard state.place(definition, at: pending.origin, rotation: pending.rotation) else {
+        guard state.place(definition,
+                          at: pending.origin,
+                          rotation: pending.rotation,
+                          variant: build.variant) else {
             return false
         }
         build.pending = nil
@@ -325,7 +353,10 @@ final class GameController: ObservableObject {
                                                      origin: coord,
                                                      rotation: build.rotation)
                 } else {
-                    _ = state.place(definition, at: coord, rotation: build.rotation)
+                    _ = state.place(definition,
+                                    at: coord,
+                                    rotation: build.rotation,
+                                    variant: build.variant)
                     refreshUI()
                 }
             }
@@ -776,6 +807,9 @@ struct BuildState {
     /// Quarter turns clockwise applied to whatever is about to be placed.
     /// Kept across placements, so a row of benches all face the same way.
     var rotation = 0
+    /// Which cut of the selected thing to build, or nil to let each one pick
+    /// its own.
+    var variant: Int?
     /// A placement lined up and waiting to be confirmed. Nothing has been
     /// built or charged while this is set.
     var pending: PendingPlacement?

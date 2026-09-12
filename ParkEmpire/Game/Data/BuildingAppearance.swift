@@ -8,18 +8,41 @@ import Foundation
 /// which now describes how the ride looks as well as how it plays.
 struct BuildingAppearance: Codable, Equatable {
     let motif: BuildingMotif
-    let primary: ParkColour
-    let secondary: ParkColour
-    let accent: ParkColour
+    var primary: ParkColour
+    var secondary: ParkColour
+    var accent: ParkColour
+    /// Which cut of this shape to draw. One tree definition draws four
+    /// different trees, so a row of them is a row of trees rather than one
+    /// tree stamped four times.
+    var variant: Int = 0
 
     init(_ motif: BuildingMotif,
          _ primary: ParkColour,
          _ secondary: ParkColour,
-         _ accent: ParkColour) {
+         _ accent: ParkColour,
+         variant: Int = 0) {
         self.motif = motif
         self.primary = primary
         self.secondary = secondary
         self.accent = accent
+        self.variant = variant
+    }
+
+    func withVariant(_ variant: Int) -> BuildingAppearance {
+        var copy = self
+        copy.variant = motif.variantCount > 1 ? variant % motif.variantCount : 0
+        return copy
+    }
+
+    /// Repaints park furniture in the park's own colours. Anything that is
+    /// meant to look like itself — a tree, a ride with its own livery — is
+    /// handed back unchanged.
+    func applying(_ scheme: ParkScheme) -> BuildingAppearance {
+        guard motif.followsParkScheme else { return self }
+        var copy = self
+        copy.primary = scheme.primary
+        copy.accent = scheme.trim
+        return copy
     }
 
     /// Used when a saved building names a definition this build no longer has.
@@ -70,6 +93,17 @@ enum BuildingMotif: String, Codable {
     case mirrorMaze
     /// Boarding platform with the foot of a lift hill behind it.
     case coasterStation
+    /// A clipped hedge, for edging a walkway.
+    case hedge
+    /// Table with benches either side and a parasol over it.
+    case picnicTable
+    /// Tall pole with a pennant at the top.
+    case flagPole
+    /// Arched gateway over the walkway, planted at both feet.
+    case gardenArch
+    /// Square tower with a clock face on it, the tallest thing in the park
+    /// that nobody queues for.
+    case clockTower
     /// Booth with a striped awning across the front.
     case stall
     /// Small booth with a domed top.
@@ -112,6 +146,41 @@ enum BuildingMotif: String, Codable {
     /// Carved figure on a plinth.
     case statue
 
+    /// How many different ways this shape is drawn. One is the usual answer;
+    /// scenery is where variety is worth the drawing.
+    var variantCount: Int {
+        switch self {
+        case .tree: return 4
+        case .conifer: return 3
+        case .flowerBed: return 3
+        case .topiary: return 3
+        case .statue: return 3
+        case .lamp: return 2
+        case .fountain: return 2
+        case .hedge: return 3
+        case .picnicTable: return 2
+        case .flagPole: return 3
+        case .gardenArch: return 2
+        case .clockTower: return 2
+        default: return 1
+        }
+    }
+
+    /// Whether this is park furniture, painted in whatever colours the park
+    /// has chosen, rather than a thing with a look of its own.
+    ///
+    /// Plants are not on this list on purpose: a park scheme of pink and gold
+    /// should not produce pink trees.
+    var followsParkScheme: Bool {
+        switch self {
+        case .lamp, .bench, .bin, .fountain, .statue,
+             .picnicTable, .flagPole, .gardenArch, .clockTower:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// What moves once the building is running. Rides that animate read as
     /// alive; a stopped animation is how a broken ride announces itself.
     var motion: BuildingMotion {
@@ -135,6 +204,8 @@ enum BuildingMotif: String, Codable {
         // on the player's own track rather than round the building.
         case .trainStation: return .none
         case .mirrorMaze, .coasterStation: return .none
+        case .hedge, .picnicTable, .flagPole, .gardenArch, .clockTower:
+            return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .basketballGame, .waterRaceGame, .balloonGame, .targetGame, .ringTossGame,
@@ -172,6 +243,16 @@ enum BuildingMotion: String, Codable {
 /// Named colours the park is drawn from. Naming them rather than storing raw
 /// components keeps the content catalogue free of UIKit and makes the palette
 /// retunable in one place.
+/// The two colours a park paints its own furniture in.
+///
+/// Deliberately only two: a scheme with five colours in it is a palette, and
+/// a player choosing five colours for a bin is a player who has stopped
+/// building a park.
+struct ParkScheme: Codable, Equatable {
+    var primary: ParkColour = .teal
+    var trim: ParkColour = .cream
+}
+
 enum ParkColour: String, Codable {
     case red
     case orange
