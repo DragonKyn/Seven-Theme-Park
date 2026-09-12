@@ -28,6 +28,8 @@ struct Facility: Codable, Identifiable {
     var soiling: Double = 0
     var timesServiced: Int = 0
 
+    /// Prizes handed out, for carnival booths. Zero everywhere else.
+    var prizesGiven: Int = 0
     var customersToday: Int = 0
     var totalCustomers: Int = 0
     var revenueToday: Double = 0
@@ -101,6 +103,7 @@ extension Facility {
         slots = container.value(.slots, or: [])
         soiling = container.value(.soiling, or: 0)
         timesServiced = container.value(.timesServiced, or: 0)
+        prizesGiven = container.value(.prizesGiven, or: 0)
         customersToday = container.value(.customersToday, or: 0)
         totalCustomers = container.value(.totalCustomers, or: 0)
         revenueToday = container.value(.revenueToday, or: 0)

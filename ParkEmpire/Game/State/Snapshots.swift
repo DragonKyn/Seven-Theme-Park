@@ -235,6 +235,10 @@ struct FacilityDetail: Identifiable {
     let referencePrice: Double
     let queueLength: Int
     let customersToday: Int
+    let totalCustomers: Int
+    /// Prizes handed over, which is the only thing a booth's owner watches.
+    let prizesGiven: Int
+    let isGame: Bool
     let revenueToday: Double
     let totalRevenue: Double
     let totalCost: Double
@@ -247,6 +251,8 @@ struct FacilityDetail: Identifiable {
         price = facility.price
         queueLength = facility.queue.count
         customersToday = facility.customersToday
+        totalCustomers = facility.totalCustomers
+        prizesGiven = facility.prizesGiven
         revenueToday = facility.revenueToday
         totalRevenue = facility.totalRevenue
         totalCost = facility.totalCost
@@ -254,11 +260,13 @@ struct FacilityDetail: Identifiable {
 
         if let definition = facility.definition {
             typeName = definition.displayName
+            isGame = definition.kind == .game
             sellsGoods = definition.kind.sellsGoods
             unitCost = definition.unitCost
             referencePrice = definition.referencePrice
         } else {
             typeName = "Unknown"
+            isGame = false
             sellsGoods = false
             unitCost = 0
             referencePrice = 0

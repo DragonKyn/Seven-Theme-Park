@@ -42,6 +42,10 @@ struct FacilityInspectorView: View {
                     StatRow(label: "Type", value: facility.typeName)
                     StatRow(label: "Queue", value: "\(facility.queueLength) waiting")
                     StatRow(label: "Customers today", value: "\(facility.customersToday)")
+                    StatRow(label: "Customers all time", value: "\(facility.totalCustomers)")
+                    if facility.isGame {
+                        StatRow(label: "Prizes given", value: "\(facility.prizesGiven)")
+                    }
                     if facility.sellsGoods {
                         StatRow(label: "Revenue today", value: CurrencyFormatter.short(facility.revenueToday))
                         StatRow(label: "Revenue all time", value: CurrencyFormatter.short(facility.totalRevenue))

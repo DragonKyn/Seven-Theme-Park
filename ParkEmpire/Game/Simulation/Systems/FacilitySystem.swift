@@ -107,6 +107,7 @@ final class FacilitySystem {
         state.guests[guestIndex].prizesWon += 1
         state.guests[guestIndex].adjustHappiness(Balance.happinessGameWin)
         state.statistics.prizesWonTotal += 1
+        state.facilities[facilityIndex].prizesGiven += 1
 
         let (text, mood) = ThoughtCatalog.gameWon(prize: prize.displayName)
         state.guests[guestIndex].think(text, mood: mood, at: now, icon: .ride)
