@@ -27,6 +27,15 @@ struct GameView: View {
                     .padding(.horizontal, 10)
                     .padding(.top, 6)
 
+                if let tip = controller.currentTip {
+                    TutorialTipView(tip: tip,
+                                    onDismiss: { controller.dismissTip() },
+                                    onTurnOff: { controller.setTipsEnabled(false) })
+                        .padding(.horizontal, 10)
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 Spacer(minLength: 0)
 
                 VStack(spacing: 8) {
@@ -53,6 +62,7 @@ struct GameView: View {
             .animation(.easeInOut(duration: 0.18), value: controller.build.isActive)
             .animation(.easeInOut(duration: 0.18), value: controller.selection?.identity)
             .animation(.easeInOut(duration: 0.18), value: controller.build.pending)
+            .animation(.easeInOut(duration: 0.22), value: controller.currentTip)
 
             if let award = controller.celebration {
                 CelebrationView(award: award) { controller.dismissCelebration() }

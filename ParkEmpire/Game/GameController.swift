@@ -23,11 +23,14 @@ final class GameController: ObservableObject {
     /// the park and are shown one at a time, because two party poppers at once
     /// is not twice as good.
     @Published private(set) var celebration: AchievementAward?
+    /// The piece of advice currently on screen, if any.
+    @Published private(set) var currentTip: TutorialTip?
 
     // MARK: - Simulation
 
     private(set) var state: GameState
     private let engine = SimulationEngine()
+    private let tutorial = TutorialDirector()
     private let saveService: SaveGameService
     private(set) var slot: Int
     /// A demo controller drives the park behind the main menu. It simulates
@@ -640,6 +643,78 @@ final class GameController: ObservableObject {
         if let current = selection?.identity {
             selection = makeSelection(current)
         }
+
+        refreshTutorial()
+    }
+
+    // MARK: - Tips
+
+    /// Offers the player a piece of advice when the park is in a state one
+    /// applies to. The park behind the main menu never teaches anybody
+    /// anything, so it is left out of this entirely.
+    private func refreshTutorial() {
+        guard !isDemo else { return }
+        if tutorial.evaluate(tutorialSignals()) {
+            currentTip = tutorial.current
+        }
+    }
+
+    private func tutorialSignals() -> TutorialSignals {
+        var signals = TutorialSignals()
+        signals.day = state.clock.day
+        signals.minutesPlayed = state.clock.simTime / 60
+        signals.guestCount = state.guestCount
+        signals.cash = state.ledger.cash
+        signals.averageHappiness = state.averageHappiness
+        signals.rideCount = state.attractions.count
+        signals.staffCount = state.staff.count
+        signals.mechanicCount = state.staffCount(role: .mechanic)
+        signals.janitorCount = state.staffCount(role: .janitor)
+        signals.litteredTiles = state.map.litteredTiles.count
+        signals.brokenRides = state.attractions.filter(\.isBroken).count
+        signals.longestQueue = state.attractions.map(\.queue.count).max() ?? 0
+        signals.isBuilding = build.isActive
+        signals.isPlacing = build.pending != nil
+        signals.isFreeBuild = state.mode.hasUnlimitedMoney
+
+        for facility in state.facilities {
+            guard let kind = facility.definition?.kind else { continue }
+            switch kind {
+            case .food, .drink: signals.shopCount += 1
+            case .game: signals.boothCount += 1
+            case .bench: signals.benchCount += 1
+            case .bathroom: signals.hasRestroom = true
+            case .bin: signals.hasBin = true
+            case .souvenir: break
+            }
+        }
+
+        return signals
+    }
+
+    /// The player has read the tip on screen.
+    func dismissTip() {
+        tutorial.dismissCurrent()
+        currentTip = nil
+    }
+
+    var tipsEnabled: Bool { tutorial.isEnabled }
+
+    func setTipsEnabled(_ enabled: Bool) {
+        tutorial.setEnabled(enabled)
+        currentTip = tutorial.current
+        refreshUI()
+    }
+
+    /// Offers every tip again, for a player handing the game to somebody else.
+    func resetTips() {
+        tutorial.reset()
+        currentTip = nil
+        refreshUI()
+    }
+
+    var tipsReadText: String {
+        "\(tutorial.tipsRead) of \(tutorial.tipsTotal) read"
     }
 
     private func makeSelection(_ identity: SelectionIdentity) -> SelectionDetail? {

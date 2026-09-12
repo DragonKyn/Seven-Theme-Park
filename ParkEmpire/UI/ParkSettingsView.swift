@@ -51,6 +51,25 @@ struct ParkSettingsView: View {
                     .padding(.vertical, 2)
                 }
 
+                Section("Tips") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Show helpful tips", isOn: Binding(
+                            get: { controller.tipsEnabled },
+                            set: { controller.setTipsEnabled($0) }
+                        ))
+
+                        Text("Each tip appears once, when the park is in a state it applies to. \(controller.tipsReadText).")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+
+                        Button("Show all tips again") {
+                            controller.resetTips()
+                        }
+                        .font(.footnote.weight(.semibold))
+                    }
+                    .padding(.vertical, 2)
+                }
+
                 Section("Right now") {
                     LabeledContent("Arrivals",
                                    value: String(format: "%.1f guests per minute", controller.hud.arrivalsPerMinute))
