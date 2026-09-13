@@ -14,6 +14,47 @@ enum TerrainArtwork {
     /// How hard a corner rounds where two open sides meet.
     private static let corner: CGFloat = 0.40
 
+    // MARK: - Build menu swatches
+
+    /// One tile of terrain, drawn exactly as the map draws it.
+    ///
+    /// Every walkway used to show in the build menu as the same white square,
+    /// so a player picking between paving, brick and boards was picking blind
+    /// and only found out what they had chosen after paying for it.
+    ///
+    /// The sample is drawn as a straight run rather than an isolated tile: a
+    /// lone tile is all kerb and rounded corners, and the paving pattern, the
+    /// thing being chosen, barely shows.
+    static func previewImage(terrain: TerrainType, style: UInt8, size: CGSize) -> UIImage {
+        let key = "terrain-preview-\(terrain.rawValue)-\(style)-\(Int(size.width))"
+        if let cached = previewCache[key] { return cached }
+
+        let runsThrough = 1 | 4
+        let image = UIGraphicsImageRenderer(size: size).image { rendererContext in
+            switch terrain {
+            case .path, .entrance:
+                drawWalkway(connections: runsThrough,
+                            style: style,
+                            variant: 0,
+                            context: rendererContext.cgContext,
+                            size: size)
+            case .bridge:
+                drawBridge(connections: runsThrough, size: size)
+            case .water:
+                // Banked on every side, so a single tile reads as a pond
+                // rather than as a blue square.
+                drawWater(shores: 15, style: style, variant: 0, size: size)
+            default:
+                ParkPalette.colour(for: terrain, alternate: false).setFill()
+                UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+            }
+        }
+        previewCache[key] = image
+        return image
+    }
+
+    private static var previewCache: [String: UIImage] = [:]
+
     // MARK: - Walkways
 
     /// `connections` is a bitmask of north, east, south and west sides that
@@ -24,27 +65,39 @@ enum TerrainArtwork {
                                side: CGFloat) -> SKTexture {
         SpriteFactory.texture(key: "walk-\(style)-\(connections)-\(variant)-\(side)",
                               size: CGSize(width: side, height: side)) { context, size in
-            // Grass underneath, because the paving no longer fills the tile.
-            (variant % 2 == 0 ? ParkPalette.grass : ParkPalette.grassAlt).setFill()
-            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
-
-            let shape = surface(connections: connections, size: size)
-            let finish = WalkwayFinish(style: style)
-
-            finish.base.setFill()
-            shape.fill()
-
-            context.saveGState()
-            shape.addClip()
-            finish.draw(size: size, variant: variant, connections: connections)
-            context.restoreGState()
-
-            // Kerb. Only the outline is stroked, so it curves round a corner
-            // for free and disappears where two tiles meet.
-            finish.kerb.setStroke()
-            shape.lineWidth = max(1, size.width * 0.055)
-            shape.stroke()
+            drawWalkway(connections: connections, style: style, variant: variant,
+                        context: context, size: size)
         }
+    }
+
+    /// Split out of the texture so the build menu can show the same paving it
+    /// is about to lay. A swatch that does not match what lands on the map is
+    /// worse than no swatch at all.
+    static func drawWalkway(connections: Int,
+                            style: UInt8,
+                            variant: Int,
+                            context: CGContext,
+                            size: CGSize) {
+        // Grass underneath, because the paving no longer fills the tile.
+        (variant % 2 == 0 ? ParkPalette.grass : ParkPalette.grassAlt).setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+        let shape = surface(connections: connections, size: size)
+        let finish = WalkwayFinish(style: style)
+
+        finish.base.setFill()
+        shape.fill()
+
+        context.saveGState()
+        shape.addClip()
+        finish.draw(size: size, variant: variant, connections: connections)
+        context.restoreGState()
+
+        // Kerb. Only the outline is stroked, so it curves round a corner
+        // for free and disappears where two tiles meet.
+        finish.kerb.setStroke()
+        shape.lineWidth = max(1, size.width * 0.055)
+        shape.stroke()
     }
 
     /// The shape of the paving on one tile: full width across every side that
@@ -235,52 +288,57 @@ enum TerrainArtwork {
     static func bridgeTexture(connections: Int, side: CGFloat) -> SKTexture {
         SpriteFactory.texture(key: "bridge-\(connections)-\(side)",
                               size: CGSize(width: side, height: side)) { _, size in
-            ParkPalette.water.setFill()
-            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+            drawBridge(connections: connections, size: size)
+        }
+    }
 
-            let deck = ParkPalette.colour(.brown)
-            let plank = UIColor(red: 0.42, green: 0.30, blue: 0.20, alpha: 0.8)
-            let rail = ParkPalette.colour(.sand)
+    /// Split out of the texture so the build menu can show the real deck.
+    static func drawBridge(connections: Int, size: CGSize) {
+        ParkPalette.water.setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
 
-            // The deck runs the way the walk does; a bridge with nothing
-            // attached is drawn north to south so it still reads as a deck.
-            let northSouth = (connections & 1 != 0) || (connections & 4 != 0) || connections == 0
-            let body = northSouth
-                ? CGRect(x: size.width * 0.08, y: 0, width: size.width * 0.84, height: size.height)
-                : CGRect(x: 0, y: size.height * 0.08, width: size.width, height: size.height * 0.84)
-            deck.setFill()
-            UIBezierPath(rect: body).fill()
+        let deck = ParkPalette.colour(.brown)
+        let plank = UIColor(red: 0.42, green: 0.30, blue: 0.20, alpha: 0.8)
+        let rail = ParkPalette.colour(.sand)
 
-            let planks = UIBezierPath()
-            let count = 6
-            for index in 1..<count {
-                let offset = CGFloat(index) / CGFloat(count)
-                if northSouth {
-                    planks.move(to: CGPoint(x: body.minX, y: size.height * offset))
-                    planks.addLine(to: CGPoint(x: body.maxX, y: size.height * offset))
-                } else {
-                    planks.move(to: CGPoint(x: size.width * offset, y: body.minY))
-                    planks.addLine(to: CGPoint(x: size.width * offset, y: body.maxY))
-                }
-            }
-            plank.setStroke()
-            planks.lineWidth = max(0.5, size.width * 0.030)
-            planks.stroke()
+        // The deck runs the way the walk does; a bridge with nothing
+        // attached is drawn north to south so it still reads as a deck.
+        let northSouth = (connections & 1 != 0) || (connections & 4 != 0) || connections == 0
+        let body = northSouth
+            ? CGRect(x: size.width * 0.08, y: 0, width: size.width * 0.84, height: size.height)
+            : CGRect(x: 0, y: size.height * 0.08, width: size.width, height: size.height * 0.84)
+        deck.setFill()
+        UIBezierPath(rect: body).fill()
 
-            // Rails down both long sides.
-            rail.setFill()
-            let thickness = max(1, size.width * 0.07)
+        let planks = UIBezierPath()
+        let count = 6
+        for index in 1..<count {
+            let offset = CGFloat(index) / CGFloat(count)
             if northSouth {
-                UIBezierPath(rect: CGRect(x: body.minX, y: 0,
-                                          width: thickness, height: size.height)).fill()
-                UIBezierPath(rect: CGRect(x: body.maxX - thickness, y: 0,
-                                          width: thickness, height: size.height)).fill()
+                planks.move(to: CGPoint(x: body.minX, y: size.height * offset))
+                planks.addLine(to: CGPoint(x: body.maxX, y: size.height * offset))
             } else {
-                UIBezierPath(rect: CGRect(x: 0, y: body.minY,
-                                          width: size.width, height: thickness)).fill()
-                UIBezierPath(rect: CGRect(x: 0, y: body.maxY - thickness,
-                                          width: size.width, height: thickness)).fill()
+                planks.move(to: CGPoint(x: size.width * offset, y: body.minY))
+                planks.addLine(to: CGPoint(x: size.width * offset, y: body.maxY))
             }
+        }
+        plank.setStroke()
+        planks.lineWidth = max(0.5, size.width * 0.030)
+        planks.stroke()
+
+        // Rails down both long sides.
+        rail.setFill()
+        let thickness = max(1, size.width * 0.07)
+        if northSouth {
+            UIBezierPath(rect: CGRect(x: body.minX, y: 0,
+                                      width: thickness, height: size.height)).fill()
+            UIBezierPath(rect: CGRect(x: body.maxX - thickness, y: 0,
+                                      width: thickness, height: size.height)).fill()
+        } else {
+            UIBezierPath(rect: CGRect(x: 0, y: body.minY,
+                                      width: size.width, height: thickness)).fill()
+            UIBezierPath(rect: CGRect(x: 0, y: body.maxY - thickness,
+                                      width: size.width, height: thickness)).fill()
         }
     }
 
@@ -292,41 +350,46 @@ enum TerrainArtwork {
     static func waterTexture(shores: Int, style: UInt8, variant: Int, side: CGFloat) -> SKTexture {
         SpriteFactory.texture(key: "water-\(style)-\(shores)-\(variant)-\(side)",
                               size: CGSize(width: side, height: side)) { _, size in
-            let palette = WaterFinish(style: style)
-            (variant % 2 == 0 ? palette.base : palette.alternate).setFill()
-            UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+            drawWater(shores: shores, style: style, variant: variant, size: size)
+        }
+    }
 
-            // A ripple or two, offset by variant so the surface is not a grid.
-            palette.ripple.setStroke()
-            let ripples = UIBezierPath()
-            let lift = variant % 2 == 0 ? CGFloat(0.34) : CGFloat(0.62)
-            for step in 0..<2 {
-                let y = size.height * (lift + 0.24 * CGFloat(step))
-                ripples.move(to: CGPoint(x: size.width * 0.18, y: y))
-                ripples.addQuadCurve(to: CGPoint(x: size.width * 0.62, y: y),
-                                     controlPoint: CGPoint(x: size.width * 0.40,
-                                                           y: y - size.height * 0.07))
-            }
-            ripples.lineWidth = max(1, size.width * 0.030)
-            ripples.stroke()
+    /// Split out of the texture so the build menu can show the real water.
+    static func drawWater(shores: Int, style: UInt8, variant: Int, size: CGSize) {
+        let palette = WaterFinish(style: style)
+        (variant % 2 == 0 ? palette.base : palette.alternate).setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
 
-            guard shores != 0 else { return }
-            let band = size.width * 0.16
-            palette.shore.setFill()
-            if shores & 1 != 0 {
-                UIBezierPath(rect: CGRect(x: 0, y: 0, width: size.width, height: band)).fill()
-            }
-            if shores & 4 != 0 {
-                UIBezierPath(rect: CGRect(x: 0, y: size.height - band,
-                                          width: size.width, height: band)).fill()
-            }
-            if shores & 8 != 0 {
-                UIBezierPath(rect: CGRect(x: 0, y: 0, width: band, height: size.height)).fill()
-            }
-            if shores & 2 != 0 {
-                UIBezierPath(rect: CGRect(x: size.width - band, y: 0,
-                                          width: band, height: size.height)).fill()
-            }
+        // A ripple or two, offset by variant so the surface is not a grid.
+        palette.ripple.setStroke()
+        let ripples = UIBezierPath()
+        let lift = variant % 2 == 0 ? CGFloat(0.34) : CGFloat(0.62)
+        for step in 0..<2 {
+            let y = size.height * (lift + 0.24 * CGFloat(step))
+            ripples.move(to: CGPoint(x: size.width * 0.18, y: y))
+            ripples.addQuadCurve(to: CGPoint(x: size.width * 0.62, y: y),
+                                 controlPoint: CGPoint(x: size.width * 0.40,
+                                                       y: y - size.height * 0.07))
+        }
+        ripples.lineWidth = max(1, size.width * 0.030)
+        ripples.stroke()
+
+        guard shores != 0 else { return }
+        let band = size.width * 0.16
+        palette.shore.setFill()
+        if shores & 1 != 0 {
+            UIBezierPath(rect: CGRect(x: 0, y: 0, width: size.width, height: band)).fill()
+        }
+        if shores & 4 != 0 {
+            UIBezierPath(rect: CGRect(x: 0, y: size.height - band,
+                                      width: size.width, height: band)).fill()
+        }
+        if shores & 8 != 0 {
+            UIBezierPath(rect: CGRect(x: 0, y: 0, width: band, height: size.height)).fill()
+        }
+        if shores & 2 != 0 {
+            UIBezierPath(rect: CGRect(x: size.width - band, y: 0,
+                                      width: band, height: size.height)).fill()
         }
     }
 

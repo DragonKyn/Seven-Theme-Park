@@ -26,6 +26,22 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// What the tile in the build menu is called. The full name is used
+    /// wherever there is room for it; this is for the grid, where four across
+    /// on a phone leaves about eight characters.
+    var shortName: String {
+        switch self {
+        case .path: return "Paths"
+        case .attraction: return "Rides"
+        case .shop: return "Food"
+        case .games: return "Games"
+        case .facility: return "Guests"
+        case .coaster: return "Coasters"
+        case .transport: return "Transit"
+        case .scenery: return "Scenery"
+        }
+    }
+
     var symbolName: String {
         switch self {
         case .path: return "square.grid.3x3"

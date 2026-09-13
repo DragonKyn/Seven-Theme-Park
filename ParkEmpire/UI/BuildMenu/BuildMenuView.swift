@@ -30,95 +30,16 @@ struct BuildMenuView: View {
     }
 
     private var catalogue: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                // The tabs scroll. There are six of them now and there will be
-                // more, and a fixed row of them plus the two toggles is wider
-                // than a phone.
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(BuildCategory.allCases) { category in
-                            Button {
-                                controller.enterBuildMode(category: category)
-                            } label: {
-                                Label(category.displayName, systemImage: category.symbolName)
-                                    .labelStyle(.iconOnly)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .frame(width: 40, height: 32)
-                                    .foregroundStyle(isSelected(category) ? Color.black : Theme.textPrimary)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .fill(isSelected(category) ? Theme.accent : Theme.control)
-                                    )
-                            }
-                        }
-                    }
-                    .padding(.trailing, 2)
-                }
-
-                if controller.canDraw {
-                    Button {
-                        controller.toggleDrawing()
-                    } label: {
-                        Label("Draw", systemImage: controller.build.isDrawing
-                              ? "hand.draw.fill"
-                              : "hand.draw")
-                            .labelStyle(.iconOnly)
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 40, height: 32)
-                            .foregroundStyle(controller.build.isDrawing ? Color.black : Theme.textPrimary)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(controller.build.isDrawing
-                                          ? Theme.accentWarm
-                                          : Theme.control)
-                            )
-                    }
-                }
-
-                // Icon only, and the same size as every other button on the
-                // row. Five category buttons plus a Draw toggle plus a worded
-                // Remove button is wider than a phone, and the label was
-                // wrapping under its own icon.
-                Button {
-                    controller.enterDemolishMode()
-                } label: {
-                    Label("Remove", systemImage: "trash.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(width: 40, height: 32)
-                        // Red at rest as well as when active, so the one
-                        // destructive button on the row does not look like
-                        // another category to try.
-                        .foregroundStyle(controller.build.isDemolishing ? Color.black : Theme.danger)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(controller.build.isDemolishing ? Theme.danger : Theme.control)
-                        )
-                }
-                .accessibilityLabel("Remove")
-            }
+        VStack(alignment: .leading, spacing: 9) {
+            toolRow
+            categoryGrid
 
             if !controller.build.isDemolishing && controller.build.category == .attraction {
                 rideGroups
             }
 
             if !controller.build.isDemolishing {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(items) { item in
-                            BuildItemCard(
-                                definition: item.definition,
-                                isSelected: controller.build.selectedID == item.id,
-                                affordable: controller.hud.cash >= item.definition.purchasePrice
-                            ) {
-                                controller.select(definitionID: item.id)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-                .frame(height: 78)
+                itemStrip
             }
 
             if !controller.build.isDemolishing && controller.styleCount > 1 {
@@ -128,9 +49,145 @@ struct BuildMenuView: View {
             Text(hintText)
                 .font(.caption2)
                 .foregroundStyle(hintIsError ? Theme.danger : Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
         .panelBackground()
+    }
+
+    /// The heading, and the two things that are not categories.
+    ///
+    /// Draw and Remove used to sit on the end of the category row looking like
+    /// two more categories. They are tools, they change what a tap on the map
+    /// does, and they belong somewhere the eye reads as a different kind of
+    /// control.
+    private var toolRow: some View {
+        HStack(spacing: 6) {
+            Text(controller.build.isDemolishing
+                 ? "REMOVING"
+                 : controller.build.category.displayName.uppercased())
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .tracking(1.6)
+                .foregroundStyle(controller.build.isDemolishing ? Theme.danger : Theme.textSecondary)
+
+            if !controller.build.isDemolishing && !items.isEmpty {
+                Text("\(items.count)")
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Theme.textSecondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Theme.control))
+            }
+
+            Spacer(minLength: 0)
+
+            if controller.canDraw {
+                toolChip(title: "Draw",
+                         symbol: controller.build.isDrawing ? "hand.draw.fill" : "hand.draw",
+                         active: controller.build.isDrawing,
+                         activeTint: Theme.accentWarm,
+                         restTint: Theme.textPrimary) {
+                    controller.toggleDrawing()
+                }
+            }
+
+            toolChip(title: "Remove",
+                     symbol: "trash.fill",
+                     active: controller.build.isDemolishing,
+                     activeTint: Theme.danger,
+                     // Red at rest as well as when active, so the one
+                     // destructive control never reads as another category.
+                     restTint: Theme.danger) {
+                controller.enterDemolishMode()
+            }
+        }
+    }
+
+    private func toolChip(title: String,
+                          symbol: String,
+                          active: Bool,
+                          activeTint: Color,
+                          restTint: Color,
+                          action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .bold))
+                Text(title)
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(active ? Color.black : restTint)
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Capsule().fill(active ? activeTint : Theme.control))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Every category, named, on screen at once.
+    ///
+    /// They used to be a scrolling row of unlabelled icons, which hid half the
+    /// game: players who never thought to swipe never found coasters, games or
+    /// scenery, and an icon on its own does not say what it opens. Four across
+    /// and two down fits a phone with the names showing, and nothing is behind
+    /// a gesture nobody knows to make.
+    private var categoryGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4),
+                  spacing: 6) {
+            ForEach(BuildCategory.allCases) { category in
+                Button {
+                    controller.enterBuildMode(category: category)
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: category.symbolName)
+                            .font(.system(size: 15, weight: .semibold))
+                        Text(category.shortName)
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .foregroundStyle(isSelected(category) ? Color.black : Theme.textPrimary)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(isSelected(category) ? Theme.accent : Theme.control)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    /// The things in the chosen category.
+    ///
+    /// Masked so the last card fades out at the edge rather than being cut in
+    /// half. A card sliced cleanly by the panel edge looks like the end of the
+    /// list; one fading out looks like there is more, which there is.
+    private var itemStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(items) { item in
+                    BuildItemCard(
+                        definition: item.definition,
+                        isSelected: controller.build.selectedID == item.id,
+                        affordable: controller.hud.cash >= item.definition.purchasePrice
+                    ) {
+                        controller.select(definitionID: item.id)
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+            .padding(.trailing, 12)
+        }
+        .frame(height: 82)
+        .mask(
+            LinearGradient(stops: [.init(color: .black, location: 0),
+                                   .init(color: .black, location: 0.92),
+                                   .init(color: .black.opacity(0), location: 1)],
+                           startPoint: .leading,
+                           endPoint: .trailing)
+        )
     }
 
     /// Which cut of the selected thing to build.
@@ -303,10 +360,17 @@ private struct BuildItemCard: View {
                 .resizable()
                 .frame(width: 38, height: 38)
         } else if let terrain = definition as? TerrainDefinition {
-            // Terrain has no artwork of its own; show the colour it paints.
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color(ParkPalette.colour(for: terrain.terrain, alternate: false)))
+            // The actual tile. Every walkway used to show as the same white
+            // square, so choosing between paving, brick and boards meant
+            // paying first and finding out afterwards.
+            Image(uiImage: TerrainArtwork.previewImage(
+                terrain: terrain.terrain,
+                style: terrain.style,
+                size: CGSize(width: BuildItemCard.thumbnailSide,
+                             height: BuildItemCard.thumbnailSide)))
+                .resizable()
                 .frame(width: 38, height: 38)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         } else {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.white.opacity(0.2))
@@ -316,7 +380,7 @@ private struct BuildItemCard: View {
 
     /// Rendered larger than it is shown so the artwork stays crisp on a
     /// high-density screen.
-    private static let thumbnailSide: CGFloat = 114
+    static let thumbnailSide: CGFloat = 114
 }
 
 /// Shown while a placement is lined up but not yet paid for: what it is,

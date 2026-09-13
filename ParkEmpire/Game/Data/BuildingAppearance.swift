@@ -216,7 +216,9 @@ enum BuildingMotif: String, Codable {
         // The station itself is still; what moves is the train, and that runs
         // on the player's own track rather than round the building.
         case .trainStation: return .none
-        case .mirrorMaze, .coasterStation: return .none
+        // A putting course is a course: the only thing that moves on it is
+        // the guests, and they are drawn separately.
+        case .mirrorMaze, .coasterStation, .miniGolf: return .none
         case .hedge, .picnicTable, .flagPole, .gardenArch, .clockTower:
             return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
