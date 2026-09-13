@@ -41,7 +41,11 @@ struct SaveGame: Codable {
     ///    gained fields decodes leniently, so a version 1 save still loads.
     /// 3: Phase 3 adds scenery and per-tile beauty. Older saves load with an
     ///    empty scenery list, and the beauty field is rebuilt from it on load.
-    static let currentVersion = 8
+    /// 9: Rare events: coach parties, safety inspections, anonymous reviewers
+    ///    and troublemakers. Every field they added decodes leniently, and a
+    ///    version 8 park books its first one from wherever its clock had
+    ///    already reached rather than from day zero.
+    static let currentVersion = 9
 
     var version: Int
     var savedAt: Date

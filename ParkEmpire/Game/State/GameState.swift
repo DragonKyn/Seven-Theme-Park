@@ -146,18 +146,26 @@ final class GameState: Codable {
         promotionBoost = container.value(.promotionBoost, or: 0)
         promotionEndsAt = container.value(.promotionEndsAt, or: 0)
         pendingPromotions = container.value(.pendingPromotions, or: [])
-        nextCoachPartyAt = container.value(.nextCoachPartyAt, or: Balance.dayLength * 0.6)
+        // A park saved before these events existed books its first one from
+        // where it actually is rather than from day zero, which would land all
+        // four of them in the first few seconds after the update. Staggered so
+        // they do not arrive together either.
+        nextCoachPartyAt = container.value(.nextCoachPartyAt,
+                                           or: clock.simTime + Balance.dayLength * 0.3)
         pendingCoachParties = container.value(.pendingCoachParties, or: [])
-        nextSafetyInspectionAt = container.value(.nextSafetyInspectionAt, or: Balance.dayLength * 2.0)
+        nextSafetyInspectionAt = container.value(.nextSafetyInspectionAt,
+                                                 or: clock.simTime + Balance.dayLength * 1.6)
         inspectingRideID = container.optionalValue(.inspectingRideID)
         inspectionVerdictAt = container.value(.inspectionVerdictAt, or: 0)
         inspectionBonus = container.value(.inspectionBonus, or: .inactive)
         pendingInspections = container.value(.pendingInspections, or: [])
-        nextCriticAt = container.value(.nextCriticAt, or: Balance.dayLength * 1.5)
+        nextCriticAt = container.value(.nextCriticAt,
+                                       or: clock.simTime + Balance.dayLength * 0.8)
         reviewRating = container.value(.reviewRating, or: .inactive)
         reviewArrivals = container.value(.reviewArrivals, or: .inactive)
         pendingReviews = container.value(.pendingReviews, or: [])
-        nextTroublemakerAt = container.value(.nextTroublemakerAt, or: Balance.dayLength * 2.0)
+        nextTroublemakerAt = container.value(.nextTroublemakerAt,
+                                             or: clock.simTime + Balance.dayLength * 1.2)
         pendingEjections = container.value(.pendingEjections, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
