@@ -80,6 +80,7 @@ enum GuestArtwork {
         case .sunHat: headwear = .sunHat
         case .visor: headwear = .visor
         case .bobbleBand: headwear = .bobbleBand
+        case .hood: headwear = .hood
         }
 
         // A cap matches the shirt, a sun hat is straw whatever they wear, and
@@ -88,6 +89,7 @@ enum GuestArtwork {
         switch appearance.hat {
         case .sunHat: headwearColour = ParkPalette.colour(.cream)
         case .bobbleBand: headwearColour = ParkPalette.colour(.pink)
+        case .hood: headwearColour = ParkPalette.colour(.charcoal)
         default: headwearColour = ParkPalette.colour(appearance.shirt)
         }
 

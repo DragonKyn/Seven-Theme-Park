@@ -36,6 +36,10 @@ struct GuestAppearance: Codable, Equatable {
         case visor
         /// Novelty headband with two pom-poms, bought inside the park.
         case bobbleBand
+        /// Pulled up over the head. Nobody in the ordinary crowd wears one:
+        /// it is kept for the park's occasional nuisance, who has to be
+        /// pickable out of four hundred people at a glance.
+        case hood
     }
 
     /// What is printed on the shirt. Three is enough: past that, nobody can

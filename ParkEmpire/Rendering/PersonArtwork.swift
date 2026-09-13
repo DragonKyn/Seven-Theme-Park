@@ -29,6 +29,8 @@ enum PersonArtwork {
         case visor
         /// Headband with two pom-poms on springs.
         case bobbleBand
+        /// Shell over the top and sides of the head, with the face in shadow.
+        case hood
         /// Rounded shell with a ridge, for anyone near machinery.
         case hardHat
         /// Cone with a pompom.
@@ -535,6 +537,35 @@ enum PersonArtwork {
         switch look.headwear {
         case .none:
             return
+
+        case .hood:
+            // Headwear is drawn after the face, so the hood is a ring rather
+            // than a shape: an outer shell with the opening punched out of it
+            // by the even-odd rule, which leaves the face showing through
+            // without erasing anything already on the canvas.
+            let shell = CGRect(x: head.minX - head.width * 0.14,
+                               y: head.minY - head.height * 0.16,
+                               width: head.width * 1.28,
+                               height: head.height * 1.16)
+            let opening = CGRect(x: head.minX + head.width * 0.08,
+                                 y: head.minY + head.height * 0.18,
+                                 width: head.width * 0.84,
+                                 height: head.height * 0.88)
+
+            let hood = UIBezierPath(roundedRect: shell, cornerRadius: shell.width * 0.46)
+            hood.append(UIBezierPath(ovalIn: opening))
+            hood.usesEvenOddFillRule = true
+            look.headwearColour.setFill()
+            hood.fill()
+
+            // A band of shadow under the front edge, which is what sells it as
+            // being worn rather than painted on.
+            let brow = CGRect(x: opening.minX + opening.width * 0.06,
+                              y: opening.minY,
+                              width: opening.width * 0.88,
+                              height: head.height * 0.14)
+            UIColor.black.withAlphaComponent(0.28).setFill()
+            UIBezierPath(roundedRect: brow, cornerRadius: brow.height * 0.5).fill()
 
         case .cap:
             let crown = CGRect(x: head.minX, y: head.minY - head.height * 0.10,

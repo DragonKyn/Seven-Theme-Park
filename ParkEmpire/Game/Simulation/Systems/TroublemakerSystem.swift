@@ -71,7 +71,7 @@ enum TroublemakerSystem {
         guest.appearance = GuestAppearance(shirt: .charcoal,
                                            hair: guest.appearance.hair,
                                            skin: guest.appearance.skin,
-                                           hat: .cap,
+                                           hat: .hood,
                                            bottoms: .charcoal,
                                            pattern: .vest,
                                            accessory: .sunglasses)
