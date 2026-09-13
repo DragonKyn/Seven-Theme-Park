@@ -13,6 +13,9 @@ enum StaffJob: Codable, Hashable {
     case entertain(GridCoord)
     /// Security stand at a spot and keep an eye on it.
     case patrol(GridCoord)
+    /// Security walk down a particular guest and see them off the premises.
+    /// The only job whose destination moves while it is being travelled to.
+    case escort(UUID)
 }
 
 enum StaffActivity: Codable, Hashable {

@@ -146,6 +146,16 @@ final class StaffSystem {
             return nil
 
         case .security:
+            // A troublemaker outranks any post. This is the job the uniform
+            // exists for, and a guard standing at the gate while somebody
+            // tips a bin over behind them is the wrong picture entirely.
+            if let target = state.guests.first(where: {
+                   $0.isActive && $0.isTroublemaker && !claimed.contains(.escort($0.id))
+               }),
+               distance(to: target.tile) != nil {
+                return .escort(target.id)
+            }
+
             // The gate most of the time, because that is where guests arrive
             // and where a guard is worth the most; a lap of the park the rest
             // of the time, so the uniform is seen somewhere other than the
@@ -231,6 +241,9 @@ final class StaffSystem {
         case .repairRide(let id), .inspectRide(let id):
             guard let attraction = state.attraction(id: id) else { return [] }
             return map.accessTiles(for: attraction.rect)
+        case .escort(let id):
+            guard let guest = state.guest(id: id), map.isWalkable(guest.tile) else { return [] }
+            return [guest.tile]
         }
     }
 
@@ -240,6 +253,13 @@ final class StaffSystem {
                         map: ParkMap,
                         dt: Double,
                         now: Double) {
+        // The only job whose destination walks away while it is being walked
+        // to, so it gets its own chase rather than a route planned once.
+        if case .escort(let id) = job {
+            chase(staffIndex: staffIndex, guestID: id, state: state, map: map, dt: dt, now: now)
+            return
+        }
+
         if state.staff[staffIndex].route.isEmpty {
             startWork(staffIndex: staffIndex, job: job, state: state)
             return
@@ -291,7 +311,7 @@ final class StaffSystem {
             state.staff[staffIndex].workTimer = atGate
                 ? Balance.securityPostDuration
                 : Balance.securityPatrolDuration
-        case .cleanLitter, .serviceFacility:
+        case .cleanLitter, .serviceFacility, .escort:
             state.staff[staffIndex].workTimer = 0
         }
 
@@ -312,6 +332,8 @@ final class StaffSystem {
             return state.attraction(id: id)?.isInspectionOverdue == true
         case .entertain, .patrol:
             return true
+        case .escort(let id):
+            return state.guest(id: id)?.isTroublemaker == true
         }
     }
 
@@ -368,9 +390,92 @@ final class StaffSystem {
         case .patrol:
             state.staff[staffIndex].workTimer -= dt
             reassureNearbyGuests(staffIndex: staffIndex, state: state, dt: dt)
-            if state.staff[staffIndex].workTimer <= 0 {
+            // A post is abandoned the moment somebody needs seeing off. A
+            // guard who waits out the remaining fifty seconds of a shift at
+            // the gate does not look like security, it looks like scenery.
+            let wanted = state.troublemakerIndex != nil
+            if state.staff[staffIndex].workTimer <= 0 || wanted {
                 finish(staffIndex: staffIndex, state: state, now: now)
             }
+
+        case .escort(let id):
+            // Only reached when the guard was already standing on them.
+            guard let guestIndex = state.guestIndex(id: id),
+                  state.guests[guestIndex].isTroublemaker else {
+                finish(staffIndex: staffIndex, state: state, now: now)
+                return
+            }
+            TroublemakerSystem.remove(guestIndex: guestIndex,
+                                      state: state,
+                                      guardName: state.staff[staffIndex].name)
+            finish(staffIndex: staffIndex, state: state, now: now)
+        }
+    }
+
+    /// Security walking down somebody who is walking away.
+    ///
+    /// The route is re-planned on a timer rather than every tick: a route
+    /// query per guard per tick would be the most expensive thing in the
+    /// simulation, and a guard a second behind still catches somebody who
+    /// walks slower than they do. The work timer is free while travelling, so
+    /// it serves as the countdown rather than putting another field on every
+    /// employee in every save.
+    private func chase(staffIndex: Int,
+                       guestID: UUID,
+                       state: GameState,
+                       map: ParkMap,
+                       dt: Double,
+                       now: Double) {
+        guard let guestIndex = state.guestIndex(id: guestID),
+              state.guests[guestIndex].isTroublemaker else {
+            state.staff[staffIndex].route = []
+            state.staff[staffIndex].activity = .idle
+            state.staff[staffIndex].nextJobSearchAt = now
+            return
+        }
+
+        // Close enough to have a word.
+        if SimMath.distance(state.staff[staffIndex].position,
+                            state.guests[guestIndex].position) <= Balance.escortCatchRadius {
+            TroublemakerSystem.remove(guestIndex: guestIndex,
+                                      state: state,
+                                      guardName: state.staff[staffIndex].name)
+            finish(staffIndex: staffIndex, state: state, now: now)
+            return
+        }
+
+        state.staff[staffIndex].workTimer -= dt
+        if state.staff[staffIndex].workTimer <= 0 || state.staff[staffIndex].route.isEmpty {
+            state.staff[staffIndex].workTimer = Balance.escortRepathInterval
+            let route = pathfinder.route(from: state.staff[staffIndex].tile,
+                                         to: [state.guests[guestIndex].tile],
+                                         in: map)
+            guard !route.isEmpty else {
+                // Nowhere to walk to. Give it up rather than stand there.
+                state.staff[staffIndex].activity = .idle
+                state.staff[staffIndex].nextJobSearchAt = now + Balance.staffJobSearchInterval
+                return
+            }
+            state.staff[staffIndex].route = route
+        }
+
+        var member = state.staff[staffIndex]
+        let result = Locomotion.advance(position: &member.position,
+                                        tile: &member.tile,
+                                        route: &member.route,
+                                        speed: member.effectiveWalkSpeed,
+                                        dt: dt,
+                                        map: map)
+        state.staff[staffIndex] = member
+
+        // Arriving where they used to be, and being blocked, mean the same
+        // thing here: plan again next tick.
+        switch result {
+        case .moving:
+            break
+        case .arrived, .blocked:
+            state.staff[staffIndex].route = []
+            state.staff[staffIndex].workTimer = 0
         }
     }
 

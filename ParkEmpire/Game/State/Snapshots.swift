@@ -347,6 +347,8 @@ struct StaffDetail: Identifiable {
             return "entertaining the crowd"
         case .patrol:
             return "keeping an eye on things"
+        case .escort(let id):
+            return "escorting \(state.guest(id: id)?.name ?? "a troublemaker") out"
         }
     }
 }
