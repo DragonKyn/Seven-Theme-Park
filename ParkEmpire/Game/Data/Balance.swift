@@ -160,8 +160,10 @@ enum Balance {
     /// gets; the range on top of it is decided by the ride they chose.
     static let promotionBoostFloor: Double = 0.18
     static let promotionBoostRange: Double = 0.35
-    /// Park minutes a post keeps working for.
-    static let promotionMinutes: Double = 45
+    /// Park minutes a post keeps working for. Sim-seconds are park minutes,
+    /// so three hours of a twelve hour day. Long enough that the queues
+    /// visibly fill, short enough that the park is your own again by closing.
+    static let promotionMinutes: Double = 180
 
     // MARK: - Carnival games
 

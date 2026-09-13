@@ -64,7 +64,7 @@ struct PromotionView: View {
 
             HStack(spacing: 14) {
                 figure("+\(Int(post.boost * 100))%", caption: "ARRIVALS")
-                figure("\(Int(post.minutes)) min", caption: "FOR THE NEXT")
+                figure(post.durationLabel, caption: "FOR THE NEXT")
             }
             .padding(.top, 2)
 

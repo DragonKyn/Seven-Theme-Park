@@ -9,6 +9,11 @@ struct PromotionPost: Codable, Identifiable, Equatable {
     let boost: Double
     /// How long it runs, in park minutes.
     let minutes: Double
+
+    /// The duration as a person would say it: "3h", or "45 min" under an hour.
+    var durationLabel: String {
+        minutes >= 60 ? "\(Int(minutes / 60))h" : "\(Int(minutes)) min"
+    }
 }
 
 extension PromotionPost {
@@ -61,7 +66,10 @@ enum PromotionSystem {
         let minutes = Balance.promotionMinutes
 
         state.promotionBoost = boost
-        state.promotionEndsAt = now + minutes * 60
+        // One sim-second is one park minute, so the duration goes on as it is.
+        // It used to be multiplied by sixty, which quietly made a "45 minute"
+        // post run for the better part of four park days.
+        state.promotionEndsAt = now + minutes
 
         let post = PromotionPost(guestName: state.guests[guestIndex].name,
                                  rideName: attraction.name,

@@ -306,9 +306,10 @@ final class GameState: Codable {
     }
 
     /// Park minutes left on the current post, or nil when there is none.
+    /// Sim-seconds are park minutes, so this is a plain subtraction.
     var promotionMinutesLeft: Double? {
         guard clock.simTime < promotionEndsAt else { return nil }
-        return (promotionEndsAt - clock.simTime) / 60
+        return promotionEndsAt - clock.simTime
     }
 
     var guestCount: Int {
