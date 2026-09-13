@@ -28,8 +28,24 @@ final class GameController: ObservableObject {
     /// The rare event currently on screen, if any. One at a time: two cards
     /// dimming the park at once reads as a bug rather than a busy day.
     @Published private(set) var event: ParkEvent?
+    /// How much of that card's time on screen is left, 1 down to 0.
+    ///
+    /// Timed here rather than inside the card. A view that times itself with
+    /// `Task.sleep` loses its timer every time SwiftUI rebuilds it, and while
+    /// the park is running that happens several times a second.
+    @Published private(set) var eventRemaining: Double = 1
+    /// Likewise for the achievement card.
+    @Published private(set) var celebrationRemaining: Double = 1
 
     // MARK: - Simulation
+
+    /// Real seconds a card stays up unless it is tapped away. Long enough to
+    /// read a headline, a line of detail and a row of figures without hurry.
+    private static let eventDwell: Double = 14
+    private static let celebrationDwell: Double = 9
+
+    private var eventShownAt: Date?
+    private var celebrationShownAt: Date?
 
     private(set) var state: GameState
     private let engine = SimulationEngine()
@@ -696,6 +712,7 @@ final class GameController: ObservableObject {
     /// Dismissed by the celebration view once its animation has run.
     func dismissCelebration() {
         celebration = nil
+        celebrationShownAt = nil
     }
 
     func makeAchievementProgress() -> [AchievementProgress] {
@@ -707,7 +724,10 @@ final class GameController: ObservableObject {
 
         if celebration == nil, !state.pendingAwards.isEmpty {
             celebration = state.pendingAwards.removeFirst()
+            celebrationShownAt = Date()
+            celebrationRemaining = 1
         }
+        expireCards()
         drainEvents()
         alerts = Array(state.alerts.suffix(12).reversed())
 
@@ -767,6 +787,22 @@ final class GameController: ObservableObject {
     ///
     /// Order is a priority, not a coincidence: something that shut a ride
     /// matters more than something that filled the gate.
+    /// Retires a card once it has had its time. Driven from the same UI
+    /// refresh as everything else, so it keeps running while the park is
+    /// paused and cannot be lost to a view being rebuilt.
+    private func expireCards() {
+        if let shownAt = celebrationShownAt {
+            let elapsed = Date().timeIntervalSince(shownAt)
+            celebrationRemaining = max(0, 1 - elapsed / Self.celebrationDwell)
+            if celebrationRemaining <= 0 { dismissCelebration() }
+        }
+        if let shownAt = eventShownAt {
+            let elapsed = Date().timeIntervalSince(shownAt)
+            eventRemaining = max(0, 1 - elapsed / Self.eventDwell)
+            if eventRemaining <= 0 { dismissEvent() }
+        }
+    }
+
     private func drainEvents() {
         guard event == nil else { return }
         if !state.pendingEjections.isEmpty {
@@ -780,11 +816,17 @@ final class GameController: ObservableObject {
         } else if !state.pendingTourBuses.isEmpty {
             event = .tourBus(state.pendingTourBuses.removeFirst())
         }
+        if event != nil {
+            eventShownAt = Date()
+            eventRemaining = 1
+        }
     }
 
-    /// Dismissed by the event's card once it has been read.
+    /// Dismissed by the event's card once it has been read, or by its own
+    /// time running out.
     func dismissEvent() {
         event = nil
+        eventShownAt = nil
     }
 
     /// The player has read the tip on screen.

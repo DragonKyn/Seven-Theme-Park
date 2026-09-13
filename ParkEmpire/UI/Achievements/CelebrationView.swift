@@ -12,10 +12,6 @@ struct CelebrationView: View {
     @State private var burst = false
     @State private var cardIn = false
 
-    /// How long the whole thing is on screen. Long enough to read three lines
-    /// without hurrying; a tap dismisses it sooner.
-    private static let dwell: TimeInterval = 7.0
-
     var body: some View {
         ZStack {
             // Catches taps so the player can dismiss it early, and dims the
@@ -35,8 +31,6 @@ struct CelebrationView: View {
         .task {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) { cardIn = true }
             withAnimation(.easeOut(duration: 1.9)) { burst = true }
-            try? await Task.sleep(nanoseconds: UInt64(Self.dwell * 1_000_000_000))
-            finish()
         }
     }
 

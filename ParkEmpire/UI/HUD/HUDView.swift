@@ -41,23 +41,45 @@ struct HUDView: View {
                     }
                 }
 
+                // Named, because a bare gear in the corner of a game reads as
+                // the app's settings. Everything behind it is the park's: the
+                // gate price, the car park, the colours, the uniform.
                 Button(action: onOpenSettings) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(7)
-                        .background(Circle().fill(Theme.control))
+                    HStack(spacing: 4) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Park")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                    }
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 9)
+                    .frame(height: 28)
+                    .background(Capsule().fill(Theme.control))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Park settings")
             }
 
             HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(hud.parkName)
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1)
-                    StarRatingView(stars: hud.starRating)
+                // The park's own name opens the park's own settings. It is
+                // the most obvious thing on screen to tap when you want to
+                // change something about your park, so it should do that.
+                Button(action: onOpenSettings) {
+                    HStack(spacing: 4) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(hud.parkName)
+                                .font(.system(.caption, design: .rounded).weight(.bold))
+                                .foregroundStyle(Theme.textPrimary)
+                                .lineLimit(1)
+                            StarRatingView(stars: hud.starRating)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens park settings")
 
                 Spacer(minLength: 0)
 

@@ -20,7 +20,10 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .shop: return "Food & Retail"
         case .games: return "Games"
         case .facility: return "Guest Services"
-        case .coaster: return "Coasters"
+        // Not "Coasters". There is no shelf of finished coasters here: this
+        // is track, track pieces and a station, and the ride it makes is
+        // whatever the player builds out of them.
+        case .coaster: return "Coaster Builder"
         case .transport: return "Transport"
         case .scenery: return "Scenery"
         }
@@ -36,7 +39,7 @@ enum BuildCategory: String, Codable, CaseIterable, Identifiable {
         case .shop: return "Food"
         case .games: return "Games"
         case .facility: return "Guests"
-        case .coaster: return "Coasters"
+        case .coaster: return "Coaster Kit"
         case .transport: return "Transit"
         case .scenery: return "Scenery"
         }

@@ -46,12 +46,22 @@ struct ParkEventPresentation {
 /// a ride closes, and nothing on screen says why.
 struct EventCardView: View {
     let event: ParkEvent
+
+    /// How much of its time on screen is left, 1 down to 0. Counted by the
+    /// controller rather than by the view.
+    ///
+    /// The card used to time itself with `try? await Task.sleep` inside a
+    /// `.task`. A cancelled sleep returns immediately and the `try?` swallowed
+    /// the cancellation, so the dismissal ran on the spot; SwiftUI cancels a
+    /// `.task` whenever the view around it is rebuilt, which this one is
+    /// several times a second while the park is running. The card was
+    /// disappearing long before anybody could read it.
+    let remaining: Double
+    /// Declared last so the call site can pass it as a trailing closure.
     let onDismiss: () -> Void
 
     @State private var shown = false
 
-    /// Long enough to read, and a tap ends it sooner.
-    private static let dwell: TimeInterval = 8.0
     private static let corner: CGFloat = 20
 
     private var presentation: ParkEventPresentation {
@@ -69,10 +79,8 @@ struct EventCardView: View {
                 .opacity(shown ? 1 : 0)
                 .onTapGesture(perform: finish)
         }
-        .task {
+        .onAppear {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.64)) { shown = true }
-            try? await Task.sleep(nanoseconds: UInt64(Self.dwell * 1_000_000_000))
-            finish()
         }
     }
 
@@ -126,7 +134,21 @@ struct EventCardView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
-            .padding(.bottom, 18)
+            .padding(.bottom, 14)
+
+            // How long is left. A card that closes itself with no warning
+            // feels like a glitch; a card with a bar running down feels like
+            // a decision the player can beat by tapping.
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(style.tint.opacity(0.75))
+                    .frame(width: geometry.size.width * max(0, min(1, remaining)))
+            }
+            .frame(height: 3)
+            .background(Color.white.opacity(0.10))
+            // The controller reports five times a second; the animation is
+            // what turns that into a bar that glides rather than steps.
+            .animation(.linear(duration: 0.2), value: remaining)
         }
         .frame(maxWidth: 310)
         .background(
@@ -164,7 +186,7 @@ struct EventCardView: View {
 
     private func finish() {
         guard shown else { return }
-        withAnimation(.easeIn(duration: 0.16)) { shown = false }
+        shown = false
         onDismiss()
     }
 }

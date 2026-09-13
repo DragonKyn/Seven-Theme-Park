@@ -71,9 +71,12 @@ struct GameView: View {
             }
 
             if let event = controller.event {
-                EventCardView(event: event) { controller.dismissEvent() }
-                    .id(event.id)
-                    .transition(.opacity)
+                EventCardView(event: event,
+                              remaining: controller.eventRemaining) {
+                    controller.dismissEvent()
+                }
+                .id(event.id)
+                .transition(.opacity)
             }
         }
         .onAppear(perform: prepareScene)
@@ -139,6 +142,8 @@ private struct ControlBarView: View {
     let onOpenAchievements: () -> Void
     let onExit: () -> Void
 
+    @State private var confirmingExit = false
+
     var body: some View {
         HStack(spacing: 6) {
             Button {
@@ -174,9 +179,22 @@ private struct ControlBarView: View {
             Menu {
                 Button("Achievements", systemImage: "rosette", action: onOpenAchievements)
                 Button("Save park") { controller.save() }
-                Button("Save and exit", role: .destructive, action: onExit)
+                // Only raises the question here. Leaving the park was an
+                // action on the menu item itself, and a menu item that tears
+                // down the screen the menu is attached to does not reliably
+                // get to run: the first tap did nothing and the second
+                // worked, which is exactly what that looks like.
+                Button("Leave park", role: .destructive) { confirmingExit = true }
             } label: {
                 ControlButtonLabel(symbol: "line.3.horizontal", title: "Menu")
+            }
+            .confirmationDialog("Leave the park?",
+                                isPresented: $confirmingExit,
+                                titleVisibility: .visible) {
+                Button("Save and exit", role: .destructive, action: onExit)
+                Button("Stay here", role: .cancel) { }
+            } message: {
+                Text("Your park is saved before you go, and will be waiting in the same slot.")
             }
         }
         .padding(8)
@@ -190,8 +208,12 @@ private struct ControlBarView: View {
                     .background(Capsule().fill(Theme.accent))
                     .foregroundStyle(.black)
                     .offset(y: -28)
-                    .task {
+                    .task(id: message) {
+                        // Checked rather than swallowed: a cancelled sleep
+                        // returns at once, and clearing the message then
+                        // would wipe the confirmation before it was read.
                         try? await Task.sleep(nanoseconds: 1_600_000_000)
+                        guard !Task.isCancelled else { return }
                         controller.clearSaveMessage()
                     }
             }

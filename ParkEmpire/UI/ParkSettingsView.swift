@@ -110,8 +110,21 @@ struct ParkSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Park Settings")
+            // The park's own name, so there is no doubt these are the
+            // settings for this park rather than for the app.
+            .navigationTitle(controller.hud.parkName)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 0) {
+                        Text(controller.hud.parkName)
+                            .font(.headline)
+                        Text("Park settings")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
