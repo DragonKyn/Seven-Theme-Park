@@ -101,6 +101,9 @@ struct Guest: Codable, Identifiable {
     var isInfluencer: Bool = false
     /// Set once they have posted, so one visit is one post.
     var hasPosted: Bool = false
+    /// A visitor quietly scoring the park. Nothing marks them out, which is
+    /// the point: their verdict lands on the park as it actually was.
+    var isCritic: Bool = false
     /// The party they arrived with, for guests who came on a coach. Nil for
     /// everybody who walked in on their own.
     var groupID: UUID?
@@ -185,6 +188,7 @@ extension Guest {
         appearance = container.value(.appearance, or: .unknown)
         isInfluencer = container.value(.isInfluencer, or: false)
         hasPosted = container.value(.hasPosted, or: false)
+        isCritic = container.value(.isCritic, or: false)
         groupID = container.optionalValue(.groupID)
         personality = container.value(.personality,
                                       or: GuestPersonality(thrillPreference: 50,

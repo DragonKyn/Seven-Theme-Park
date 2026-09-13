@@ -156,6 +156,22 @@ extension ParkEventPresentation {
                 figures: [Figure(value: "+\(Int(post.boost * 100))%", caption: "ARRIVALS"),
                           Figure(value: post.durationLabel, caption: "FOR THE NEXT")])
 
+        case .review(let review):
+            return ParkEventPresentation(
+                symbolName: review.isBad ? "hand.thumbsdown.fill" : "star.bubble.fill",
+                tint: review.isBad ? Theme.danger : Theme.money,
+                deepTint: review.isBad
+                    ? Color(red: 0.62, green: 0.16, blue: 0.20)
+                    : Theme.moneyDeep,
+                kicker: "\(review.starLine)   REVIEWED",
+                headline: review.headline,
+                detail: review.detail,
+                figures: review.ratingSwing == 0
+                    ? [Figure(value: review.criticName, caption: "LEFT BY")]
+                    : [Figure(value: "\(review.ratingSwing > 0 ? "+" : "")\(Int(review.ratingSwing))",
+                              caption: "PARK RATING"),
+                       Figure(value: review.durationLabel, caption: "FOR THE NEXT")])
+
         case .inspection(let report):
             return ParkEventPresentation(
                 symbolName: report.passed ? "checkmark.seal.fill" : "xmark.seal.fill",

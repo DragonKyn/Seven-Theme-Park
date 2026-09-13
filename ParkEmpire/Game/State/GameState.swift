@@ -66,6 +66,12 @@ final class GameState: Codable {
     /// What a recent clean bill of health is doing for the rating.
     var inspectionBonus: TimedModifier = .inactive
     var pendingInspections: [InspectionReport] = []
+    /// Sim time the next anonymous reviewer may walk in, and what the last
+    /// review they published is still doing to the park.
+    var nextCriticAt: Double = Balance.dayLength * 1.5
+    var reviewRating: TimedModifier = .inactive
+    var reviewArrivals: TimedModifier = .inactive
+    var pendingReviews: [CriticReview] = []
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -143,6 +149,10 @@ final class GameState: Codable {
         inspectionVerdictAt = container.value(.inspectionVerdictAt, or: 0)
         inspectionBonus = container.value(.inspectionBonus, or: .inactive)
         pendingInspections = container.value(.pendingInspections, or: [])
+        nextCriticAt = container.value(.nextCriticAt, or: Balance.dayLength * 1.5)
+        reviewRating = container.value(.reviewRating, or: .inactive)
+        reviewArrivals = container.value(.reviewArrivals, or: .inactive)
+        pendingReviews = container.value(.pendingReviews, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
@@ -324,10 +334,15 @@ final class GameState: Codable {
         clock.simTime < promotionEndsAt ? promotionBoost : 0
     }
 
-    /// Rating points a recent clean bill of health is currently adding. Zero
-    /// once it has run its course.
-    var activeInspectionBonus: Double {
-        inspectionBonus.value(at: clock.simTime)
+    /// Rating points the park is currently being given or docked by things
+    /// that happened to it rather than things it earned. Zero once they lapse.
+    var activeRatingModifier: Double {
+        inspectionBonus.value(at: clock.simTime) + reviewRating.value(at: clock.simTime)
+    }
+
+    /// Extra arrivals a warm review is currently bringing in, as a share.
+    var activeReviewArrivals: Double {
+        reviewArrivals.value(at: clock.simTime)
     }
 
     /// Park minutes left on the current post, or nil when there is none.

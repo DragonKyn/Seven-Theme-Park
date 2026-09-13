@@ -21,11 +21,12 @@ final class RatingSystem {
         let totalWeight = components.reduce(0.0) { $0 + $1.weight }
         guard totalWeight > 0 else { return }
 
-        // A clean bill of health is a bonus on top of what the park earned,
-        // not a ninth thing the park is judged on. Added after the weights are
-        // normalised, so the breakdown the dashboard shows stays honest.
+        // A clean bill of health, or a review, is a swing on top of what the
+        // park earned rather than a ninth thing it is judged on. Added after
+        // the weights are normalised, so the breakdown the dashboard shows
+        // stays honest.
         let earned = components.reduce(0.0) { $0 + $1.weight * $1.value } / totalWeight * 100
-        let target = SimMath.clamp(earned + state.activeInspectionBonus)
+        let target = SimMath.clamp(earned + state.activeRatingModifier)
 
         let previousStars = state.starRating
         state.parkRating += (target - state.parkRating) * Balance.ratingSmoothing

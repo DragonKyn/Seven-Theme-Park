@@ -173,6 +173,12 @@ final class MovementSystem {
         let guest = state.guests[guestIndex]
         let reason = guest.departureReason ?? DepartureReason.satisfied.rawValue
         state.statistics.recordDeparture(reason: reason)
+
+        // A reviewer's opinion is only complete on the way out.
+        if guest.isCritic {
+            CriticSystem.publish(guestIndex: guestIndex, state: state)
+        }
+
         state.guests[guestIndex].activity = .departed
         state.guests[guestIndex].route = []
     }

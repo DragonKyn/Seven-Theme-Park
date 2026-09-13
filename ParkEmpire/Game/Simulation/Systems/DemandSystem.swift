@@ -61,11 +61,11 @@ final class DemandSystem {
         // can actually get here.
         let parking = CarParkContent.demandMultiplier(level: state.carParkLevel)
 
-        // A post about the park is a short, sharp rush on top of whatever
-        // the park had already earned.
-        let promotion = 1 + state.activePromotionBoost
+        // A post about the park, or a warm review, is a short sharp rush on
+        // top of whatever the park had already earned.
+        let word = 1 + state.activePromotionBoost + state.activeReviewArrivals
 
-        return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * promotion,
+        return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * word,
                              0,
                              Balance.maxArrivalsPerMinute)
     }
@@ -197,6 +197,11 @@ final class DemandSystem {
                                                accessory: .phone)
             guest.cash += 120
             PromotionSystem.scheduleNext(state: state)
+        } else if groupID == nil, CriticSystem.shouldAdmit(state: state) {
+            // Nothing is changed about how they look. Being impossible to spot
+            // is the whole of the event.
+            guest.isCritic = true
+            CriticSystem.scheduleNext(state: state)
         }
 
         guest.nextDecisionAt = now + 1

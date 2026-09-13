@@ -14,12 +14,15 @@ enum ParkEvent: Identifiable, Equatable {
     case coachParty(CoachPartyReport)
     /// A safety inspector gave their verdict on a ride.
     case inspection(InspectionReport)
+    /// A visitor nobody knew was reviewing the park published their verdict.
+    case review(CriticReview)
 
     var id: UUID {
         switch self {
         case .promotion(let post): return post.id
         case .coachParty(let report): return report.id
         case .inspection(let report): return report.id
+        case .review(let review): return review.id
         }
     }
 }
