@@ -22,6 +22,17 @@ struct ParkStatistics: Codable {
     var prizesWonTotal: Int = 0
     /// Posts the park has been featured in.
     var promotionsTotal: Int = 0
+    /// Reviews left by anonymous critics, split by how they went.
+    var goodReviewsTotal: Int = 0
+    var badReviewsTotal: Int = 0
+    /// Disruptive visitors dealt with, and ones who got away with it.
+    var troublemakersEjectedTotal: Int = 0
+    var troublemakersEscapedTotal: Int = 0
+    /// Verdicts the regulator has handed down.
+    var safetyInspectionsPassedTotal: Int = 0
+    var safetyInspectionsFailedTotal: Int = 0
+    /// Coaches that have pulled up at the gate.
+    var coachPartiesTotal: Int = 0
 
     /// Counts of the reason guests gave for leaving, used for "common complaint".
     var departureReasons: [String: Int] = [:]
@@ -64,6 +75,13 @@ extension ParkStatistics {
         gamesPlayedTotal = container.value(.gamesPlayedTotal, or: 0)
         prizesWonTotal = container.value(.prizesWonTotal, or: 0)
         promotionsTotal = container.value(.promotionsTotal, or: 0)
+        goodReviewsTotal = container.value(.goodReviewsTotal, or: 0)
+        badReviewsTotal = container.value(.badReviewsTotal, or: 0)
+        troublemakersEjectedTotal = container.value(.troublemakersEjectedTotal, or: 0)
+        troublemakersEscapedTotal = container.value(.troublemakersEscapedTotal, or: 0)
+        safetyInspectionsPassedTotal = container.value(.safetyInspectionsPassedTotal, or: 0)
+        safetyInspectionsFailedTotal = container.value(.safetyInspectionsFailedTotal, or: 0)
+        coachPartiesTotal = container.value(.coachPartiesTotal, or: 0)
         transportTripsTotal = container.value(.transportTripsTotal, or: 0)
         departureReasons = container.value(.departureReasons, or: [:])
     }

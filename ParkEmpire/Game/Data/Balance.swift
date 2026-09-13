@@ -196,6 +196,97 @@ enum Balance {
     /// Maximum staff of all roles.
     static let maxStaff = 40
 
+    // MARK: - Mystery critics
+
+    /// A park with nothing to review is not worth reviewing.
+    static let criticMinimumRides = 2
+    /// Park days between one anonymous reviewer and the next.
+    static let criticGapDays: ClosedRange<Double> = 4.0...7.0
+    /// Happiness at which a review turns from lukewarm to warm, and the point
+    /// below which it turns hostile. Between the two the review runs and
+    /// changes nothing, which is a real verdict and should read as one.
+    static let criticPraiseHappiness: Double = 70
+    static let criticComplaintHappiness: Double = 45
+    /// Rating points a five star review adds, scaled down for four, and the
+    /// points a one star review takes off. Ratings ease at a tenth every ten
+    /// seconds, so these move the live number by a little less than they say.
+    static let criticPraiseRating: Double = 7
+    static let criticComplaintRating: Double = 8
+    /// Extra arrivals a warm review brings, as a share.
+    static let criticPraiseArrivals: Double = 0.20
+    /// Park minutes a review keeps working for, good or bad. Half a day.
+    static let criticEffectMinutes: Double = 360
+
+    // MARK: - Troublemakers
+
+    /// A park with fewer guests than this has nobody to annoy, and the event
+    /// would go unwitnessed.
+    static let troublemakerMinimumGuests = 25
+    /// Park days between one and the next. More often than a famous visitor,
+    /// because the lesson it teaches is one the player needs sooner.
+    static let troublemakerGapDays: ClosedRange<Double> = 2.5...5.0
+    /// Park minutes they stay if nobody removes them. Four hours of a twelve
+    /// hour day: long enough that the damage is real, short of a disaster.
+    static let troublemakerStayLength: Double = 240
+    /// Tiles over which their presence sours the mood.
+    static let troublemakerRadius: Double = 4.0
+    /// Happiness drained per sim-second from everybody inside that circle.
+    /// Deliberately larger than an entertainer's lift.
+    static let troublemakerHappinessPerSecond: Double = 0.85
+    /// Chance per sim-second of dropping a piece of rubbish. Over a full stay
+    /// that is roughly a dozen pieces, which one janitor cannot keep up with.
+    static let troublemakerLitterChancePerSecond: Double = 0.055
+    /// Chance per sim-second of shoving somebody out of a nearby queue, how
+    /// far they reach to do it, and what it costs the person shoved.
+    static let troublemakerQueueChancePerSecond: Double = 0.020
+    static let troublemakerQueueRadius: Double = 3.5
+    static let troublemakerQueuePenalty: Double = 10
+
+    // MARK: - Security escorts
+
+    /// How close a guard has to get before they have them.
+    static let escortCatchRadius: Double = 0.9
+    /// Sim-seconds between a guard re-planning towards a moving target. Every
+    /// tick would make route finding the most expensive thing in the game,
+    /// and a guard a second behind still catches somebody slower than they are.
+    static let escortRepathInterval: Double = 1.5
+    /// One-off relief to everybody who watched it happen, and how far that
+    /// reaches.
+    static let escortHappinessRelief: Double = 9
+    static let escortReliefRadius: Double = 6.0
+
+    // MARK: - Safety inspections
+
+    static let safetyInspectionMinimumRides = 1
+    /// Park days between visits from the regulator.
+    static let safetyInspectionGapDays: ClosedRange<Double> = 2.5...4.5
+    /// Park minutes of notice before the verdict lands, so a mechanic sent
+    /// the moment the alert arrives can still save the ride.
+    static let safetyInspectionWarning: Double = 60
+    /// Condition at or above which a ride passes. Well below `repairedCondition`
+    /// so a ride a mechanic has just touched cannot fail.
+    static let safetyInspectionPassCondition: Double = 55
+    /// The fine, charged to maintenance. Comparable to the cost of the mechanic
+    /// the park should have hired instead.
+    static let safetyInspectionFine: Double = 1_200
+    /// Rating points a clean bill of health adds, and the park minutes it lasts.
+    static let safetyInspectionRatingBonus: Double = 6
+    static let safetyInspectionBonusMinutes: Double = 360
+
+    // MARK: - Coach parties
+
+    static let coachPartyMinimumRides = 1
+    /// Park days between coaches. The most common of the rare events.
+    static let coachPartyGapDays: ClosedRange<Double> = 1.5...3.0
+    /// How many get off the coach, and the point below which a full park
+    /// simply turns it round at the gate.
+    static let coachPartySize: ClosedRange<Int> = 12...22
+    static let coachPartyMinimumSize = 6
+    /// Share of the party that are children, and what each of them has to
+    /// spend against an ordinary guest.
+    static let coachPartyChildShare: Double = 0.62
+    static let coachPartySpendScale: Double = 0.55
+
     // MARK: - Achievements
 
     /// Sim-seconds between achievement checks. Every metric is a running total
