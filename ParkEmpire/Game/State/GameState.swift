@@ -54,6 +54,10 @@ final class GameState: Codable {
     /// Posts that have happened but not yet been shown to the player. Kept in
     /// the save so one made as the app goes to the background is not lost.
     var pendingPromotions: [PromotionPost] = []
+    /// Sim time the next coach is booked in, and the ones that have pulled up
+    /// but not yet been shown to the player.
+    var nextCoachPartyAt: Double = Balance.dayLength * 0.6
+    var pendingCoachParties: [CoachPartyReport] = []
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -124,6 +128,8 @@ final class GameState: Codable {
         promotionBoost = container.value(.promotionBoost, or: 0)
         promotionEndsAt = container.value(.promotionEndsAt, or: 0)
         pendingPromotions = container.value(.pendingPromotions, or: [])
+        nextCoachPartyAt = container.value(.nextCoachPartyAt, or: Balance.dayLength * 0.6)
+        pendingCoachParties = container.value(.pendingCoachParties, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())

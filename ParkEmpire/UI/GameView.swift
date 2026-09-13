@@ -69,8 +69,9 @@ struct GameView: View {
                     .transition(.opacity)
             }
 
-            if let post = controller.promotion {
-                PromotionView(post: post) { controller.dismissPromotion() }
+            if let event = controller.event {
+                EventCardView(event: event) { controller.dismissEvent() }
+                    .id(event.id)
                     .transition(.opacity)
             }
         }

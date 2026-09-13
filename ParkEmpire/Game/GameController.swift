@@ -25,8 +25,9 @@ final class GameController: ObservableObject {
     @Published private(set) var celebration: AchievementAward?
     /// The piece of advice currently on screen, if any.
     @Published private(set) var currentTip: TutorialTip?
-    /// A social media post about the park, waiting to be shown off.
-    @Published private(set) var promotion: PromotionPost?
+    /// The rare event currently on screen, if any. One at a time: two cards
+    /// dimming the park at once reads as a bug rather than a busy day.
+    @Published private(set) var event: ParkEvent?
 
     // MARK: - Simulation
 
@@ -707,9 +708,7 @@ final class GameController: ObservableObject {
         if celebration == nil, !state.pendingAwards.isEmpty {
             celebration = state.pendingAwards.removeFirst()
         }
-        if promotion == nil, !state.pendingPromotions.isEmpty {
-            promotion = state.pendingPromotions.removeFirst()
-        }
+        drainEvents()
         alerts = Array(state.alerts.suffix(12).reversed())
 
         if let current = selection?.identity {
@@ -764,9 +763,22 @@ final class GameController: ObservableObject {
         return signals
     }
 
-    /// Dismissed by the post's card once it has been read.
-    func dismissPromotion() {
-        promotion = nil
+    /// Takes the next rare event off whichever queue has one waiting.
+    ///
+    /// Order is a priority, not a coincidence: something that shut a ride
+    /// matters more than something that filled the gate.
+    private func drainEvents() {
+        guard event == nil else { return }
+        if !state.pendingPromotions.isEmpty {
+            event = .promotion(state.pendingPromotions.removeFirst())
+        } else if !state.pendingCoachParties.isEmpty {
+            event = .coachParty(state.pendingCoachParties.removeFirst())
+        }
+    }
+
+    /// Dismissed by the event's card once it has been read.
+    func dismissEvent() {
+        event = nil
     }
 
     /// The player has read the tip on screen.

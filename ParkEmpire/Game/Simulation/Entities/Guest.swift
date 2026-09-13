@@ -101,6 +101,9 @@ struct Guest: Codable, Identifiable {
     var isInfluencer: Bool = false
     /// Set once they have posted, so one visit is one post.
     var hasPosted: Bool = false
+    /// The party they arrived with, for guests who came on a coach. Nil for
+    /// everybody who walked in on their own.
+    var groupID: UUID?
 
     // Money
     var cash: Double
@@ -182,6 +185,7 @@ extension Guest {
         appearance = container.value(.appearance, or: .unknown)
         isInfluencer = container.value(.isInfluencer, or: false)
         hasPosted = container.value(.hasPosted, or: false)
+        groupID = container.optionalValue(.groupID)
         personality = container.value(.personality,
                                       or: GuestPersonality(thrillPreference: 50,
                                                            patience: 50,

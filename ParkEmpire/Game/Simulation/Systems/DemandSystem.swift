@@ -9,6 +9,11 @@ import Foundation
 final class DemandSystem {
 
     func update(state: GameState, dt: Double) {
+        // Coaches arrive on their own schedule, not out of the trickle.
+        if CoachPartySystem.shouldArrive(state: state) {
+            admitCoachParty(state: state)
+        }
+
         let arrivals = arrivalsPerMinute(state: state)
         state.currentArrivalsPerMinute = arrivals
 
@@ -76,13 +81,52 @@ final class DemandSystem {
         }
     }
 
+    /// A coach pulls up and empties.
+    ///
+    /// Child heavy and light in the pocket, and all of them through the gate
+    /// in one go, which is the whole point of the event.
+    func admitCoachParty(state: GameState) {
+        // Booked first, so every way out of this method still re-books.
+        CoachPartySystem.scheduleNext(state: state)
+
+        let wanted = state.rng.int(Balance.coachPartySize)
+        let room = Balance.maxGuests - state.guestCount
+        let count = min(wanted, room)
+        // A park with no room left turns the coach round at the gate rather
+        // than squeezing a handful of them in and calling it an event.
+        guard count >= Balance.coachPartyMinimumSize else { return }
+
+        let groupID = UUID()
+        var childCount = 0
+        for _ in 0..<count {
+            let isChild = state.rng.chance(Balance.coachPartyChildShare)
+            if isChild { childCount += 1 }
+            admitGuest(state: state,
+                       ageOverride: isChild ? .child : .adult,
+                       cashScale: Balance.coachPartySpendScale,
+                       groupID: groupID)
+        }
+
+        let name = GuestNames.coachGroup(using: &state.rng)
+        state.pendingCoachParties.append(
+            CoachPartyReport(groupName: name, count: count, childCount: childCount))
+        state.statistics.coachPartiesTotal += 1
+        state.postAlert("\(name) has arrived, \(count) of them at once.",
+                        severity: .info,
+                        key: "coachParty",
+                        cooldown: 60)
+    }
+
     // MARK: - Admission
 
-    private func admitGuest(state: GameState) {
+    private func admitGuest(state: GameState,
+                            ageOverride: AgeCategory? = nil,
+                            cashScale: Double = 1,
+                            groupID: UUID? = nil) {
         let entrance = state.map.entranceCoord
         let now = state.clock.simTime
 
-        let age = randomAge(&state.rng)
+        let age = ageOverride ?? randomAge(&state.rng)
         let personality = GuestPersonality.random(for: age, using: &state.rng)
 
         let cashRange: ClosedRange<Double>
@@ -100,7 +144,7 @@ final class DemandSystem {
         // the cap admitted a crowd with nothing left to spend, and every shop
         // and booth in it stood empty. Demand is still what an expensive park
         // pays for, through `admissionWillingness` below.
-        let spendingMoney = state.rng.double(cashRange) * spendingScale
+        let spendingMoney = state.rng.double(cashRange) * spendingScale * cashScale
         let startingCash = spendingMoney + state.admissionPrice
 
         let speedScale: Double
@@ -136,9 +180,12 @@ final class DemandSystem {
             plannedVisitLength: Balance.visitLengthBase + visitJitter
         )
         guest.appearance = GuestAppearance.random(for: age, using: &state.rng)
+        guest.groupID = groupID
 
-        // Every so often, somebody with an audience.
-        if PromotionSystem.shouldAdmitInfluencer(state: state) {
+        // Every so often, somebody with an audience. Never somebody who came
+        // on a coach: a batch of twenty would otherwise swallow the schedule
+        // the famous visitor is spaced out by.
+        if groupID == nil, PromotionSystem.shouldAdmitInfluencer(state: state) {
             guest.isInfluencer = true
             // Dressed to be found in a crowd, and filming.
             guest.appearance = GuestAppearance(shirt: .pink,
