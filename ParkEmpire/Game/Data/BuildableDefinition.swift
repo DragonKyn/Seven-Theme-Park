@@ -61,6 +61,14 @@ protocol BuildableDefinition {
     /// Terrain this is built on top of rather than beside. A boat ride goes on
     /// the water.
     var bedTerrain: TerrainType? { get }
+    /// Whether it may also stand on open ground next to its bed rather than on
+    /// it. A bin belongs on the path, but a bin on the grass beside the path
+    /// is still a bin somebody can drop a wrapper in, and players place things
+    /// in ways nobody designed for.
+    var maySitBesideBed: Bool { get }
+    /// Whether it may be built on the walkway itself without closing it. An
+    /// arch over a path is the whole point of an arch.
+    var mayStandOnWalkway: Bool { get }
     /// Whether placing this lays coaster track under itself.
     var laysCoasterTrack: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
@@ -86,6 +94,8 @@ extension BuildableDefinition {
     var requiresTrackAccess: Bool { false }
     var requiresCoasterTrackAccess: Bool { false }
     var bedTerrain: TerrainType? { nil }
+    var maySitBesideBed: Bool { false }
+    var mayStandOnWalkway: Bool { false }
     var laysCoasterTrack: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }

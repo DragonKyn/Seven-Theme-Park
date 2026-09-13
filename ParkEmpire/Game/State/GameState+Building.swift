@@ -90,7 +90,9 @@ extension GameState {
                 variant: style
             )
             scenery.append(item)
-            map.setBuilding(item.id, on: item.rect.coords)
+            map.setBuilding(item.id,
+                            on: item.rect.coords,
+                            blocking: !sceneryDefinition.mayStandOnWalkway)
             refreshBeauty()
 
         default:

@@ -55,26 +55,47 @@ enum PlacementValidator {
                 }
             }
         } else if let bed = definition.bedTerrain {
-            // Built on top of something rather than beside it: every tile it
-            // covers has to be that terrain, and free.
+            // Built on top of something rather than beside it.
             for coord in rect.coords {
                 guard let tile = map.tile(at: coord) else { return .invalid("Outside the park") }
-                let matches = bed == .coasterTrack
-                    ? tile.terrain.isCoasterTrack
-                    : tile.terrain == bed
-                guard matches else {
-                    switch bed {
-                    case .water: return .invalid("Needs to sit on water")
-                    case .path: return .invalid("Goes on a walkway")
-                    default: return .invalid("Lay coaster track here first")
-                    }
-                }
                 guard !tile.isOccupied else {
                     return .invalid("Something is already here")
                 }
             }
-            if definition.requiresPathAccess && map.accessTiles(for: rect).isEmpty {
-                return .invalid("Needs to touch a walkway")
+
+            let onBed = rect.coords.allSatisfy { coord in
+                guard let tile = map.tile(at: coord) else { return false }
+                return bed == .coasterTrack ? tile.terrain.isCoasterTrack : tile.terrain == bed
+            }
+
+            if onBed {
+                if definition.requiresPathAccess && map.accessTiles(for: rect).isEmpty {
+                    return .invalid("Needs to touch a walkway")
+                }
+            } else if definition.maySitBesideBed {
+                // Off the path is allowed, so long as somebody standing on the
+                // path can still reach it. That is what keeps a bin on the
+                // grass a bin rather than an ornament.
+                guard map.isAreaBuildable(rect) else {
+                    return .invalid("Something is in the way")
+                }
+                guard !map.accessTiles(for: rect).isEmpty else {
+                    return .invalid("Put it on a walkway, or on the ground beside one")
+                }
+            } else {
+                switch bed {
+                case .water: return .invalid("Needs to sit on water")
+                case .path: return .invalid("Goes on a walkway")
+                default: return .invalid("Lay coaster track here first")
+                }
+            }
+        } else if definition.mayStandOnWalkway && map.isWalkwayArea(rect) {
+            // Straddles the path rather than standing beside it. Placed
+            // without blocking, so the route underneath stays open.
+            for coord in rect.coords {
+                guard map.tile(at: coord)?.isOccupied == false else {
+                    return .invalid("Something is already here")
+                }
             }
         } else {
             guard map.isAreaBuildable(rect) else {

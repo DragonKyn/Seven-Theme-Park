@@ -291,6 +291,27 @@ enum GameContent {
             group: .family
         ),
         AttractionDefinition(
+            id: "ride.minigolf",
+            displayName: "Wonder Putt",
+            summary: "Eighteen holes squeezed into a corner of the park. Slow, cheap to run, "
+                + "and it keeps a crowd occupied for ages.",
+            purchasePrice: 6_200,
+            capacity: 16,
+            // A round of crazy golf is the longest thing in the park that
+            // nobody queues twice for, and it costs almost nothing to keep
+            // running: there is no machinery, only grass.
+            rideDuration: 130,
+            loadDuration: 14,
+            excitement: 34,
+            nausea: 0,
+            maintenanceRate: 0.005,
+            operatingCostPerCycle: 3,
+            footprint: GridSize(5, 4),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.miniGolf, .green, .cream, .red),
+            group: .gentle
+        ),
+        AttractionDefinition(
             id: "ride.hauntedhouse",
             displayName: "Haunted Manor",
             summary: "A slow ride through the dark. Takes crowds, and takes them all day.",
@@ -807,7 +828,8 @@ enum GameContent {
         FacilityDefinition(
             id: "facility.bin",
             displayName: "Garbage Bin",
-            summary: "Goes straight on the walkway. Without bins, guests carrying rubbish drop it.",
+            summary: "On the walkway or on the grass beside one. Without bins, "
+                + "guests carrying rubbish drop it.",
             kind: .bin,
             purchasePrice: 80,
             defaultPrice: 0,
@@ -917,13 +939,14 @@ enum GameContent {
         SceneryDefinition(
             id: "scenery.arch",
             displayName: "Garden Arch",
-            summary: "Frames a walkway. Two of them at either end of a path make it look designed.",
+            summary: "Goes over the path itself. Two of them at either end make it look designed.",
             purchasePrice: 460,
             beauty: 50,
             beautyRadius: 2,
             footprint: GridSize(1, 1),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.gardenArch, .teal, .lime, .cream)
+            appearance: BuildingAppearance(.gardenArch, .teal, .lime, .cream),
+            spansWalkway: true
         ),
         SceneryDefinition(
             id: "scenery.clocktower",

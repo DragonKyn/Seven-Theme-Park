@@ -75,6 +75,14 @@ struct ParkMap: Codable {
         return true
     }
 
+    /// Whether every tile of a footprint is walkway of some kind.
+    func isWalkwayArea(_ rect: GridRect) -> Bool {
+        for coord in rect.coords {
+            guard let tile = tile(at: coord), tile.terrain.isWalkway else { return false }
+        }
+        return true
+    }
+
     /// Walkable tiles a guest can stand on to use the given footprint.
     func accessTiles(for rect: GridRect) -> [GridCoord] {
         rect.adjacentCoords.filter { isWalkable($0) }

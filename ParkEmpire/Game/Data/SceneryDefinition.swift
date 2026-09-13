@@ -18,6 +18,9 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     let footprint: GridSize
     let unlockLevel: Int
     let appearance: BuildingAppearance
+    /// Whether this is something a guest walks under. An arch over a path is
+    /// the point of an arch; a tree over a path is a tree in the way.
+    var spansWalkway: Bool = false
 
     var category: BuildCategory { .scenery }
 
@@ -26,6 +29,11 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     /// Scenery is decoration, not a destination, so it can stand anywhere
     /// there is room rather than having to touch a walkway.
     var requiresPathAccess: Bool { false }
+
+    /// Set on pieces designed to be walked through rather than walked around.
+    /// They are placed without blocking the tile, so the path underneath
+    /// stays open.
+    var mayStandOnWalkway: Bool { spansWalkway }
 
     /// Beauty contributed to a tile `distance` steps away. Linear falloff is
     /// enough: the player needs to see that closer is better, not model light.

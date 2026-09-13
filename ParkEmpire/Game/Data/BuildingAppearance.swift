@@ -102,6 +102,8 @@ enum BuildingMotif: String, Codable {
     case skyGliders
     /// Squat mirrored box.
     case mirrorMaze
+    /// A putting course: striped fairways, flags, a windmill and a hut.
+    case miniGolf
     /// Boarding platform with the foot of a lift hill behind it.
     case coasterStation
     /// A clipped hedge, for edging a walkway.

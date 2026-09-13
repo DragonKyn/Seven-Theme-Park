@@ -71,6 +71,7 @@ enum BuildingArtwork {
         case .wavePool: drawWavePoolBase(context, size, primary, secondary, accent)
         case .skyGliders: drawSkyGlidersBase(context, size, primary, secondary, accent)
         case .mirrorMaze: drawMirrorMaze(context, size, primary, secondary, accent)
+        case .miniGolf:  drawMiniGolf(context, size, primary, secondary, accent)
         case .coasterStation: drawCoasterStation(context, size, primary, secondary, accent)
         case .stall:     drawStall(context, size, primary, secondary, accent)
         case .kiosk:     drawKiosk(context, size, primary, secondary, accent)

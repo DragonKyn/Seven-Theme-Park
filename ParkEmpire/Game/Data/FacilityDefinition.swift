@@ -86,9 +86,18 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
         kind.isFurniture ? .path : nil
     }
 
-    /// Furniture is already on the walkway, so there is nothing to touch.
+    /// Furniture on the walkway is already on it, so there is nothing to
+    /// touch. Furniture beside the walkway is checked separately, because
+    /// that is the case where reachability is not a given.
     var requiresPathAccess: Bool {
         !kind.isFurniture
+    }
+
+    /// Furniture may stand on the grass next to a path. The validator still
+    /// insists it touches one, so a bin in the middle of a lawn is refused:
+    /// the freedom is in where it looks right, not in making it useless.
+    var maySitBesideBed: Bool {
+        kind.isFurniture
     }
 
     var previewAppearance: BuildingAppearance? { appearance }
