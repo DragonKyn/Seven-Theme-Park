@@ -28,7 +28,9 @@ enum StaffArtwork {
                                             size: size)
 
             switch role {
-            case .janitor: drawBroom(layout: layout, size: size)
+            case .janitor:
+                drawOveralls(layout: layout)
+                drawBroom(layout: layout, size: size)
             case .mechanic: drawWrench(layout: layout, size: size, context: context)
             case .entertainer: drawBalloons(layout: layout, size: size)
             case .security: drawSecurityMarkings(layout: layout)
@@ -121,25 +123,99 @@ enum StaffArtwork {
         path.fill()
     }
 
-    /// A long handle down the right-hand side with a block of bristles at the
-    /// foot. At this size the bristles are the whole silhouette.
+    /// Bib and brace over the uniform shirt.
+    ///
+    /// A fixed workwear blue whatever the park's colours are, for the same
+    /// reason the mechanic's hard hat is always amber: the point of the
+    /// garment is that it is recognisable, and a bib in the park's pastel of
+    /// the week is not. The shirt still shows at the shoulders and sleeves,
+    /// so the employee is plainly one of yours.
+    private static func drawOveralls(layout: PersonArtwork.Layout) {
+        let body = layout.body
+        let denim = ParkPalette.colour(.indigo)
+        let stitch = ParkPalette.colour(.cream).withAlphaComponent(0.55)
+
+        // The bib: a panel up the middle of the chest, narrower than the body
+        // so the shirt reads as a shirt either side of it.
+        let bib = CGRect(x: body.minX + body.width * 0.20,
+                         y: body.minY + body.height * 0.26,
+                         width: body.width * 0.60,
+                         height: body.height * 0.78)
+        denim.setFill()
+        UIBezierPath(roundedRect: bib, cornerRadius: body.width * 0.10).fill()
+
+        // Braces over each shoulder, angled in towards the bib.
+        let braceWidth = max(0.6, body.width * 0.13)
+        denim.setStroke()
+        for side in [-1.0, 1.0] as [CGFloat] {
+            let brace = UIBezierPath()
+            brace.move(to: CGPoint(x: body.midX + side * body.width * 0.34,
+                                   y: body.minY + body.height * 0.02))
+            brace.addLine(to: CGPoint(x: body.midX + side * body.width * 0.20,
+                                      y: bib.minY + braceWidth * 0.5))
+            brace.lineWidth = braceWidth
+            brace.lineCapStyle = .round
+            brace.stroke()
+        }
+
+        // A pocket on the bib, which is the detail that says workwear rather
+        // than apron at a glance.
+        let pocket = CGRect(x: bib.midX - bib.width * 0.22,
+                            y: bib.minY + bib.height * 0.16,
+                            width: bib.width * 0.44,
+                            height: bib.height * 0.24)
+        stitch.setStroke()
+        let outline = UIBezierPath(roundedRect: pocket, cornerRadius: pocket.height * 0.25)
+        outline.lineWidth = max(0.4, body.width * 0.06)
+        outline.stroke()
+    }
+
+    /// A broom held out at an angle, bristles on the ground.
+    ///
+    /// Held at a slant rather than upright: a vertical pole beside somebody
+    /// reads as a flag or a railing, and only the angle says they are using
+    /// it. The bristle block is wide because at this size it is most of what
+    /// anybody can actually see.
     private static func drawBroom(layout: PersonArtwork.Layout, size: CGSize) {
         let unit = layout.body.width
-        let x = layout.body.maxX + unit * 0.34
+        let grip = CGPoint(x: layout.body.maxX + unit * 0.16,
+                           y: layout.body.minY + layout.body.height * 0.30)
+        let foot = CGPoint(x: layout.body.maxX + unit * 0.86,
+                           y: layout.bottom - unit * 0.16)
 
         let handle = UIBezierPath()
-        handle.move(to: CGPoint(x: x, y: layout.head.midY))
-        handle.addLine(to: CGPoint(x: x, y: layout.bottom - unit * 0.10))
+        handle.move(to: grip)
+        handle.addLine(to: foot)
         ParkPalette.colour(.brown).setStroke()
-        handle.lineWidth = max(1, unit * 0.16)
+        handle.lineWidth = max(1, unit * 0.20)
+        handle.lineCapStyle = .round
         handle.stroke()
 
-        let bristles = CGRect(x: x - unit * 0.30,
-                              y: layout.bottom - unit * 0.34,
-                              width: unit * 0.60,
-                              height: unit * 0.26)
+        // The head, square to the ground rather than to the handle, because
+        // that is how a broom actually sits when somebody is sweeping with it.
+        let head = CGRect(x: foot.x - unit * 0.46,
+                          y: foot.y - unit * 0.04,
+                          width: unit * 0.92,
+                          height: unit * 0.34)
+        ParkPalette.colour(.charcoal).setFill()
+        UIBezierPath(roundedRect: CGRect(x: head.minX, y: head.minY,
+                                         width: head.width, height: head.height * 0.42),
+                     cornerRadius: head.height * 0.18).fill()
+
         ParkPalette.colour(.sand).setFill()
-        UIBezierPath(roundedRect: bristles, cornerRadius: bristles.height * 0.3).fill()
+        UIBezierPath(rect: CGRect(x: head.minX, y: head.minY + head.height * 0.34,
+                                  width: head.width, height: head.height * 0.66)).fill()
+
+        // A few bristle gaps, which is what stops it reading as a block.
+        ParkPalette.colour(.brown).withAlphaComponent(0.45).setStroke()
+        let bristle = UIBezierPath()
+        for step in 1...3 {
+            let x = head.minX + head.width * (CGFloat(step) / 4)
+            bristle.move(to: CGPoint(x: x, y: head.minY + head.height * 0.40))
+            bristle.addLine(to: CGPoint(x: x, y: head.maxY))
+        }
+        bristle.lineWidth = max(0.4, unit * 0.05)
+        bristle.stroke()
     }
 
     /// A stubby spanner held out from the body, open jaw uppermost.

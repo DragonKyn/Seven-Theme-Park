@@ -22,6 +22,7 @@ struct GameView: View {
             VStack(spacing: 0) {
                 HUDView(hud: controller.hud,
                         alertCount: controller.alerts.count,
+                        onOpenFinance: { showingFinance = true },
                         onOpenAlerts: { showingAlerts = true },
                         onOpenSettings: { showingSettings = true })
                     .padding(.horizontal, 10)

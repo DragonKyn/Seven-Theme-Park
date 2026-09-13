@@ -4,15 +4,20 @@ import SwiftUI
 struct HUDView: View {
     let hud: HUDSnapshot
     let alertCount: Int
+    let onOpenFinance: () -> Void
     let onOpenAlerts: () -> Void
     let onOpenSettings: () -> Void
 
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 6) {
-                MoneyPill(cash: hud.cash,
-                          todayProfit: hud.todayProfit,
-                          isUnlimited: hud.mode.hasUnlimitedMoney)
+                // The number people tap when they want to know where it went.
+                Button(action: onOpenFinance) {
+                    MoneyPill(cash: hud.cash,
+                              todayProfit: hud.todayProfit,
+                              isUnlimited: hud.mode.hasUnlimitedMoney)
+                }
+                .buttonStyle(.plain)
                 StatPill(symbol: "person.2.fill", value: "\(hud.guestCount)")
                 StatPill(symbol: "face.smiling",
                          value: "\(Int(hud.averageHappiness))%",
