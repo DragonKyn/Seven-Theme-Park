@@ -54,10 +54,10 @@ final class GameState: Codable {
     /// Posts that have happened but not yet been shown to the player. Kept in
     /// the save so one made as the app goes to the background is not lost.
     var pendingPromotions: [PromotionPost] = []
-    /// Sim time the next coach is booked in, and the ones that have pulled up
+    /// Sim time the next tour bus is booked in, and the ones that have pulled up
     /// but not yet been shown to the player.
-    var nextCoachPartyAt: Double = Balance.dayLength * 0.6
-    var pendingCoachParties: [CoachPartyReport] = []
+    var nextTourBusAt: Double = Balance.dayLength * 0.6
+    var pendingTourBuses: [TourBusReport] = []
     /// Sim time the next regulator calls. While one is on site the ride they
     /// are looking at is named here, along with when they will say their piece.
     var nextSafetyInspectionAt: Double = Balance.dayLength * 2.0
@@ -150,9 +150,9 @@ final class GameState: Codable {
         // where it actually is rather than from day zero, which would land all
         // four of them in the first few seconds after the update. Staggered so
         // they do not arrive together either.
-        nextCoachPartyAt = container.value(.nextCoachPartyAt,
+        nextTourBusAt = container.value(.nextTourBusAt,
                                            or: clock.simTime + Balance.dayLength * 0.3)
-        pendingCoachParties = container.value(.pendingCoachParties, or: [])
+        pendingTourBuses = container.value(.pendingTourBuses, or: [])
         nextSafetyInspectionAt = container.value(.nextSafetyInspectionAt,
                                                  or: clock.simTime + Balance.dayLength * 1.6)
         inspectingRideID = container.optionalValue(.inspectingRideID)

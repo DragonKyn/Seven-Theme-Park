@@ -228,17 +228,25 @@ enum Balance {
     /// Park minutes they stay if nobody removes them. Four hours of a twelve
     /// hour day: long enough that the damage is real, short of a disaster.
     static let troublemakerStayLength: Double = 240
+    /// Park minutes before security so much as notices them.
+    ///
+    /// Without this a guard breaks off their post the instant one walks in and
+    /// the whole event is over in seconds, which is neither satisfying nor
+    /// instructive. The grace period is what gives them time to make a mess
+    /// worth clearing up, and what makes the escort feel like a rescue.
+    static let troublemakerGracePeriod: Double = 40
     /// Tiles over which their presence sours the mood.
     static let troublemakerRadius: Double = 4.0
     /// Happiness drained per sim-second from everybody inside that circle.
     /// Deliberately larger than an entertainer's lift.
     static let troublemakerHappinessPerSecond: Double = 0.85
-    /// Chance per sim-second of dropping a piece of rubbish. Over a full stay
-    /// that is roughly a dozen pieces, which one janitor cannot keep up with.
-    static let troublemakerLitterChancePerSecond: Double = 0.055
+    /// Chance per sim-second of dropping a piece of rubbish. Roughly one every
+    /// eight seconds, so even the shortest visit leaves a trail somebody has
+    /// to walk past.
+    static let troublemakerLitterChancePerSecond: Double = 0.120
     /// Chance per sim-second of shoving somebody out of a nearby queue, how
     /// far they reach to do it, and what it costs the person shoved.
-    static let troublemakerQueueChancePerSecond: Double = 0.020
+    static let troublemakerQueueChancePerSecond: Double = 0.045
     static let troublemakerQueueRadius: Double = 3.5
     static let troublemakerQueuePenalty: Double = 10
 
@@ -273,19 +281,21 @@ enum Balance {
     static let safetyInspectionRatingBonus: Double = 6
     static let safetyInspectionBonusMinutes: Double = 360
 
-    // MARK: - Coach parties
+    // MARK: - Tour buses
 
-    static let coachPartyMinimumRides = 1
-    /// Park days between coaches. The most common of the rare events.
-    static let coachPartyGapDays: ClosedRange<Double> = 1.5...3.0
-    /// How many get off the coach, and the point below which a full park
+    static let tourBusMinimumRides = 1
+    /// Park days between tour buses. Still the most common of the rare
+    /// events, but a bus every other day stops being an arrival and starts
+    /// being the way the park fills up.
+    static let tourBusGapDays: ClosedRange<Double> = 4.0...7.0
+    /// How many get off the bus, and the point below which a full park
     /// simply turns it round at the gate.
-    static let coachPartySize: ClosedRange<Int> = 12...22
-    static let coachPartyMinimumSize = 6
+    static let tourBusSize: ClosedRange<Int> = 12...22
+    static let tourBusMinimumSize = 6
     /// Share of the party that are children, and what each of them has to
     /// spend against an ordinary guest.
-    static let coachPartyChildShare: Double = 0.62
-    static let coachPartySpendScale: Double = 0.55
+    static let tourBusChildShare: Double = 0.62
+    static let tourBusSpendScale: Double = 0.55
 
     // MARK: - Achievements
 

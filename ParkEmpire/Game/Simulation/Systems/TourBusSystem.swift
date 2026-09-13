@@ -1,23 +1,27 @@
 import Foundation
 
 /// A group that arrived together, and who they were.
-struct CoachPartyReport: Codable, Identifiable, Equatable {
+struct TourBusReport: Codable, Identifiable, Equatable {
     var id = UUID()
     let groupName: String
-    /// How many got off the coach.
+    /// How many got off the bus.
     let count: Int
     /// How many of those were children.
     let childCount: Int
 
-    /// The line under the group's name on the card.
+    /// The line on the card, and the line under it.
+    var headline: String {
+        "\(count) arrivals in one go"
+    }
+
     var detail: String {
         childCount * 2 >= count
-            ? "are here on a day out, and most of them are children"
-            : "are here on a day out"
+            ? "A school party is through the gate. Your queues are about to find out."
+            : "A day trip is through the gate. Your queues are about to find out."
     }
 }
 
-extension CoachPartyReport {
+extension TourBusReport {
     /// Lenient decoding, like everything else that goes in a save.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -28,24 +32,24 @@ extension CoachPartyReport {
     }
 }
 
-/// Coaches pulling up at the gate.
+/// Tour buses pulling up at the gate.
 ///
-/// The interesting thing about a coach is not the money, which is poor: it is
+/// The interesting thing about a busload is not the money, which is poor: it is
 /// that twenty people arrive in one second rather than over ten minutes. A
 /// park that copes with a trickle does not necessarily cope with a crowd, and
 /// this is the only thing in the game that asks the question.
-enum CoachPartySystem {
+enum TourBusSystem {
 
     /// Whether one is due. Booked against the clock rather than rolled for, so
     /// the park can be left alone for a day and still see one.
     static func shouldArrive(state: GameState) -> Bool {
-        guard state.attractions.count >= Balance.coachPartyMinimumRides else { return false }
-        return state.clock.simTime >= state.nextCoachPartyAt
+        guard state.attractions.count >= Balance.tourBusMinimumRides else { return false }
+        return state.clock.simTime >= state.nextTourBusAt
     }
 
     /// Books the next one.
     static func scheduleNext(state: GameState) {
-        let days = state.rng.double(Balance.coachPartyGapDays)
-        state.nextCoachPartyAt = state.clock.simTime + days * Balance.dayLength
+        let days = state.rng.double(Balance.tourBusGapDays)
+        state.nextTourBusAt = state.clock.simTime + days * Balance.dayLength
     }
 }

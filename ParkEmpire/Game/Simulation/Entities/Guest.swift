@@ -110,7 +110,7 @@ struct Guest: Codable, Identifiable {
     var troublemakerUntil: Double = 0
     /// Rubbish they have dropped, for the report afterwards.
     var troublemakerLitter: Int = 0
-    /// The party they arrived with, for guests who came on a coach. Nil for
+    /// The party they arrived with, for guests who came in on a tour bus. Nil for
     /// everybody who walked in on their own.
     var groupID: UUID?
 

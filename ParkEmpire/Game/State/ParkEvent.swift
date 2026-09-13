@@ -10,8 +10,8 @@ import Foundation
 enum ParkEvent: Identifiable, Equatable {
     /// A visitor with an audience posted about the park.
     case promotion(PromotionPost)
-    /// A coach pulled up at the gate and emptied.
-    case coachParty(CoachPartyReport)
+    /// A tour bus pulled up at the gate and emptied.
+    case tourBus(TourBusReport)
     /// A safety inspector gave their verdict on a ride.
     case inspection(InspectionReport)
     /// A visitor nobody knew was reviewing the park published their verdict.
@@ -22,7 +22,7 @@ enum ParkEvent: Identifiable, Equatable {
     var id: UUID {
         switch self {
         case .promotion(let post): return post.id
-        case .coachParty(let report): return report.id
+        case .tourBus(let report): return report.id
         case .inspection(let report): return report.id
         case .review(let review): return review.id
         case .ejection(let report): return report.id

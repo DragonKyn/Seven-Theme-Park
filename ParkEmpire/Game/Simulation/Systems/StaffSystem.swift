@@ -149,8 +149,11 @@ final class StaffSystem {
             // A troublemaker outranks any post. This is the job the uniform
             // exists for, and a guard standing at the gate while somebody
             // tips a bin over behind them is the wrong picture entirely.
+            let now = state.clock.simTime
             if let target = state.guests.first(where: {
-                   $0.isActive && $0.isTroublemaker && !claimed.contains(.escort($0.id))
+                   $0.isActive && $0.isTroublemaker
+                       && TroublemakerSystem.isNoticed($0, at: now)
+                       && !claimed.contains(.escort($0.id))
                }),
                distance(to: target.tile) != nil {
                 return .escort(target.id)
@@ -390,10 +393,13 @@ final class StaffSystem {
         case .patrol:
             state.staff[staffIndex].workTimer -= dt
             reassureNearbyGuests(staffIndex: staffIndex, state: state, dt: dt)
-            // A post is abandoned the moment somebody needs seeing off. A
-            // guard who waits out the remaining fifty seconds of a shift at
-            // the gate does not look like security, it looks like scenery.
-            let wanted = state.troublemakerIndex != nil
+            // A post is abandoned the moment somebody needs seeing off, but
+            // not before security have clocked them. A guard who waits out the
+            // remaining fifty seconds of a shift while a bin goes over behind
+            // them does not look like security, it looks like scenery.
+            let wanted = state.troublemakerIndex.map {
+                TroublemakerSystem.isNoticed(state.guests[$0], at: now)
+            } ?? false
             if state.staff[staffIndex].workTimer <= 0 || wanted {
                 finish(staffIndex: staffIndex, state: state, now: now)
             }

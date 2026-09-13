@@ -15,10 +15,9 @@ struct EjectionReport: Codable, Identifiable, Equatable {
     var wasEscorted: Bool { guardName != nil }
 
     var detail: String {
-        if let guardName {
-            return "was walked out by \(guardName)"
-        }
-        return "made a nuisance of themselves all afternoon, unchallenged"
+        wasEscorted
+            ? "The guests around them settled as soon as they were off the premises."
+            : "Nobody was on hand to step in. A guard on duty would have seen them off."
     }
 
     var durationLabel: String {
@@ -51,6 +50,18 @@ enum TroublemakerSystem {
         guard state.guestCount >= Balance.troublemakerMinimumGuests else { return false }
         guard state.clock.simTime >= state.nextTroublemakerAt else { return false }
         return state.troublemakerIndex == nil
+    }
+
+    /// Whether security have clocked them yet.
+    ///
+    /// A guard who breaks off their post the instant one walks through the
+    /// gate ends the event in seconds, before anybody has seen anything
+    /// happen. The grace period is what gives them time to make a mess worth
+    /// clearing up, and what turns the escort into a rescue rather than a
+    /// formality.
+    static func isNoticed(_ guest: Guest, at simTime: Double) -> Bool {
+        let arrived = guest.troublemakerUntil - Balance.troublemakerStayLength
+        return simTime >= arrived + Balance.troublemakerGracePeriod
     }
 
     /// Books the next one, some way off.
@@ -164,7 +175,7 @@ enum TroublemakerSystem {
                         <= Balance.escortReliefRadius else { continue }
                 state.guests[index].adjustHappiness(Balance.escortHappinessRelief)
             }
-            state.postAlert("\(guardName) escorted \(guest.name) out of the park.",
+            state.postAlert("Security escorted \(guest.name) out of the park.",
                             severity: .info,
                             key: "escort",
                             cooldown: 30)

@@ -32,7 +32,7 @@ enum CarParkContent {
         case 1: return "Paved Lot"
         case 2: return "Marked Bays"
         case 3: return "Overflow Field"
-        case 4: return "Coach Bays"
+        case 4: return "Bus Bays"
         default: return "Multi-Storey"
         }
     }

@@ -14,17 +14,17 @@ enum GuestNames {
         "Quist", "Rowe", "Sable", "Thorne", "Vance", "Wilde", "Yates", "Zell"
     ]
 
-    /// Parties that turn up by the coachload. Built from the same family
+    /// Parties that turn up by the busload. Built from the same family
     /// names as the guests themselves, so a park's cast hangs together.
-    private static let coachGroups = [
+    private static let tourGroups = [
         "Alderbrook Primary", "The Hollis Day Centre", "Marsh Lane Scouts",
         "Pike Street Youth Club", "The Rowe Family Reunion", "Thorne Valley School",
         "Kerr Road Nursery", "The Wilde Society", "Vance College", "Sable Park Guides",
         "Frost Hill Juniors", "The Ingram Walking Club"
     ]
 
-    static func coachGroup(using generator: inout SeededGenerator) -> String {
-        generator.pick(coachGroups) ?? "A day out"
+    static func tourGroup(using generator: inout SeededGenerator) -> String {
+        generator.pick(tourGroups) ?? "A day out"
     }
 
     static func random(using generator: inout SeededGenerator) -> String {

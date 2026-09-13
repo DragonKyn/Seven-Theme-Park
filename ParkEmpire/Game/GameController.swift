@@ -777,8 +777,8 @@ final class GameController: ObservableObject {
             event = .inspection(state.pendingInspections.removeFirst())
         } else if !state.pendingPromotions.isEmpty {
             event = .promotion(state.pendingPromotions.removeFirst())
-        } else if !state.pendingCoachParties.isEmpty {
-            event = .coachParty(state.pendingCoachParties.removeFirst())
+        } else if !state.pendingTourBuses.isEmpty {
+            event = .tourBus(state.pendingTourBuses.removeFirst())
         }
     }
 

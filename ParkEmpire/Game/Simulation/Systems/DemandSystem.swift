@@ -9,9 +9,9 @@ import Foundation
 final class DemandSystem {
 
     func update(state: GameState, dt: Double) {
-        // Coaches arrive on their own schedule, not out of the trickle.
-        if CoachPartySystem.shouldArrive(state: state) {
-            admitCoachParty(state: state)
+        // Tour buses arrive on their own schedule, not out of the trickle.
+        if TourBusSystem.shouldArrive(state: state) {
+            admitTourBus(state: state)
         }
 
         let arrivals = arrivalsPerMinute(state: state)
@@ -81,39 +81,39 @@ final class DemandSystem {
         }
     }
 
-    /// A coach pulls up and empties.
+    /// A tour bus pulls up and empties.
     ///
     /// Child heavy and light in the pocket, and all of them through the gate
     /// in one go, which is the whole point of the event.
-    func admitCoachParty(state: GameState) {
+    func admitTourBus(state: GameState) {
         // Booked first, so every way out of this method still re-books.
-        CoachPartySystem.scheduleNext(state: state)
+        TourBusSystem.scheduleNext(state: state)
 
-        let wanted = state.rng.int(Balance.coachPartySize)
+        let wanted = state.rng.int(Balance.tourBusSize)
         let room = Balance.maxGuests - state.guestCount
         let count = min(wanted, room)
-        // A park with no room left turns the coach round at the gate rather
+        // A park with no room left turns the bus round at the gate rather
         // than squeezing a handful of them in and calling it an event.
-        guard count >= Balance.coachPartyMinimumSize else { return }
+        guard count >= Balance.tourBusMinimumSize else { return }
 
         let groupID = UUID()
         var childCount = 0
         for _ in 0..<count {
-            let isChild = state.rng.chance(Balance.coachPartyChildShare)
+            let isChild = state.rng.chance(Balance.tourBusChildShare)
             if isChild { childCount += 1 }
             admitGuest(state: state,
                        ageOverride: isChild ? .child : .adult,
-                       cashScale: Balance.coachPartySpendScale,
+                       cashScale: Balance.tourBusSpendScale,
                        groupID: groupID)
         }
 
-        let name = GuestNames.coachGroup(using: &state.rng)
-        state.pendingCoachParties.append(
-            CoachPartyReport(groupName: name, count: count, childCount: childCount))
-        state.statistics.coachPartiesTotal += 1
+        let name = GuestNames.tourGroup(using: &state.rng)
+        state.pendingTourBuses.append(
+            TourBusReport(groupName: name, count: count, childCount: childCount))
+        state.statistics.tourBusesTotal += 1
         state.postAlert("\(name) has arrived, \(count) of them at once.",
                         severity: .info,
-                        key: "coachParty",
+                        key: "tourBus",
                         cooldown: 60)
     }
 
@@ -183,7 +183,7 @@ final class DemandSystem {
         guest.groupID = groupID
 
         // Every so often, somebody with an audience. Never somebody who came
-        // on a coach: a batch of twenty would otherwise swallow the schedule
+        // on a bus: a batch of twenty would otherwise swallow the schedule
         // the famous visitor is spaced out by.
         if groupID == nil, PromotionSystem.shouldAdmitInfluencer(state: state) {
             guest.isInfluencer = true

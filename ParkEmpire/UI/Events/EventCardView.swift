@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Everything the card needs to draw itself, worked out from the event.
 ///
-/// The view knows nothing about parks: it is given a symbol, some words and a
-/// row of figures, which is why one card can serve every rare event rather
-/// than each one growing its own near-identical copy.
+/// The view knows nothing about parks: it is given a banner, a symbol, some
+/// words and a row of figures, which is why one card can serve every rare
+/// event rather than each one growing its own near-identical copy.
 struct ParkEventPresentation {
     struct Figure: Identifiable {
         let id = UUID()
@@ -12,6 +12,21 @@ struct ParkEventPresentation {
         let caption: String
     }
 
+    /// The band across the top of the card. Each one gives its event a look
+    /// of its own without any of them needing a view of its own.
+    enum Banner {
+        /// Nothing but the card.
+        case none
+        /// Diagonal hazard stripes with a title, for anything that reads as
+        /// an incident somebody had to deal with.
+        case incident(String)
+        /// A bus destination board: amber lettering on black.
+        case destination(String)
+        /// A stamped certificate line, for a verdict handed down.
+        case stamp(String, passed: Bool)
+    }
+
+    let banner: Banner
     let symbolName: String
     /// The two colours behind the symbol, and the colour of the kicker.
     let tint: Color
@@ -37,6 +52,7 @@ struct EventCardView: View {
 
     /// Long enough to read, and a tap ends it sooner.
     private static let dwell: TimeInterval = 8.0
+    private static let corner: CGFloat = 20
 
     private var presentation: ParkEventPresentation {
         ParkEventPresentation.make(for: event)
@@ -44,7 +60,7 @@ struct EventCardView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(shown ? 0.28 : 0)
+            Color.black.opacity(shown ? 0.32 : 0)
                 .ignoresSafeArea()
                 .onTapGesture(perform: finish)
 
@@ -62,74 +78,86 @@ struct EventCardView: View {
 
     private var card: some View {
         let style = presentation
-        return VStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(colors: [style.tint, style.deepTint],
-                                         startPoint: .topLeading,
-                                         endPoint: .bottomTrailing))
-                    .frame(width: 62, height: 62)
-                Image(systemName: style.symbolName)
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 2))
+        return VStack(spacing: 0) {
+            BannerView(banner: style.banner)
 
-            Text(style.kicker)
-                .font(.system(size: 9, weight: .heavy, design: .rounded))
-                .tracking(2.4)
-                .foregroundStyle(style.tint)
-
-            Text(style.headline)
-                .font(.system(size: 21, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-
-            Text(style.detail)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-
-            if !style.figures.isEmpty {
-                HStack(spacing: 14) {
-                    ForEach(style.figures) { pill($0) }
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [style.tint, style.deepTint],
+                                             startPoint: .topLeading,
+                                             endPoint: .bottomTrailing))
+                        .frame(width: 62, height: 62)
+                    Image(systemName: style.symbolName)
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(.white)
                 }
-                .padding(.top, 2)
-            }
+                .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 2))
+                .shadow(color: style.deepTint.opacity(0.5), radius: 10, y: 4)
 
-            Text("Tap to carry on")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.45))
-                .padding(.top, 2)
+                Text(style.kicker)
+                    .font(.system(size: 9, weight: .heavy, design: .rounded))
+                    .tracking(2.4)
+                    .foregroundStyle(style.tint)
+                    .multilineTextAlignment(.center)
+
+                Text(style.headline)
+                    .font(.system(size: 21, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(style.detail)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !style.figures.isEmpty {
+                    HStack(spacing: 8) {
+                        ForEach(style.figures) { pill($0, tint: style.tint) }
+                    }
+                    .padding(.top, 2)
+                }
+
+                Text("Tap to carry on")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .padding(.top, 2)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
-        .frame(maxWidth: 300)
+        .frame(maxWidth: 310)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
                 .fill(LinearGradient(colors: [Theme.panelTop, Theme.panelBottom],
                                      startPoint: .top,
                                      endPoint: .bottom))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(style.tint.opacity(0.6), lineWidth: 1.5)
-                )
-                .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: Self.corner, style: .continuous)
+                .strokeBorder(style.tint.opacity(0.6), lineWidth: 1.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: Self.corner, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 18, y: 9)
     }
 
-    private func pill(_ item: ParkEventPresentation.Figure) -> some View {
-        VStack(spacing: 2) {
+    private func pill(_ item: ParkEventPresentation.Figure, tint: Color) -> some View {
+        VStack(spacing: 3) {
             Text(item.value)
-                .font(.system(size: 17, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.accent)
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(item.caption)
                 .font(.system(size: 8, weight: .heavy, design: .rounded))
-                .tracking(1.4)
+                .tracking(1.2)
                 .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
         }
-        .frame(minWidth: 96)
-        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(.white.opacity(0.10)))
     }
@@ -141,12 +169,100 @@ struct EventCardView: View {
     }
 }
 
+// MARK: - Banners
+
+/// The band across the top of an event card.
+private struct BannerView: View {
+    let banner: ParkEventPresentation.Banner
+
+    var body: some View {
+        switch banner {
+        case .none:
+            EmptyView()
+
+        case .incident(let title):
+            ZStack {
+                HazardStripes()
+                Text(title)
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .tracking(3)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(.black.opacity(0.72)))
+            }
+            .frame(height: 34)
+            .clipped()
+
+        case .destination(let text):
+            // A bus destination board: amber on black, letter-spaced, with a
+            // hairline under it like the lip of the sign.
+            VStack(spacing: 0) {
+                Text(text.uppercased())
+                    .font(.system(size: 13, weight: .heavy, design: .monospaced))
+                    .tracking(2)
+                    .foregroundStyle(Theme.money)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(Color.black.opacity(0.80))
+                Rectangle()
+                    .fill(Theme.moneyDeep.opacity(0.8))
+                    .frame(height: 2)
+            }
+
+        case .stamp(let title, let passed):
+            stamp(title, colour: passed ? Theme.accent : Theme.danger)
+        }
+    }
+
+    private func stamp(_ title: String, colour: Color) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .black, design: .rounded))
+            .tracking(3)
+            .foregroundStyle(colour)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(colour.opacity(0.18))
+            .overlay(Rectangle().fill(colour.opacity(0.55)).frame(height: 2),
+                     alignment: .bottom)
+    }
+}
+
+/// Diagonal warning stripes, drawn rather than tiled from an image.
+private struct HazardStripes: View {
+    var body: some View {
+        Canvas { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)),
+                         with: .color(Theme.accentWarm.opacity(0.30)))
+
+            let width: CGFloat = 12
+            let step = width * 2
+            var x = -size.height
+            while x < size.width + size.height {
+                var stripe = Path()
+                stripe.move(to: CGPoint(x: x, y: size.height))
+                stripe.addLine(to: CGPoint(x: x + size.height, y: 0))
+                stripe.addLine(to: CGPoint(x: x + size.height + width, y: 0))
+                stripe.addLine(to: CGPoint(x: x + width, y: size.height))
+                stripe.closeSubpath()
+                context.fill(stripe, with: .color(Theme.accentWarm.opacity(0.55)))
+                x += step
+            }
+        }
+    }
+}
+
+// MARK: - Events to words
+
 extension ParkEventPresentation {
     /// The one place an event turns into words and colours.
     static func make(for event: ParkEvent) -> ParkEventPresentation {
         switch event {
         case .promotion(let post):
             return ParkEventPresentation(
+                banner: .none,
                 symbolName: "iphone.gen3.radiowaves.left.and.right",
                 tint: Color(red: 0.98, green: 0.55, blue: 0.78),
                 deepTint: Color(red: 0.62, green: 0.36, blue: 0.92),
@@ -157,20 +273,29 @@ extension ParkEventPresentation {
                           Figure(value: post.durationLabel, caption: "FOR THE NEXT")])
 
         case .ejection(let report):
+            // The guard's own name is deliberately not here. What the player
+            // wants to know is whether the department they pay for did its
+            // job, not which employee happened to be nearest.
             return ParkEventPresentation(
-                symbolName: report.wasEscorted ? "shield.lefthalf.filled" : "exclamationmark.triangle.fill",
+                banner: .incident(report.wasEscorted ? "INCIDENT CLOSED" : "INCIDENT LOGGED"),
+                symbolName: report.wasEscorted ? "shield.lefthalf.filled" : "shield.slash.fill",
                 tint: report.wasEscorted ? Theme.accent : Theme.danger,
                 deepTint: report.wasEscorted
                     ? Color(red: 0.10, green: 0.48, blue: 0.36)
                     : Color(red: 0.62, green: 0.16, blue: 0.20),
-                kicker: report.wasEscorted ? "ESCORTED OUT" : "NOBODY STOPPED THEM",
-                headline: report.guestName,
+                kicker: "PARK SECURITY",
+                headline: report.wasEscorted
+                    ? "Your security team escorted out a troublemaker"
+                    : "A troublemaker walked out unchallenged",
                 detail: report.detail,
                 figures: [Figure(value: "\(report.litterDropped)", caption: "RUBBISH DROPPED"),
-                          Figure(value: report.durationLabel, caption: "IN THE PARK")])
+                          Figure(value: report.durationLabel, caption: "ON SITE"),
+                          Figure(value: report.wasEscorted ? "REMOVED" : "NO COVER",
+                                 caption: "OUTCOME")])
 
         case .review(let review):
             return ParkEventPresentation(
+                banner: .none,
                 symbolName: review.isBad ? "hand.thumbsdown.fill" : "star.bubble.fill",
                 tint: review.isBad ? Theme.danger : Theme.money,
                 deepTint: review.isBad
@@ -187,31 +312,36 @@ extension ParkEventPresentation {
 
         case .inspection(let report):
             return ParkEventPresentation(
+                banner: .stamp(report.passed ? "CERTIFICATE ISSUED" : "PROHIBITION NOTICE",
+                               passed: report.passed),
                 symbolName: report.passed ? "checkmark.seal.fill" : "xmark.seal.fill",
                 tint: report.passed ? Theme.accent : Theme.danger,
                 deepTint: report.passed
                     ? Color(red: 0.10, green: 0.48, blue: 0.36)
                     : Color(red: 0.62, green: 0.16, blue: 0.20),
-                kicker: report.passed ? "SAFETY INSPECTION PASSED" : "SAFETY INSPECTION FAILED",
+                kicker: "SAFETY INSPECTION",
                 headline: report.headline,
                 detail: report.detail,
                 figures: report.passed
                     ? [Figure(value: "\(Int(report.condition))%", caption: "CONDITION"),
-                       Figure(value: "+\(Int(report.bonus)) for \(report.durationLabel)",
-                              caption: "PARK RATING")]
+                       Figure(value: "+\(Int(report.bonus))", caption: "PARK RATING"),
+                       Figure(value: report.durationLabel, caption: "FOR THE NEXT")]
                     : [Figure(value: "\(Int(report.condition))%", caption: "CONDITION"),
-                       Figure(value: CurrencyFormatter.compact(report.fine), caption: "FINE")])
+                       Figure(value: CurrencyFormatter.compact(report.fine), caption: "FINE"),
+                       Figure(value: "CLOSED", caption: "UNTIL REPAIRED")])
 
-        case .coachParty(let report):
+        case .tourBus(let report):
             return ParkEventPresentation(
-                symbolName: "bus.fill",
-                tint: Theme.accentWarm,
+                banner: .destination(report.groupName),
+                symbolName: "bus.doubledecker.fill",
+                tint: Theme.money,
                 deepTint: Theme.moneyDeep,
-                kicker: "A COACH HAS ARRIVED",
-                headline: report.groupName,
+                kicker: "TOUR BUS ARRIVING",
+                headline: report.headline,
                 detail: report.detail,
-                figures: [Figure(value: "\(report.count)", caption: "THROUGH THE GATE"),
-                          Figure(value: "\(report.childCount)", caption: "OF THEM CHILDREN")])
+                figures: [Figure(value: "\(report.count)", caption: "ON BOARD"),
+                          Figure(value: "\(report.childCount)", caption: "CHILDREN"),
+                          Figure(value: "\(report.count - report.childCount)", caption: "ADULTS")])
         }
     }
 }
