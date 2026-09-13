@@ -1,0 +1,58 @@
+=== exit code: 0
+=== products tree
+total 0
+drwxr-xr-x  8 runner  staff  256 Sep 13 06:31 ParkEmpire.app
+drwxr-xr-x  3 runner  staff   96 Sep 13 06:31 ParkEmpire.app.dSYM
+drwxr-xr-x  6 runner  staff  192 Sep 13 06:31 ParkEmpire.swiftmodule
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app:
+total 11224
+-rw-r--r--  1 runner  staff    10230 Sep 13 06:29 AppIcon60x60@2x.png
+-rw-r--r--  1 runner  staff    13428 Sep 13 06:29 AppIcon76x76@2x~ipad.png
+-rw-r--r--  1 runner  staff   215288 Sep 13 06:30 Assets.car
+-rw-r--r--  1 runner  staff     1490 Sep 13 06:30 Info.plist
+-rwxr-xr-x  1 runner  staff  5490904 Sep 13 06:31 ParkEmpire
+-rw-r--r--  1 runner  staff        8 Sep 13 06:30 PkgInfo
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM:
+total 0
+drwxr-xr-x  4 runner  staff  128 Sep 13 06:31 Contents
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM/Contents:
+total 8
+-rw-r--r--  1 runner  staff  651 Sep 13 06:31 Info.plist
+drwxr-xr-x  4 runner  staff  128 Sep 13 06:31 Resources
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM/Contents/Resources:
+total 0
+drwxr-xr-x  3 runner  staff  96 Sep 13 06:31 DWARF
+drwxr-xr-x  3 runner  staff  96 Sep 13 06:31 Relocations
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM/Contents/Resources/DWARF:
+total 21360
+-rw-r--r--  1 runner  staff  10934644 Sep 13 06:31 ParkEmpire
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM/Contents/Resources/Relocations:
+total 0
+drwxr-xr-x  3 runner  staff  96 Sep 13 06:31 aarch64
+
+build/Build/Products/Release-iphoneos/ParkEmpire.app.dSYM/Contents/Resources/Relocations/aarch64:
+total 2632
+-rw-r--r--  1 runner  staff  1344751 Sep 13 06:31 ParkEmpire.yml
+
+build/Build/Products/Release-iphoneos/ParkEmpire.swiftmodule:
+total 2032
+-rw-r--r--  1 runner  staff      149 Sep 13 06:31 arm64-apple-ios.abi.json
+-rw-r--r--  1 runner  staff     1056 Sep 13 06:31 arm64-apple-ios.swiftdoc
+-rw-r--r--  1 runner  staff  1031752 Sep 13 06:31 arm64-apple-ios.swiftmodule
+drwxr-xr-x  3 runner  staff       96 Sep 13 06:31 Project
+
+build/Build/Products/Release-iphoneos/ParkEmpire.swiftmodule/Project:
+total 48
+-rw-r--r--  1 runner  staff  21920 Sep 13 06:31 arm64-apple-ios.swiftsourceinfo
+=== app binary
+build/Build/Products/Release-iphoneos/ParkEmpire.app/ParkEmpire: Mach-O 64-bit executable arm64
+-rwxr-xr-x  1 runner  staff  5490904 Sep 13 06:31 build/Build/Products/Release-iphoneos/ParkEmpire.app/ParkEmpire
+=== swift sources xcodebuild saw
+1
+=== errors
