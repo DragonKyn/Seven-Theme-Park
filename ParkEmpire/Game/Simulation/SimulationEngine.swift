@@ -69,6 +69,9 @@ final class SimulationEngine {
         facilitySystem.update(state: state, dt: dt)
         cleanliness.update(state: state, dt: dt)
         maintenance.update(state: state, dt: dt)
+        // After maintenance and before the staff, so a ride shut this tick is
+        // already on the mechanic's list when they look for work.
+        InspectionSystem.update(state: state)
         staffSystem.update(state: state, dt: dt)
         economy.update(state: state, dt: dt)
         rating.update(state: state)

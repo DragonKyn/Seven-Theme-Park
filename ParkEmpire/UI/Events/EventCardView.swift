@@ -156,6 +156,23 @@ extension ParkEventPresentation {
                 figures: [Figure(value: "+\(Int(post.boost * 100))%", caption: "ARRIVALS"),
                           Figure(value: post.durationLabel, caption: "FOR THE NEXT")])
 
+        case .inspection(let report):
+            return ParkEventPresentation(
+                symbolName: report.passed ? "checkmark.seal.fill" : "xmark.seal.fill",
+                tint: report.passed ? Theme.accent : Theme.danger,
+                deepTint: report.passed
+                    ? Color(red: 0.10, green: 0.48, blue: 0.36)
+                    : Color(red: 0.62, green: 0.16, blue: 0.20),
+                kicker: report.passed ? "SAFETY INSPECTION PASSED" : "SAFETY INSPECTION FAILED",
+                headline: report.headline,
+                detail: report.detail,
+                figures: report.passed
+                    ? [Figure(value: "\(Int(report.condition))%", caption: "CONDITION"),
+                       Figure(value: "+\(Int(report.bonus)) for \(report.durationLabel)",
+                              caption: "PARK RATING")]
+                    : [Figure(value: "\(Int(report.condition))%", caption: "CONDITION"),
+                       Figure(value: CurrencyFormatter.compact(report.fine), caption: "FINE")])
+
         case .coachParty(let report):
             return ParkEventPresentation(
                 symbolName: "bus.fill",

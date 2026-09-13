@@ -58,6 +58,14 @@ final class GameState: Codable {
     /// but not yet been shown to the player.
     var nextCoachPartyAt: Double = Balance.dayLength * 0.6
     var pendingCoachParties: [CoachPartyReport] = []
+    /// Sim time the next regulator calls. While one is on site the ride they
+    /// are looking at is named here, along with when they will say their piece.
+    var nextSafetyInspectionAt: Double = Balance.dayLength * 2.0
+    var inspectingRideID: UUID?
+    var inspectionVerdictAt: Double = 0
+    /// What a recent clean bill of health is doing for the rating.
+    var inspectionBonus: TimedModifier = .inactive
+    var pendingInspections: [InspectionReport] = []
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -130,6 +138,11 @@ final class GameState: Codable {
         pendingPromotions = container.value(.pendingPromotions, or: [])
         nextCoachPartyAt = container.value(.nextCoachPartyAt, or: Balance.dayLength * 0.6)
         pendingCoachParties = container.value(.pendingCoachParties, or: [])
+        nextSafetyInspectionAt = container.value(.nextSafetyInspectionAt, or: Balance.dayLength * 2.0)
+        inspectingRideID = container.optionalValue(.inspectingRideID)
+        inspectionVerdictAt = container.value(.inspectionVerdictAt, or: 0)
+        inspectionBonus = container.value(.inspectionBonus, or: .inactive)
+        pendingInspections = container.value(.pendingInspections, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
@@ -309,6 +322,12 @@ final class GameState: Codable {
     /// share. Zero once it has run its course.
     var activePromotionBoost: Double {
         clock.simTime < promotionEndsAt ? promotionBoost : 0
+    }
+
+    /// Rating points a recent clean bill of health is currently adding. Zero
+    /// once it has run its course.
+    var activeInspectionBonus: Double {
+        inspectionBonus.value(at: clock.simTime)
     }
 
     /// Park minutes left on the current post, or nil when there is none.
