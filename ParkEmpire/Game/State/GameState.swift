@@ -72,6 +72,10 @@ final class GameState: Codable {
     var reviewRating: TimedModifier = .inactive
     var reviewArrivals: TimedModifier = .inactive
     var pendingReviews: [CriticReview] = []
+    /// Sim time the next nuisance may turn up, and the ones already dealt
+    /// with but not yet reported to the player.
+    var nextTroublemakerAt: Double = Balance.dayLength * 2.0
+    var pendingEjections: [EjectionReport] = []
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -153,6 +157,8 @@ final class GameState: Codable {
         reviewRating = container.value(.reviewRating, or: .inactive)
         reviewArrivals = container.value(.reviewArrivals, or: .inactive)
         pendingReviews = container.value(.pendingReviews, or: [])
+        nextTroublemakerAt = container.value(.nextTroublemakerAt, or: Balance.dayLength * 2.0)
+        pendingEjections = container.value(.pendingEjections, or: [])
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
@@ -343,6 +349,12 @@ final class GameState: Codable {
     /// Extra arrivals a warm review is currently bringing in, as a share.
     var activeReviewArrivals: Double {
         reviewArrivals.value(at: clock.simTime)
+    }
+
+    /// The disruptive visitor currently in the park, if there is one. Never
+    /// more than one at a time.
+    var troublemakerIndex: Int? {
+        guests.firstIndex { $0.isActive && $0.isTroublemaker }
     }
 
     /// Park minutes left on the current post, or nil when there is none.

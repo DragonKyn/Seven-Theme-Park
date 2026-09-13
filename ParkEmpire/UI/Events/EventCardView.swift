@@ -156,6 +156,19 @@ extension ParkEventPresentation {
                 figures: [Figure(value: "+\(Int(post.boost * 100))%", caption: "ARRIVALS"),
                           Figure(value: post.durationLabel, caption: "FOR THE NEXT")])
 
+        case .ejection(let report):
+            return ParkEventPresentation(
+                symbolName: report.wasEscorted ? "shield.lefthalf.filled" : "exclamationmark.triangle.fill",
+                tint: report.wasEscorted ? Theme.accent : Theme.danger,
+                deepTint: report.wasEscorted
+                    ? Color(red: 0.10, green: 0.48, blue: 0.36)
+                    : Color(red: 0.62, green: 0.16, blue: 0.20),
+                kicker: report.wasEscorted ? "ESCORTED OUT" : "NOBODY STOPPED THEM",
+                headline: report.guestName,
+                detail: report.detail,
+                figures: [Figure(value: "\(report.litterDropped)", caption: "RUBBISH DROPPED"),
+                          Figure(value: report.durationLabel, caption: "IN THE PARK")])
+
         case .review(let review):
             return ParkEventPresentation(
                 symbolName: review.isBad ? "hand.thumbsdown.fill" : "star.bubble.fill",

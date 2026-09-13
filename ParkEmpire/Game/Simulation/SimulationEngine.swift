@@ -68,6 +68,9 @@ final class SimulationEngine {
         attractionSystem.update(state: state, dt: dt)
         facilitySystem.update(state: state, dt: dt)
         cleanliness.update(state: state, dt: dt)
+        // After the litter is counted and before the rating runs, so rubbish
+        // dropped this tick is on the map when the park is judged for it.
+        TroublemakerSystem.update(state: state, dt: dt)
         maintenance.update(state: state, dt: dt)
         // After maintenance and before the staff, so a ride shut this tick is
         // already on the mechanic's list when they look for work.

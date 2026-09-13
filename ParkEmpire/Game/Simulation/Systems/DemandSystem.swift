@@ -197,6 +197,9 @@ final class DemandSystem {
                                                accessory: .phone)
             guest.cash += 120
             PromotionSystem.scheduleNext(state: state)
+        } else if groupID == nil, TroublemakerSystem.shouldAdmit(state: state) {
+            TroublemakerSystem.mark(&guest, state: state, now: now)
+            TroublemakerSystem.scheduleNext(state: state)
         } else if groupID == nil, CriticSystem.shouldAdmit(state: state) {
             // Nothing is changed about how they look. Being impossible to spot
             // is the whole of the event.

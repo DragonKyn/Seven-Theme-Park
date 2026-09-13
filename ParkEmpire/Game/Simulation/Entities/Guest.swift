@@ -104,6 +104,12 @@ struct Guest: Codable, Identifiable {
     /// A visitor quietly scoring the park. Nothing marks them out, which is
     /// the point: their verdict lands on the park as it actually was.
     var isCritic: Bool = false
+    /// A visitor here to be a nuisance, until security sees them off or they
+    /// have had their afternoon.
+    var isTroublemaker: Bool = false
+    var troublemakerUntil: Double = 0
+    /// Rubbish they have dropped, for the report afterwards.
+    var troublemakerLitter: Int = 0
     /// The party they arrived with, for guests who came on a coach. Nil for
     /// everybody who walked in on their own.
     var groupID: UUID?
@@ -189,6 +195,9 @@ extension Guest {
         isInfluencer = container.value(.isInfluencer, or: false)
         hasPosted = container.value(.hasPosted, or: false)
         isCritic = container.value(.isCritic, or: false)
+        isTroublemaker = container.value(.isTroublemaker, or: false)
+        troublemakerUntil = container.value(.troublemakerUntil, or: 0)
+        troublemakerLitter = container.value(.troublemakerLitter, or: 0)
         groupID = container.optionalValue(.groupID)
         personality = container.value(.personality,
                                       or: GuestPersonality(thrillPreference: 50,

@@ -769,7 +769,9 @@ final class GameController: ObservableObject {
     /// matters more than something that filled the gate.
     private func drainEvents() {
         guard event == nil else { return }
-        if !state.pendingReviews.isEmpty {
+        if !state.pendingEjections.isEmpty {
+            event = .ejection(state.pendingEjections.removeFirst())
+        } else if !state.pendingReviews.isEmpty {
             event = .review(state.pendingReviews.removeFirst())
         } else if !state.pendingInspections.isEmpty {
             event = .inspection(state.pendingInspections.removeFirst())

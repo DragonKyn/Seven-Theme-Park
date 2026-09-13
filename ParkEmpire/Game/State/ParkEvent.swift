@@ -16,6 +16,8 @@ enum ParkEvent: Identifiable, Equatable {
     case inspection(InspectionReport)
     /// A visitor nobody knew was reviewing the park published their verdict.
     case review(CriticReview)
+    /// A disruptive visitor's stay came to an end, one way or the other.
+    case ejection(EjectionReport)
 
     var id: UUID {
         switch self {
@@ -23,6 +25,7 @@ enum ParkEvent: Identifiable, Equatable {
         case .coachParty(let report): return report.id
         case .inspection(let report): return report.id
         case .review(let review): return review.id
+        case .ejection(let report): return report.id
         }
     }
 }
