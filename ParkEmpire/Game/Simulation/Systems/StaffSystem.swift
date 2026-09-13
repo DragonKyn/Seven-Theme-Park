@@ -114,7 +114,9 @@ final class StaffSystem {
             var bestScore = -Double.greatestFiniteMagnitude
             for attraction in state.attractions {
                 guard let priority = attraction.maintenancePriority else { continue }
-                let job = attraction.isBroken
+                // A ride an inspector shut needs putting right, not looking
+                // over, so it goes on the repair list alongside broken ones.
+                let job = (attraction.isBroken || attraction.isImpounded)
                     ? StaffJob.repairRide(attraction.id)
                     : StaffJob.inspectRide(attraction.id)
                 guard !claimed.contains(job), let steps = nearestAccess(attraction.rect) else { continue }
@@ -304,7 +306,8 @@ final class StaffSystem {
         case .serviceFacility(let id):
             return (state.facility(id: id)?.soiling ?? 0) > 0
         case .repairRide(let id):
-            return state.attraction(id: id)?.isBroken == true
+            guard let ride = state.attraction(id: id) else { return false }
+            return ride.isBroken || ride.isImpounded
         case .inspectRide(let id):
             return state.attraction(id: id)?.isInspectionOverdue == true
         case .entertain, .patrol:

@@ -45,7 +45,6 @@ final class MaintenanceSystem {
 
     /// Closes the ride, empties it, and disappoints everyone involved.
     private func breakDown(index: Int, state: GameState) {
-        let now = state.clock.simTime
         let name = state.attractions[index].name
         let attractionID = state.attractions[index].id
 
@@ -54,29 +53,10 @@ final class MaintenanceSystem {
         state.attractions[index].phase = .loading
         state.attractions[index].phaseTimer = 0
 
-        // Riders are let off mid-experience, which they take badly.
-        let riders = state.attractions[index].riders
-        state.attractions[index].riders = []
-        for guestID in riders {
-            guard let guestIndex = state.guestIndex(id: guestID) else { continue }
-            state.guests[guestIndex].adjustHappiness(-Balance.happinessRideBrokeDown)
-            state.guests[guestIndex].activity = .exploring
-            state.guests[guestIndex].nextDecisionAt = now
-            state.guests[guestIndex].think("\(name) broke down while I was on it!",
-                                           mood: .negative, at: now)
-        }
-
-        // The queue is cleared, as promised on the tin.
-        let queued = state.attractions[index].queue
-        state.attractions[index].queue = []
-        for guestID in queued {
-            guard let guestIndex = state.guestIndex(id: guestID) else { continue }
-            state.guests[guestIndex].adjustHappiness(-Balance.happinessQueueAbandonPenalty)
-            state.guests[guestIndex].activity = .exploring
-            state.guests[guestIndex].nextDecisionAt = now
-            state.guests[guestIndex].think("All that queuing and \(name) broke down.",
-                                           mood: .negative, at: now)
-        }
+        Self.evacuate(attractionIndex: index,
+                      state: state,
+                      riderMessage: "\(name) broke down while I was on it!",
+                      queueMessage: "All that queuing and \(name) broke down.")
 
         state.statistics.breakdownsTotal += 1
         state.postAlert("\(name) has broken down.",
@@ -93,11 +73,50 @@ final class MaintenanceSystem {
         }
     }
 
+    /// Empties a ride of everybody on it and everybody waiting for it.
+    ///
+    /// Shared with the safety inspector, which shuts rides without breaking
+    /// them. Deliberately limited to riders and the queue: the ride's phase
+    /// and its breakdown count belong to whatever closed it, and a failed
+    /// inspection is not a breakdown.
+    static func evacuate(attractionIndex index: Int,
+                         state: GameState,
+                         riderMessage: String,
+                         queueMessage: String) {
+        let now = state.clock.simTime
+
+        // Riders are let off mid-experience, which they take badly.
+        let riders = state.attractions[index].riders
+        state.attractions[index].riders = []
+        for guestID in riders {
+            guard let guestIndex = state.guestIndex(id: guestID) else { continue }
+            state.guests[guestIndex].adjustHappiness(-Balance.happinessRideBrokeDown)
+            state.guests[guestIndex].activity = .exploring
+            state.guests[guestIndex].nextDecisionAt = now
+            state.guests[guestIndex].think(riderMessage, mood: .negative, at: now)
+        }
+
+        // The queue is cleared, as promised on the tin.
+        let queued = state.attractions[index].queue
+        state.attractions[index].queue = []
+        for guestID in queued {
+            guard let guestIndex = state.guestIndex(id: guestID) else { continue }
+            state.guests[guestIndex].adjustHappiness(-Balance.happinessQueueAbandonPenalty)
+            state.guests[guestIndex].activity = .exploring
+            state.guests[guestIndex].nextDecisionAt = now
+            state.guests[guestIndex].think(queueMessage, mood: .negative, at: now)
+        }
+    }
+
     // MARK: - Mechanic outcomes
 
     static func completeRepair(attractionIndex: Int, state: GameState) {
         state.statistics.repairsCompletedTotal += 1
         state.attractions[attractionIndex].isBroken = false
+        // A repair is what lifts an impound too: it restores condition well
+        // clear of the pass mark, so the ride cannot be shut again the moment
+        // it reopens.
+        state.attractions[attractionIndex].isImpounded = false
         state.attractions[attractionIndex].condition = max(
             state.attractions[attractionIndex].condition, Balance.repairedCondition)
         state.attractions[attractionIndex].timeSinceInspection = 0

@@ -25,6 +25,10 @@ struct Attraction: Codable, Identifiable {
     var condition: Double = 100
     /// Set when the ride fails. Only a mechanic clears it.
     var isBroken: Bool = false
+    /// Shut by a safety inspector. Kept apart from `isOpen`, which belongs to
+    /// the player: an inspector must not silently flip a switch the player
+    /// owns, and putting it right is a mechanic's job rather than a tap.
+    var isImpounded: Bool = false
     /// Sim-seconds since a mechanic last inspected it. Overdue rides break
     /// noticeably more often.
     var timeSinceInspection: Double = 0
@@ -71,8 +75,9 @@ struct Attraction: Codable, Identifiable {
 
     func upgradeLevel(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
 
-    /// Open for business: the player has not closed it and it is not broken.
-    var isOperational: Bool { isOpen && !isBroken }
+    /// Open for business: the player has not closed it, it is not broken, and
+    /// no inspector has shut it.
+    var isOperational: Bool { isOpen && !isBroken && !isImpounded }
 
     var isInspectionOverdue: Bool { timeSinceInspection > Balance.inspectionInterval }
 
@@ -92,6 +97,7 @@ struct Attraction: Codable, Identifiable {
     }
 
     var statusDescription: String {
+        if isImpounded { return "Shut by the inspector" }
         if isBroken { return "Broken down" }
         if !isOpen { return "Closed" }
         return phase == .running ? "Running" : "Loading"
@@ -100,6 +106,7 @@ struct Attraction: Codable, Identifiable {
     /// How urgently a mechanic should attend, or nil when nothing is needed.
     var maintenancePriority: Double? {
         if isBroken { return 1000 }
+        if isImpounded { return 900 }
         if isInspectionOverdue { return 100 + (100 - condition) }
         return nil
     }
@@ -118,6 +125,7 @@ extension Attraction {
         isOpen = container.value(.isOpen, or: true)
         condition = container.value(.condition, or: 100)
         isBroken = container.value(.isBroken, or: false)
+        isImpounded = container.value(.isImpounded, or: false)
         timeSinceInspection = container.value(.timeSinceInspection, or: 0)
         totalBreakdowns = container.value(.totalBreakdowns, or: 0)
         upgrades = container.value(.upgrades, or: [:])
