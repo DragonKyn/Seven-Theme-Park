@@ -12,6 +12,11 @@ final class AppRouter: ObservableObject {
     @Published private(set) var screen: Screen = .menu
     @Published private(set) var slotSummaries: [Int: SaveSlotSummary] = [:]
     @Published private(set) var customMaps: [CustomMap] = []
+    /// Trial id to the earliest day it was beaten on.
+    @Published private(set) var completedTrials: [String: Int] = [:]
+    /// Set when a finished trial sends the player back to the ladder, so the
+    /// menu opens straight onto it.
+    @Published var opensLadderOnMenu = false
     @Published var errorMessage: String?
 
     private let saveService = SaveGameService()
@@ -20,6 +25,37 @@ final class AppRouter: ObservableObject {
     init() {
         refreshSlots()
         customMaps = mapStore.load()
+        refreshTrials()
+    }
+
+    // MARK: - Trials
+
+    func refreshTrials() {
+        completedTrials = TrialProgressStore().completed
+    }
+
+    func isTrialUnlocked(_ trial: TrialDefinition) -> Bool {
+        TrialProgressStore().isUnlocked(trial)
+    }
+
+    var firstEmptySlot: Int {
+        (0..<SaveGameService.slotCount).first { slotSummaries[$0] == nil } ?? 0
+    }
+
+    func startTrial(_ trial: TrialDefinition, in slot: Int) {
+        let controller = GameController(newParkNamed: trial.title,
+                                        mode: .trial,
+                                        layout: trial.map.layout,
+                                        startingCash: trial.startingCash,
+                                        trialID: trial.id,
+                                        slot: slot,
+                                        saveService: saveService)
+        if let cap = trial.maxAdmission {
+            controller.setAdmissionPrice(min(cap, Balance.defaultAdmissionPrice))
+        }
+        controller.save()
+        refreshSlots()
+        screen = .game(controller)
     }
 
     // MARK: - Maps

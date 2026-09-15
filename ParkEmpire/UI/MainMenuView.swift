@@ -10,6 +10,7 @@ import SwiftUI
 struct MainMenuView: View {
     @EnvironmentObject private var router: AppRouter
     @State private var showingNewGame = false
+    @State private var showingTrials = false
     @State private var demo: DemoParkBackdrop?
     /// The slot the player has asked to delete, held until they confirm.
     @State private var slotToDelete: Int?
@@ -65,9 +66,17 @@ struct MainMenuView: View {
                 Text("This cannot be undone.")
             }
         }
+        .fullScreenCover(isPresented: $showingTrials) {
+            TrialLadderView()
+        }
         .onAppear {
             router.refreshSlots()
+            router.refreshTrials()
             if demo == nil { demo = DemoParkBackdrop() }
+            if router.opensLadderOnMenu {
+                router.opensLadderOnMenu = false
+                showingTrials = true
+            }
         }
     }
 
@@ -109,6 +118,15 @@ struct MainMenuView: View {
                                 symbol: "play.fill",
                                 prominent: true)
             }
+        }
+
+        Button {
+            showingTrials = true
+        } label: {
+            MenuButtonLabel(title: "Park Trials",
+                            subtitle: "\(router.completedTrials.count) of \(TrialContent.all.count) medals · ten parks on a deadline",
+                            symbol: "flag.checkered",
+                            prominent: false)
         }
 
         Button {
@@ -246,8 +264,8 @@ private struct SaveSlotRow: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
-                    if summary.mode == .freeBuild {
-                        Label("Free build", systemImage: "infinity")
+                    if summary.mode != .normal {
+                        Label(summary.mode.displayName, systemImage: summary.mode.symbolName)
                             .labelStyle(.iconOnly)
                             .font(.system(size: 10, weight: .bold))
                             .padding(.horizontal, 5)
@@ -477,6 +495,8 @@ private struct NewParkSheet: View {
         switch mode {
         case .normal:
             return "You start with \(CurrencyFormatter.short(Balance.startingCash)), a park entrance and a short walkway. Everything else is up to you."
+        case .trial:
+            return "Trials are started from the Park Trials ladder."
         case .freeBuild:
             return "Build without paying for any of it. The books still record what everything would have cost, so the finance screen still tells you whether the park could support itself."
         }

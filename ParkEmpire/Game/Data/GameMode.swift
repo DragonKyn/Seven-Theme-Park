@@ -9,6 +9,10 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
     /// recorded so the finance screen still means something, but nothing is
     /// ever deducted.
     case freeBuild
+    /// A park built against a deadline, on a map chosen for it, as one rung
+    /// of the Park Trials ladder. Started from the ladder, never from the new
+    /// park sheet.
+    case trial
 
     var id: String { rawValue }
 
@@ -19,6 +23,7 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .normal: return "Normal"
         case .freeBuild: return "Free Build"
+        case .trial: return "Park Trial"
         }
     }
 
@@ -28,6 +33,8 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
             return "Start with a fixed balance and make the park pay for itself. Achievements count."
         case .freeBuild:
             return "Unlimited money. Build whatever you like. Achievements are switched off."
+        case .trial:
+            return "A set map, a set budget and a deadline. Meet every goal to earn the medal."
         }
     }
 
@@ -35,6 +42,7 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .normal: return "chart.line.uptrend.xyaxis"
         case .freeBuild: return "infinity"
+        case .trial: return "flag.checkered"
         }
     }
 
@@ -42,5 +50,5 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
 
     /// Achievements are earned against the constraint of a budget. Without one
     /// they measure nothing, so they are not awarded at all.
-    var earnsAchievements: Bool { self == .normal }
+    var earnsAchievements: Bool { self != .freeBuild }
 }

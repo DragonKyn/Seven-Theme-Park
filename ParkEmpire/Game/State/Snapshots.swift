@@ -21,6 +21,7 @@ struct HUDSnapshot {
     var arrivalsPerMinute: Double = 0
     var todayProfit: Double = 0
     var mode: GameMode = .normal
+    var trial: TrialSnapshot?
 
     init() {}
 
@@ -38,6 +39,7 @@ struct HUDSnapshot {
         arrivalsPerMinute = state.currentArrivalsPerMinute
         todayProfit = state.ledger.today.profit
         mode = state.mode
+        trial = TrialSnapshot(state: state)
     }
 }
 

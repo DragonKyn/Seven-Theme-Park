@@ -28,6 +28,16 @@ struct AchievementsView: View {
                     LabeledContent("Awards paid", value: CurrencyFormatter.short(totalPaid))
                 }
 
+                Section {
+                    ForEach(TrialContent.all) { trial in
+                        TrialMedalRow(trial: trial, bestDay: medals[trial.id])
+                    }
+                } header: {
+                    Text("Park Trials medals")
+                } footer: {
+                    Text("Earned by beating each trial on the ladder. Medals belong to you rather than to a park, so they count in every park you play.")
+                }
+
                 Section("Achievements") {
                     ForEach(progress) { item in
                         AchievementRow(item: item)
@@ -42,6 +52,10 @@ struct AchievementsView: View {
                 }
             }
         }
+    }
+
+    private var medals: [String: Int] {
+        TrialProgressStore().completed
     }
 
     private var earnedTiers: Int {
@@ -125,3 +139,43 @@ private struct TierPips: View {
         }
     }
 }
+
+/// One trial's medal: earned, with the best day it was won on, or not yet.
+private struct TrialMedalRow: View {
+    let trial: TrialDefinition
+    let bestDay: Int?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: trial.medal.symbolName)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(bestDay != nil ? Color.black.opacity(0.8) : Color.secondary)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(bestDay != nil
+                                          ? AnyShapeStyle(Theme.moneyGradient)
+                                          : AnyShapeStyle(Color.secondary.opacity(0.15))))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(trial.medal.name)
+                    .font(.subheadline.weight(.semibold))
+                Text("Trial \(trial.number): \(trial.title)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            if let bestDay {
+                Text("Day \(bestDay)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .opacity(bestDay != nil ? 1 : 0.7)
+    }
+}
+

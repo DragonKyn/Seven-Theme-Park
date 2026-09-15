@@ -86,6 +86,7 @@ final class SimulationEngine {
             state.refreshTrackedRides()
         }
         achievements.update(state: state)
+        TrialSystem.update(state: state)
 
         purgeDepartedGuests(state: state)
     }

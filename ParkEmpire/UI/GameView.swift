@@ -13,6 +13,7 @@ struct GameView: View {
     @State private var showingAlerts = false
     @State private var showingStaff = false
     @State private var showingAchievements = false
+    @State private var trialExpanded = true
 
     var body: some View {
         ZStack {
@@ -27,6 +28,12 @@ struct GameView: View {
                         onOpenSettings: { showingSettings = true })
                     .padding(.horizontal, 10)
                     .padding(.top, 6)
+
+                if let trial = controller.hud.trial {
+                    TrialTrackerView(trial: trial, expanded: $trialExpanded)
+                        .padding(.horizontal, 10)
+                        .padding(.top, 8)
+                }
 
                 if let tip = controller.currentTip {
                     TutorialTipView(tip: tip,
@@ -68,6 +75,18 @@ struct GameView: View {
             if let award = controller.celebration {
                 CelebrationView(award: award) { controller.dismissCelebration() }
                     .transition(.opacity)
+            }
+
+            if let report = controller.trialResult {
+                TrialResultView(report: report,
+                                onKeepPlaying: { controller.dismissTrialResult() },
+                                onLeave: {
+                                    controller.dismissTrialResult()
+                                    router.opensLadderOnMenu = report.result.won
+                                    router.exitToMenu()
+                                })
+                    .transition(.opacity)
+                    .zIndex(2)
             }
 
             if let event = controller.event {

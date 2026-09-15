@@ -36,6 +36,8 @@ final class GameController: ObservableObject {
     @Published private(set) var eventRemaining: Double = 1
     /// Likewise for the achievement card.
     @Published private(set) var celebrationRemaining: Double = 1
+    /// The end of a trial, on screen until the player chooses what next.
+    @Published private(set) var trialResult: TrialResultReport?
 
     // MARK: - Simulation
 
@@ -82,12 +84,14 @@ final class GameController: ObservableObject {
                      mode: GameMode,
                      layout: MapLayout? = nil,
                      startingCash: Double = Balance.startingCash,
+                     trialID: String? = nil,
                      slot: Int,
                      saveService: SaveGameService = SaveGameService()) {
         self.init(state: GameState(parkName: name,
                                    mode: mode,
                                    layout: layout,
-                                   startingCash: startingCash),
+                                   startingCash: startingCash,
+                                   trialID: trialID),
                   slot: slot,
                   saveService: saveService)
     }
@@ -127,8 +131,14 @@ final class GameController: ObservableObject {
     // MARK: - Park settings
 
     func setAdmissionPrice(_ price: Double) {
-        state.admissionPrice = SimMath.clamp(price, 0, Balance.admissionPriceMax)
+        state.admissionPrice = SimMath.clamp(price, 0, admissionPriceLimit)
         refreshUI()
+    }
+
+    /// The most the gate may charge: the game's ceiling, or a trial's cap
+    /// when it sets a lower one.
+    var admissionPriceLimit: Double {
+        min(Balance.admissionPriceMax, state.trial?.maxAdmission ?? Balance.admissionPriceMax)
     }
 
     /// Colours every employee in the park. Cheap and instant: it changes how
@@ -733,6 +743,7 @@ final class GameController: ObservableObject {
             celebrationRemaining = 1
         }
         expireCards()
+        drainTrialResult()
         drainEvents()
         alerts = Array(state.alerts.suffix(12).reversed())
 
@@ -792,6 +803,32 @@ final class GameController: ObservableObject {
     ///
     /// Order is a priority, not a coincidence: something that shut a ride
     /// matters more than something that filled the gate.
+    /// Shows a trial's end, and records a win on the ladder.
+    ///
+    /// Recorded here rather than in the simulation: the ladder belongs to the
+    /// player, not to the park, and the simulation never touches anything
+    /// outside the park it is running.
+    private func drainTrialResult() {
+        guard trialResult == nil, !isDemo, let result = state.pendingTrialResult else { return }
+        state.pendingTrialResult = nil
+
+        var isFirstWin = false
+        if result.won, let trial = result.trial {
+            isFirstWin = TrialProgressStore().recordWin(trial, day: result.day)
+        }
+        let next = result.trial.flatMap { trial in
+            TrialContent.all.first { $0.number == trial.number + 1 }
+        }
+        trialResult = TrialResultReport(result: result, isFirstWin: isFirstWin, nextTrial: next)
+        // Saved at once, so a win is never lost to the app closing on the
+        // card that announced it.
+        autosave()
+    }
+
+    func dismissTrialResult() {
+        trialResult = nil
+    }
+
     /// Retires a card once it has had its time. Driven from the same UI
     /// refresh as everything else, so it keeps running while the park is
     /// paused and cannot be lost to a view being rebuilt.

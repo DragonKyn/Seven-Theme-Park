@@ -17,7 +17,7 @@ struct ParkSettingsView: View {
                         Slider(value: Binding(
                             get: { controller.hud.admissionPrice },
                             set: { controller.setAdmissionPrice($0) }
-                        ), in: 0...Balance.admissionPriceMax, step: 1)
+                        ), in: 0...controller.admissionPriceLimit, step: 1)
 
                         Text(demandAdvice)
                             .font(.footnote)

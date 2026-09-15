@@ -76,6 +76,14 @@ final class GameState: Codable {
     /// with but not yet reported to the player.
     var nextTroublemakerAt: Double = Balance.dayLength * 2.0
     var pendingEjections: [EjectionReport] = []
+    /// The rung of the Park Trials ladder this park is, if it is one, and how
+    /// it stands. Nil for every park started from the new park sheet.
+    var trialID: String?
+    var trialOutcome: TrialOutcome = .inProgress
+    var trialDecidedDay: Int = 0
+    var nextTrialCheck: Double = 0
+    /// A trial's end, waiting to be shown.
+    var pendingTrialResult: TrialResult?
     /// 0-100, eased towards the value `RatingSystem` computes.
     var parkRating: Double = 0
     /// Gates the build menu. Phase 3 will drive this from objectives; for now
@@ -109,9 +117,11 @@ final class GameState: Codable {
          mode: GameMode = .normal,
          layout: MapLayout? = nil,
          startingCash: Double = Balance.startingCash,
+         trialID: String? = nil,
          seed: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)) {
         self.parkName = parkName
         self.mode = mode
+        self.trialID = trialID
         self.map = ParkMap(width: Balance.mapWidth, height: Balance.mapHeight)
         self.ledger = Ledger(startingCash: startingCash)
         self.rng = SeededGenerator(seed: seed)
@@ -173,6 +183,11 @@ final class GameState: Codable {
         nextTroublemakerAt = container.value(.nextTroublemakerAt,
                                              or: clock.simTime + Balance.dayLength * 1.2)
         pendingEjections = container.value(.pendingEjections, or: [])
+        trialID = container.optionalValue(.trialID)
+        trialOutcome = container.value(.trialOutcome, or: .inProgress)
+        trialDecidedDay = container.value(.trialDecidedDay, or: 0)
+        nextTrialCheck = container.value(.nextTrialCheck, or: 0)
+        pendingTrialResult = container.optionalValue(.pendingTrialResult)
         parkRating = container.value(.parkRating, or: 0)
         unlockLevel = container.value(.unlockLevel, or: 4)
         rng = container.value(.rng, or: SeededGenerator())
@@ -363,6 +378,11 @@ final class GameState: Codable {
     /// Extra arrivals a warm review is currently bringing in, as a share.
     var activeReviewArrivals: Double {
         reviewArrivals.value(at: clock.simTime)
+    }
+
+    /// The trial this park is being played as, if any.
+    var trial: TrialDefinition? {
+        trialID.flatMap(TrialContent.definition(id:))
     }
 
     /// The disruptive visitor currently in the park, if there is one. Never
