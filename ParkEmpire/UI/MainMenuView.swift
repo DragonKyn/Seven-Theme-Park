@@ -129,7 +129,7 @@ struct MainMenuView: View {
             showingTrials = true
         } label: {
             MenuButtonLabel(title: "Park Trials",
-                            subtitle: "\(router.completedTrials.count) of \(TrialContent.all.count) medals · ten parks on a deadline",
+                            subtitle: "\(router.completedTrials.count) of \(TrialContent.all.count) medals · parks on a deadline",
                             symbol: "flag.checkered",
                             prominent: false)
         }

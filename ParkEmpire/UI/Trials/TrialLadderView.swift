@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Park Trials ladder: ten parks to build under a deadline, each one
+/// The Park Trials ladder: parks to build under a deadline, each one
 /// opening when the one before it is beaten.
 struct TrialLadderView: View {
     @EnvironmentObject private var router: AppRouter
@@ -44,7 +44,7 @@ struct TrialLadderView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Ten parks, each on a deadline.")
+            Text("\(TrialContent.all.count) parks, each on a deadline.")
                 .font(.system(size: 20, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
             Text("Meet every goal before the last day closes. Each trial you beat earns its medal and opens the next rung.")
@@ -110,12 +110,7 @@ private struct TrialRungCard: View {
                     .saturation(unlocked ? 1 : 0)
                     .opacity(unlocked ? 1 : 0.45)
 
-                Text("\(trial.number)")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
-                    .foregroundStyle(.black.opacity(0.85))
-                    .frame(width: 22, height: 22)
-                    .background(Circle().fill(unlocked ? AnyShapeStyle(Theme.moneyGradient)
-                                                       : AnyShapeStyle(Color.white.opacity(0.5))))
+                numberBadge
                     .offset(x: -6, y: -6)
             }
 
@@ -145,6 +140,12 @@ private struct TrialRungCard: View {
                     Text("\(trial.dayLimit) days  ·  starts with \(CurrencyFormatter.short(trial.startingCash))")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .foregroundStyle(Theme.textSecondary)
+                    if let bestDay {
+                        Label("Completed on day \(bestDay)  ·  \(trial.medal.name)",
+                              systemImage: "checkmark.seal.fill")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.accent)
+                    }
                     if let runDay {
                         Label("Park in progress, day \(runDay)", systemImage: "play.circle.fill")
                             .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -164,24 +165,45 @@ private struct TrialRungCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(bestDay != nil ? Theme.money.opacity(0.55) : Color.white.opacity(0.08),
-                              lineWidth: 1)
+                .strokeBorder(bestDay != nil ? Theme.accent.opacity(0.75) : Color.white.opacity(0.08),
+                              lineWidth: bestDay != nil ? 2 : 1)
         )
+        .overlay(alignment: .bottomTrailing) {
+            if bestDay != nil {
+                CompleteStamp()
+                    .padding(.trailing, 10)
+                    .padding(.bottom, 10)
+            }
+        }
     }
 
+    /// The rung's number, or a tick once it is beaten. The tick replaces the
+    /// number rather than sitting beside it, so a finished rung reads as
+    /// finished from the far side of the screen.
+    @ViewBuilder
+    private var numberBadge: some View {
+        if bestDay != nil {
+            Image(systemName: "checkmark")
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Theme.accent))
+                .overlay(Circle().strokeBorder(.white.opacity(0.8), lineWidth: 1.5))
+        } else {
+            Text("\(trial.number)")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundStyle(.black.opacity(0.85))
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(unlocked ? AnyShapeStyle(Theme.moneyGradient)
+                                                   : AnyShapeStyle(Color.white.opacity(0.5))))
+        }
+    }
+
+    /// A chevron on every rung that opens. Whether it is beaten is said by
+    /// the tick, the green edge and the stamp, not repeated up here.
     @ViewBuilder
     private var status: some View {
-        if let bestDay {
-            HStack(spacing: 3) {
-                Image(systemName: trial.medal.symbolName)
-                Text("Day \(bestDay)")
-            }
-            .font(.system(size: 10, weight: .heavy, design: .rounded))
-            .foregroundStyle(.black.opacity(0.85))
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(Capsule().fill(Theme.moneyGradient))
-        } else if unlocked {
+        if unlocked {
             Image(systemName: "chevron.right")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Theme.textSecondary)
@@ -207,6 +229,11 @@ private struct TrialBriefingView: View {
                     .aspectRatio(1, contentMode: .fit)
                     .frame(maxWidth: 220)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay {
+                        if router.completedTrials[trial.id] != nil {
+                            CompleteStamp(scale: 1.6)
+                        }
+                    }
                     .frame(maxWidth: .infinity)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -335,3 +362,33 @@ private struct TrialBriefingView: View {
     }
 
 }
+
+/// A rubber stamp, set at an angle, that says a trial is done.
+struct CompleteStamp: View {
+    var scale: CGFloat = 1
+
+    var body: some View {
+        HStack(spacing: 4 * scale) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 13 * scale, weight: .black))
+            Text("COMPLETE")
+                .font(.system(size: 12 * scale, weight: .black, design: .rounded))
+                .tracking(1.5 * scale)
+        }
+        .foregroundStyle(Theme.accent)
+        .padding(.horizontal, 9 * scale)
+        .padding(.vertical, 4 * scale)
+        .background(
+            RoundedRectangle(cornerRadius: 6 * scale, style: .continuous)
+                .fill(Theme.panelBottom.opacity(0.85))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6 * scale, style: .continuous)
+                .strokeBorder(Theme.accent, lineWidth: 2 * scale)
+        )
+        .rotationEffect(.degrees(-9))
+        .shadow(color: .black.opacity(0.35), radius: 3, y: 1)
+        .accessibilityLabel("Trial complete")
+    }
+}
+

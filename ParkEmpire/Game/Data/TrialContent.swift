@@ -240,11 +240,72 @@ enum TrialContent {
             id: "trial.10",
             number: 10,
             title: "Wonder of the World",
-            briefing: "A lake, a small budget and the highest bar on the ladder. Five stars, a full park and a fortune in the bank.",
+            briefing: "A lake, a small budget and the bar only the best parks reach. Five stars, a full park and a fortune in the bank.",
             mapID: "map.willowlake",
             startingCash: 12_000,
             dayLimit: 18,
             goals: [.parkRating(80), .guestsInPark(90), .cash(80_000)],
-            medal: TrialMedal(name: "Wonder Maker", symbolName: "crown.fill"))
+            medal: TrialMedal(name: "Wonder Maker", symbolName: "crown.fill")),
+
+        // The back five. Each asks for everything the one before it did and
+        // takes something away as well: land, budget, the gate, or time.
+
+        TrialDefinition(
+            id: "trial.11",
+            number: 11,
+            title: "Archipelago",
+            briefing: "The Wonder of the World again, only now the land is a scatter of islands. Every bridge comes out of the budget.",
+            mapID: "map.archipelago",
+            startingCash: 12_000,
+            dayLimit: 18,
+            goals: [.parkRating(80), .guestsInPark(90), .cash(90_000), .rides(8)],
+            medal: TrialMedal(name: "Island Magnate", symbolName: "beach.umbrella.fill")),
+
+        TrialDefinition(
+            id: "trial.12",
+            number: 12,
+            title: "Pay What You Can",
+            briefing: "The gate is capped at ten dollars, so the park has to earn its keep from food, shops and games. Keep people happy enough to spend.",
+            mapID: "map.pinewood",
+            startingCash: 10_000,
+            dayLimit: 18,
+            goals: [.cash(70_000), .parkRating(82), .happiness(75)],
+            maxAdmission: 10,
+            medal: TrialMedal(name: "Open Door", symbolName: "door.left.hand.open")),
+
+        TrialDefinition(
+            id: "trial.13",
+            number: 13,
+            title: "The Long Haul",
+            briefing: "Back on the pier with less money and a far bigger crowd to move. Fifteen hundred people have to make that walk.",
+            mapID: "map.longpier",
+            startingCash: 10_000,
+            dayLimit: 20,
+            goals: [.guestsAdmitted(1_500), .parkRating(84), .cash(100_000)],
+            medal: TrialMedal(name: "Marathon Maker", symbolName: "figure.walk")),
+
+        TrialDefinition(
+            id: "trial.14",
+            number: 14,
+            title: "Switchback",
+            briefing: "One valley doubling back through solid rock, a capped gate and eight thousand to start. Pack the bends without souring the crowd.",
+            mapID: "map.switchback",
+            startingCash: 8_000,
+            dayLimit: 20,
+            goals: [.parkRating(86), .guestsInPark(92), .happiness(78), .cash(100_000)],
+            maxAdmission: 25,
+            medal: TrialMedal(name: "Ridge Runner", symbolName: "arrow.triangle.turn.up.right.diamond.fill")),
+
+        TrialDefinition(
+            id: "trial.15",
+            number: 15,
+            title: "The Grand Finale",
+            briefing: "Everything at once, in a canyon, on six thousand dollars and a twenty dollar gate. The last rung, and the park that proves you have learned all fourteen before it.",
+            mapID: "map.canyon",
+            startingCash: 6_000,
+            dayLimit: 24,
+            goals: [.parkRating(88), .guestsInPark(95), .happiness(80), .cash(120_000), .rides(12)],
+            maxAdmission: 20,
+            medal: TrialMedal(name: "Legend of the Lot", symbolName: "trophy.fill"))
     ]
 }

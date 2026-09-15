@@ -29,7 +29,8 @@ enum MapCatalogue {
 
     static let all: [MapBlueprint] = [
         openMeadow, willowLake, longPier, riverbend,
-        pinewoodClearing, canyonFloor, twinPlateaus, harbourPoint
+        pinewoodClearing, canyonFloor, twinPlateaus, harbourPoint,
+        archipelago, switchbackRidge
     ]
 
     static func blueprint(id: String) -> MapBlueprint? {
@@ -173,6 +174,48 @@ enum MapCatalogue {
             name: "Harbour Point",
             summary: "A headland narrowing into the sea. Roomy at the gate, tight at the tip.",
             difficulty: 3,
+            layout: painter.finish())
+    }()
+
+    /// Open sea with a scatter of islands, the gate on the largest. No
+    /// single island holds a park, so the park is the bridges as much as
+    /// the rides.
+    static let archipelago: MapBlueprint = {
+        var painter = MapPainter(fill: .water, entranceX: 30, seed: 131)
+        painter.blob(.grass, centreX: 30, centreY: 6, radiusX: 11, radiusY: 8, rough: 0.12)
+        painter.blob(.grass, centreX: 12, centreY: 20, radiusX: 7, radiusY: 6)
+        painter.blob(.grass, centreX: 47, centreY: 19, radiusX: 7, radiusY: 5)
+        painter.blob(.grass, centreX: 27, centreY: 30, radiusX: 6, radiusY: 5)
+        painter.blob(.grass, centreX: 9, centreY: 42, radiusX: 6, radiusY: 7)
+        painter.blob(.grass, centreX: 42, centreY: 40, radiusX: 8, radiusY: 6)
+        painter.blob(.grass, centreX: 25, centreY: 52, radiusX: 9, radiusY: 5)
+        painter.blob(.forest, centreX: 42, centreY: 42, radiusX: 2.5, radiusY: 2)
+        painter.blob(.rock, centreX: 9, centreY: 45, radiusX: 2, radiusY: 2)
+        return MapBlueprint(
+            id: "map.archipelago",
+            name: "Archipelago",
+            summary: "Open sea and a scatter of islands. No one island holds a park.",
+            difficulty: 5,
+            layout: painter.finish())
+    }()
+
+    /// Solid rock with one valley doubling back on itself up the map. Every
+    /// guest walks every bend, and nothing wide fits anywhere.
+    static let switchbackRidge: MapBlueprint = {
+        var painter = MapPainter(fill: .rock, entranceX: 30, seed: 149)
+        painter.band(.grass,
+                     through: [(30, -2), (30, 10), (12, 16), (12, 26),
+                               (47, 32), (47, 42), (18, 48), (18, 62)],
+                     width: 8)
+        // Wider shelves at two of the bends, the only places a big ride fits.
+        painter.blob(.grass, centreX: 12, centreY: 21, radiusX: 7, radiusY: 6, rough: 0.10)
+        painter.blob(.grass, centreX: 47, centreY: 37, radiusX: 7, radiusY: 6, rough: 0.10)
+        painter.blob(.water, centreX: 47, centreY: 38, radiusX: 2, radiusY: 2)
+        return MapBlueprint(
+            id: "map.switchback",
+            name: "Switchback Ridge",
+            summary: "A single valley zig-zags up through solid rock. Every bend is a squeeze.",
+            difficulty: 5,
             layout: painter.finish())
     }()
 }
