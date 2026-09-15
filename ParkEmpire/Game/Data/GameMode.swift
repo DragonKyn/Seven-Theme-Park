@@ -12,6 +12,9 @@ enum GameMode: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The modes chosen on the new park screen.
+    static let sandboxModes: [GameMode] = [.normal, .freeBuild]
+
     var displayName: String {
         switch self {
         case .normal: return "Normal"

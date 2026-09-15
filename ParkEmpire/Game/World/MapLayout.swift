@@ -40,7 +40,7 @@ enum MapGround: UInt8, Codable, CaseIterable, Identifiable {
 /// security stand are all drawn outside that edge, and a map is a better
 /// puzzle for choosing where along it the gate goes than for rotating the
 /// whole world.
-struct MapLayout: Codable, Equatable {
+struct MapLayout: Codable, Hashable {
     let width: Int
     let height: Int
     var ground: [MapGround]

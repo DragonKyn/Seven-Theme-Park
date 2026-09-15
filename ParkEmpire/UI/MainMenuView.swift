@@ -43,8 +43,8 @@ struct MainMenuView: View {
         }
         .sheet(isPresented: $showingNewGame) {
             NewParkSheet(summaries: router.slotSummaries,
-                         suggestedSlot: firstEmptySlot()) { name, mode, slot in
-                router.startNewGame(named: name, mode: mode, in: slot)
+                         suggestedSlot: firstEmptySlot()) { name, mode, map, slot in
+                router.startNewGame(named: name, mode: mode, map: map, in: slot)
                 showingNewGame = false
             }
             .presentationDetents([.large])
@@ -115,7 +115,7 @@ struct MainMenuView: View {
             showingNewGame = true
         } label: {
             MenuButtonLabel(title: "New Park",
-                            subtitle: "Normal or free build",
+                            subtitle: "Pick a map, normal or free build",
                             symbol: "plus",
                             prominent: router.slotSummaries.isEmpty)
         }
@@ -346,14 +346,24 @@ private struct SaveSlotRow: View {
 // MARK: - New park
 
 private struct NewParkSheet: View {
+    @EnvironmentObject private var router: AppRouter
     let summaries: [Int: SaveSlotSummary]
     let suggestedSlot: Int
-    let onStart: (String, GameMode, Int) -> Void
+    let onStart: (String, GameMode, MapBlueprint, Int) -> Void
 
     @State private var parkName = ""
     @State private var mode: GameMode = .normal
     @State private var slot = 0
+    @State private var mapID = MapCatalogue.openMeadowID
+    /// The map being drawn or edited, if the editor is open. A new map is a
+    /// fresh value rather than nil, so one presentation covers both.
+    @State private var editing: MapEditorRequest?
+    @State private var mapToDelete: MapBlueprint?
     @Environment(\.dismiss) private var dismiss
+
+    private var selectedMap: MapBlueprint {
+        router.availableMaps.first { $0.id == mapID } ?? MapCatalogue.openMeadow
+    }
 
     var body: some View {
         NavigationStack {
@@ -362,8 +372,23 @@ private struct NewParkSheet: View {
                     TextField("New Park", text: $parkName)
                 }
 
+                Section {
+                    MapPickerView(maps: router.availableMaps,
+                                  selectedID: $mapID,
+                                  onCreate: { editing = MapEditorRequest(map: nil) },
+                                  onEdit: { blueprint in
+                                      editing = MapEditorRequest(map: router.customMap(forBlueprintID: blueprint.id))
+                                  },
+                                  onDelete: { mapToDelete = $0 })
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                } header: {
+                    Text("Map")
+                } footer: {
+                    Text("Hold a map you drew to edit or delete it.")
+                }
+
                 Section("Mode") {
-                    ForEach(GameMode.allCases) { option in
+                    ForEach(GameMode.sandboxModes) { option in
                         Button {
                             mode = option
                         } label: {
@@ -418,11 +443,33 @@ private struct NewParkSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { onStart(parkName, mode, slot) }
+                    Button("Start") { onStart(parkName, mode, selectedMap, slot) }
                         .fontWeight(.semibold)
                 }
             }
             .onAppear { slot = suggestedSlot }
+            .fullScreenCover(item: $editing) { request in
+                MapEditorView(editing: request.map) { saved in
+                    router.saveCustomMap(saved)
+                    mapID = saved.blueprint.id
+                }
+            }
+            .confirmationDialog("Delete this map?",
+                                isPresented: Binding(get: { mapToDelete != nil },
+                                                     set: { if !$0 { mapToDelete = nil } }),
+                                titleVisibility: .visible) {
+                Button("Delete", role: .destructive) {
+                    if let blueprint = mapToDelete,
+                       let map = router.customMap(forBlueprintID: blueprint.id) {
+                        router.deleteCustomMap(id: map.id)
+                        if mapID == blueprint.id { mapID = MapCatalogue.openMeadowID }
+                    }
+                    mapToDelete = nil
+                }
+                Button("Keep it", role: .cancel) { mapToDelete = nil }
+            } message: {
+                Text("Parks already built on it are not affected.")
+            }
         }
     }
 
@@ -441,4 +488,10 @@ private struct NewParkSheet: View {
         }
         return "Slot \(index + 1), empty"
     }
+}
+
+/// Asks for the map editor to open, on a new map or an existing one.
+private struct MapEditorRequest: Identifiable {
+    let id = UUID()
+    let map: CustomMap?
 }

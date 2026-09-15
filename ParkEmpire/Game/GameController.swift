@@ -80,9 +80,14 @@ final class GameController: ObservableObject {
 
     convenience init(newParkNamed name: String,
                      mode: GameMode,
+                     layout: MapLayout? = nil,
+                     startingCash: Double = Balance.startingCash,
                      slot: Int,
                      saveService: SaveGameService = SaveGameService()) {
-        self.init(state: GameState(parkName: name, mode: mode),
+        self.init(state: GameState(parkName: name,
+                                   mode: mode,
+                                   layout: layout,
+                                   startingCash: startingCash),
                   slot: slot,
                   saveService: saveService)
     }
