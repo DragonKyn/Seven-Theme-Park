@@ -24,6 +24,12 @@ struct ParkMap: Codable {
     /// Where guests appear and leave. Always a walkable entrance tile.
     private(set) var entranceCoord: GridCoord
 
+    /// Tiles whose ground came with the map, by linear index. A lake on a
+    /// premade map is part of the puzzle, so it cannot be taken up the way a
+    /// pond the player dug can. Rock and forest are never offered for sale,
+    /// so nothing could remove them anyway; water is the case this is for.
+    private(set) var naturalTiles: Set<Int> = []
+
     init(width: Int, height: Int) {
         self.width = width
         self.height = height
@@ -130,12 +136,35 @@ struct ParkMap: Codable {
     }
 
     /// Lays down the starting entrance plus a short stub of path leading in.
-    mutating func applyStartingLayout(pathLength: Int) {
-        entranceCoord = GridCoord(width / 2, 0)
+    mutating func applyStartingLayout(pathLength: Int, entranceX: Int? = nil) {
+        entranceCoord = GridCoord(entranceX ?? width / 2, 0)
         setTerrain(.entrance, at: entranceCoord)
         for offset in 1...max(1, pathLength) {
             setTerrain(.path, at: GridCoord(entranceCoord.x, entranceCoord.y + offset))
         }
+    }
+
+    /// Lays a map's ground down, then the gate and the walkway in from it.
+    mutating func apply(_ layout: MapLayout, pathLength: Int) {
+        var cleared = layout
+        cleared.clearGateApproach()
+
+        var natural: Set<Int> = []
+        for y in 0..<min(height, cleared.height) {
+            for x in 0..<min(width, cleared.width) {
+                let ground = cleared.ground(atX: x, y: y)
+                guard ground != .grass else { continue }
+                let coord = GridCoord(x, y)
+                setTerrain(ground.terrain, at: coord)
+                natural.insert(linearIndex(of: coord))
+            }
+        }
+        naturalTiles = natural
+        applyStartingLayout(pathLength: pathLength, entranceX: cleared.entranceX)
+    }
+
+    func isNatural(_ coord: GridCoord) -> Bool {
+        isInside(coord) && naturalTiles.contains(linearIndex(of: coord))
     }
 
     // MARK: - Litter
@@ -291,6 +320,7 @@ extension ParkMap {
         generation = container.value(.generation, or: 0)
         litterGeneration = container.value(.litterGeneration, or: 0)
         entranceCoord = container.value(.entranceCoord, or: GridCoord(width / 2, 0))
+        naturalTiles = container.value(.naturalTiles, or: [])
 
         // Recomputed rather than trusted, so the index can never drift out of
         // step with the tiles themselves.

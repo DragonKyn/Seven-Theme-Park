@@ -236,6 +236,9 @@ extension GameState {
         }
 
         guard let tile = map.tile(at: coord) else { return false }
+        // Ground that came with the map stays. A bridge laid over a natural
+        // lake can still come up, and leaves the lake behind.
+        if map.isNatural(coord) && tile.terrain != .bridge { return false }
         // Matched on the finish as well as the terrain, so taking up a
         // boardwalk does not refund the price of plain paving.
         let terrains = GameContent.terrains

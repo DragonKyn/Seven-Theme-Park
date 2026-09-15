@@ -5,6 +5,15 @@ import UIKit
 /// readable on a phone at a glance.
 enum ParkPalette {
     static let grass = UIColor(red: 0.55, green: 0.78, blue: 0.45, alpha: 1)
+    /// Natural ground from the map. Rock is a warm grey so it reads as stone
+    /// rather than as a hole in the world; forest is darker than any grass so
+    /// the edge of what can be built on is never in doubt.
+    static let rock = UIColor(red: 0.56, green: 0.53, blue: 0.50, alpha: 1)
+    static let rockShade = UIColor(red: 0.42, green: 0.40, blue: 0.38, alpha: 1)
+    static let rockLight = UIColor(red: 0.70, green: 0.67, blue: 0.63, alpha: 1)
+    static let forest = UIColor(red: 0.20, green: 0.42, blue: 0.24, alpha: 1)
+    static let forestDeep = UIColor(red: 0.14, green: 0.32, blue: 0.18, alpha: 1)
+    static let forestCanopy = UIColor(red: 0.27, green: 0.53, blue: 0.29, alpha: 1)
     static let grassAlt = UIColor(red: 0.51, green: 0.74, blue: 0.42, alpha: 1)
     static let path = UIColor(red: 0.87, green: 0.84, blue: 0.76, alpha: 1)
     static let entrance = UIColor(red: 0.96, green: 0.74, blue: 0.30, alpha: 1)
@@ -120,6 +129,8 @@ enum ParkPalette {
         case .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
             return coasterBed
         case .grass: return alternate ? grassAlt : grass
+        case .rock: return rock
+        case .forest: return forest
         }
     }
 

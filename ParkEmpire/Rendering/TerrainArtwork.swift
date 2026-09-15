@@ -44,6 +44,10 @@ enum TerrainArtwork {
                 // Banked on every side, so a single tile reads as a pond
                 // rather than as a blue square.
                 drawWater(shores: 15, style: style, variant: 0, size: size)
+            case .rock:
+                drawRock(edges: 0, variant: 1, size: size)
+            case .forest:
+                drawForest(edges: 0, variant: 1, size: size)
             default:
                 ParkPalette.colour(for: terrain, alternate: false).setFill()
                 UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
@@ -279,6 +283,95 @@ enum TerrainArtwork {
                 UIBezierPath(ovalIn: CGRect(x: size.width * spot.0, y: size.height * spot.1,
                                             width: side, height: side)).fill()
             }
+        }
+    }
+
+    // MARK: - Natural ground
+
+    /// Rock that came with the map. A slab with a few boulders on it, and a
+    /// darker lip on any side that faces open ground, which is what makes a
+    /// block of it read as an outcrop with an edge.
+    static func rockTexture(edges: Int, variant: Int, side: CGFloat) -> SKTexture {
+        SpriteFactory.texture(key: "rock-\(edges)-\(variant)-\(side)",
+                              size: CGSize(width: side, height: side)) { _, size in
+            drawRock(edges: edges, variant: variant, size: size)
+        }
+    }
+
+    static func drawRock(edges: Int, variant: Int, size: CGSize) {
+        ParkPalette.rock.setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+        // Boulders, placed by variant so a field of rock is not a grid.
+        let layouts: [[(CGFloat, CGFloat, CGFloat)]] = [
+            [(0.30, 0.34, 0.26), (0.70, 0.66, 0.20)],
+            [(0.62, 0.30, 0.24), (0.26, 0.70, 0.18)],
+            [(0.50, 0.52, 0.30)],
+            [(0.24, 0.26, 0.18), (0.72, 0.40, 0.22), (0.40, 0.76, 0.16)]
+        ]
+        for (x, y, radius) in layouts[variant % layouts.count] {
+            let rect = CGRect(x: size.width * (x - radius),
+                              y: size.height * (y - radius * 0.8),
+                              width: size.width * radius * 2,
+                              height: size.height * radius * 1.6)
+            ParkPalette.rockShade.setFill()
+            UIBezierPath(ovalIn: rect.offsetBy(dx: 0, dy: size.height * 0.05)).fill()
+            ParkPalette.rockLight.setFill()
+            UIBezierPath(ovalIn: rect).fill()
+        }
+
+        drawEdges(edges, colour: ParkPalette.rockShade, size: size, depth: 0.14)
+    }
+
+    /// Forest that came with the map: overlapping canopies, darker toward
+    /// any side that faces open ground so a tree line has a shadow under it.
+    static func forestTexture(edges: Int, variant: Int, side: CGFloat) -> SKTexture {
+        SpriteFactory.texture(key: "forest-\(edges)-\(variant)-\(side)",
+                              size: CGSize(width: side, height: side)) { _, size in
+            drawForest(edges: edges, variant: variant, size: size)
+        }
+    }
+
+    static func drawForest(edges: Int, variant: Int, size: CGSize) {
+        ParkPalette.forestDeep.setFill()
+        UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+
+        // Crowns overlapping the tile edge slightly, so neighbouring tiles
+        // merge into one canopy instead of showing a seam.
+        let crowns: [[(CGFloat, CGFloat, CGFloat)]] = [
+            [(0.28, 0.30, 0.32), (0.74, 0.40, 0.30), (0.46, 0.78, 0.30)],
+            [(0.64, 0.26, 0.34), (0.24, 0.62, 0.30), (0.78, 0.80, 0.26)],
+            [(0.40, 0.40, 0.38), (0.84, 0.72, 0.24)],
+            [(0.20, 0.22, 0.26), (0.62, 0.52, 0.34), (0.22, 0.84, 0.24)]
+        ]
+        for (x, y, radius) in crowns[variant % crowns.count] {
+            let rect = CGRect(x: size.width * (x - radius), y: size.height * (y - radius),
+                              width: size.width * radius * 2, height: size.height * radius * 2)
+            ParkPalette.forest.setFill()
+            UIBezierPath(ovalIn: rect).fill()
+            // A lit side on each crown, which is what makes it a tree.
+            ParkPalette.forestCanopy.setFill()
+            UIBezierPath(ovalIn: rect.insetBy(dx: rect.width * 0.22, dy: rect.height * 0.22)
+                .offsetBy(dx: -rect.width * 0.08, dy: -rect.height * 0.08)).fill()
+        }
+
+        drawEdges(edges, colour: ParkPalette.forestDeep.withAlphaComponent(0.85),
+                  size: size, depth: 0.10)
+    }
+
+    /// A band along each side named in `edges` (north, east, south, west).
+    private static func drawEdges(_ edges: Int, colour: UIColor, size: CGSize, depth: CGFloat) {
+        guard edges != 0 else { return }
+        colour.setFill()
+        let band = size.width * depth
+        // Texture space runs y downward, so north is the top edge.
+        if edges & 1 != 0 { UIBezierPath(rect: CGRect(x: 0, y: 0, width: size.width, height: band)).fill() }
+        if edges & 4 != 0 {
+            UIBezierPath(rect: CGRect(x: 0, y: size.height - band, width: size.width, height: band)).fill()
+        }
+        if edges & 8 != 0 { UIBezierPath(rect: CGRect(x: 0, y: 0, width: band, height: size.height)).fill() }
+        if edges & 2 != 0 {
+            UIBezierPath(rect: CGRect(x: size.width - band, y: 0, width: band, height: size.height)).fill()
         }
     }
 

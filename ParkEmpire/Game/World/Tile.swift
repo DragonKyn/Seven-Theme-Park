@@ -24,6 +24,12 @@ enum TerrainType: String, Codable {
     /// A deck over water. Walkable like a path, and the only way to cross a
     /// pond without filling it in.
     case bridge
+    /// Bare rock that came with the map. Nothing is built on it and nobody
+    /// walks on it, and it cannot be cleared: it is the shape of the land.
+    case rock
+    /// Standing forest that came with the map. As permanent as rock, and
+    /// better to look at.
+    case forest
 
     /// Guests may only ever stand on walkable terrain.
     var isWalkableTerrain: Bool {

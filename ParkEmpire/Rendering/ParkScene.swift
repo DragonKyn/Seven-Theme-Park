@@ -475,6 +475,8 @@ final class ParkScene: SKScene {
         case .coasterHelix: terrain = 8
         case .coasterJump: terrain = 9
         case .bridge: terrain = 10
+        case .rock: terrain = 11
+        case .forest: terrain = 12
         }
         return terrain * 100_000
             + Int(tile.style) * 10_000
@@ -493,6 +495,7 @@ final class ParkScene: SKScene {
         switch tile.terrain {
         case .water: return shoreMask(at: coord, map: map)
         case .path, .entrance, .bridge: return walkwayConnections(at: coord, map: map)
+        case .rock, .forest: return edgeMask(for: tile.terrain, at: coord, map: map)
         default: return trackConnections(at: coord, map: map)
         }
     }
@@ -513,6 +516,26 @@ final class ParkScene: SKScene {
             connections |= bit
         }
         return connections
+    }
+
+    /// Sides of a rock or forest tile that are open ground, as north, east,
+    /// south and west bits. What turns a block of them into an outcrop or a
+    /// tree line with an edge, rather than a grid of identical squares.
+    private func edgeMask(for terrain: TerrainType, at coord: GridCoord, map: ParkMap) -> Int {
+        let offsets: [(Int, GridCoord)] = [
+            (1, GridCoord(coord.x, coord.y + 1)),
+            (2, GridCoord(coord.x + 1, coord.y)),
+            (4, GridCoord(coord.x, coord.y - 1)),
+            (8, GridCoord(coord.x - 1, coord.y))
+        ]
+        var edges = 0
+        for (bit, neighbour) in offsets {
+            // Off the map counts as more of the same, so the border does not
+            // grow a cliff edge against nothing.
+            guard let other = map.tile(at: neighbour) else { continue }
+            if other.terrain != terrain { edges |= bit }
+        }
+        return edges
     }
 
     /// Sides of a water tile that are not more water, as north, east, south
@@ -601,6 +624,14 @@ final class ParkScene: SKScene {
                                                side: Self.tileSide)
         case .entrance:
             return SpriteFactory.tileTexture(colour: ParkPalette.entrance, side: Self.tileSide)
+        case .rock:
+            return TerrainArtwork.rockTexture(edges: edgeMask(for: .rock, at: coord, map: map),
+                                              variant: variant,
+                                              side: Self.tileSide)
+        case .forest:
+            return TerrainArtwork.forestTexture(edges: edgeMask(for: .forest, at: coord, map: map),
+                                                variant: variant,
+                                                side: Self.tileSide)
         case .track, .coasterTrack, .coasterLoop, .coasterHill, .coasterHelix, .coasterJump:
             let connections = trackConnections(at: coord, map: map)
             return SpriteFactory.trackTileTexture(connections: connections,

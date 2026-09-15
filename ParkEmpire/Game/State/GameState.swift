@@ -107,14 +107,20 @@ final class GameState: Codable {
 
     init(parkName: String,
          mode: GameMode = .normal,
+         layout: MapLayout? = nil,
+         startingCash: Double = Balance.startingCash,
          seed: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)) {
         self.parkName = parkName
         self.mode = mode
         self.map = ParkMap(width: Balance.mapWidth, height: Balance.mapHeight)
-        self.ledger = Ledger(startingCash: Balance.startingCash)
+        self.ledger = Ledger(startingCash: startingCash)
         self.rng = SeededGenerator(seed: seed)
         self.ledger.isUnlimited = mode.hasUnlimitedMoney
-        self.map.applyStartingLayout(pathLength: Balance.startingPathLength)
+        if let layout {
+            self.map.apply(layout, pathLength: Balance.startingPathLength)
+        } else {
+            self.map.applyStartingLayout(pathLength: Balance.startingPathLength)
+        }
     }
 
     /// Lenient decoding: every field falls back to a default, so a save written
