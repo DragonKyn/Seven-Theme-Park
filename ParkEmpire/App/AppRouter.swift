@@ -14,6 +14,8 @@ final class AppRouter: ObservableObject {
     @Published private(set) var customMaps: [CustomMap] = []
     /// Trial id to the earliest day it was beaten on.
     @Published private(set) var completedTrials: [String: Int] = [:]
+    /// Trial id to the run the player has on the go for it, if any.
+    @Published private(set) var trialRuns: [String: SaveSlotSummary] = [:]
     /// Set when a finished trial sends the player back to the ladder, so the
     /// menu opens straight onto it.
     @Published var opensLadderOnMenu = false
@@ -23,6 +25,9 @@ final class AppRouter: ObservableObject {
     private let mapStore = CustomMapStore()
 
     init() {
+        // Before anything is listed, so a slot a trial was occupying shows as
+        // free from the first time the menu appears.
+        saveService.moveTrialsOutOfSlots()
         refreshSlots()
         customMaps = mapStore.load()
         refreshTrials()
@@ -32,30 +37,40 @@ final class AppRouter: ObservableObject {
 
     func refreshTrials() {
         completedTrials = TrialProgressStore().completed
+        trialRuns = saveService.trialSummaries()
     }
 
     func isTrialUnlocked(_ trial: TrialDefinition) -> Bool {
         TrialProgressStore().isUnlocked(trial)
     }
 
-    var firstEmptySlot: Int {
-        (0..<SaveGameService.slotCount).first { slotSummaries[$0] == nil } ?? 0
-    }
-
-    func startTrial(_ trial: TrialDefinition, in slot: Int) {
+    /// Starts a trial from day one, replacing any run already on the go.
+    func startTrial(_ trial: TrialDefinition) {
         let controller = GameController(newParkNamed: trial.title,
                                         mode: .trial,
                                         layout: trial.map.layout,
                                         startingCash: trial.startingCash,
                                         trialID: trial.id,
-                                        slot: slot,
+                                        location: .trial(trial.id),
                                         saveService: saveService)
         if let cap = trial.maxAdmission {
             controller.setAdmissionPrice(min(cap, Balance.defaultAdmissionPrice))
         }
         controller.save()
-        refreshSlots()
+        refreshTrials()
         screen = .game(controller)
+    }
+
+    /// Picks a trial up where the player left it.
+    func resumeTrial(_ trial: TrialDefinition) {
+        do {
+            let state = try saveService.load(from: .trial(trial.id))
+            screen = .game(GameController(state: state,
+                                          location: .trial(trial.id),
+                                          saveService: saveService))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     // MARK: - Maps
@@ -103,7 +118,7 @@ final class AppRouter: ObservableObject {
         let controller = GameController(newParkNamed: parkName,
                                         mode: mode,
                                         layout: map.layout,
-                                        slot: slot,
+                                        location: .slot(slot),
                                         saveService: saveService)
         controller.save()
         refreshSlots()
@@ -112,15 +127,17 @@ final class AppRouter: ObservableObject {
 
     func loadGame(from slot: Int) {
         do {
-            let state = try saveService.load(from: slot)
-            screen = .game(GameController(state: state, slot: slot, saveService: saveService))
+            let state = try saveService.load(from: .slot(slot))
+            screen = .game(GameController(state: state,
+                                          location: .slot(slot),
+                                          saveService: saveService))
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     func deleteSave(in slot: Int) {
-        saveService.delete(slot: slot)
+        saveService.delete(.slot(slot))
         refreshSlots()
     }
 
@@ -130,6 +147,7 @@ final class AppRouter: ObservableObject {
             controller.save()
         }
         refreshSlots()
+        refreshTrials()
         screen = .menu
     }
 

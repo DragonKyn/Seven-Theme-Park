@@ -1,5 +1,22 @@
 import Foundation
 
+/// Where a park lives on disk.
+///
+/// The three slots are for parks the player started. A trial is not one of
+/// them: each rung of the ladder keeps its own run in a file of its own, so
+/// working through the trials never costs the player a slot.
+enum SaveLocation: Equatable {
+    case slot(Int)
+    case trial(String)
+
+    fileprivate var fileStem: String {
+        switch self {
+        case .slot(let number): return "slot-\(number)"
+        case .trial(let id): return "trial-\(id)"
+        }
+    }
+}
+
 /// Reads and writes parks to the app's Documents directory as JSON.
 ///
 /// Each slot is two files: the park itself and a small summary sidecar, so the
@@ -29,12 +46,12 @@ final class SaveGameService {
         return documents.appendingPathComponent("Saves", isDirectory: true)
     }
 
-    private func saveURL(slot: Int) -> URL {
-        savesDirectory.appendingPathComponent("slot-\(slot).json")
+    private func saveURL(_ location: SaveLocation) -> URL {
+        savesDirectory.appendingPathComponent("\(location.fileStem).json")
     }
 
-    private func summaryURL(slot: Int) -> URL {
-        savesDirectory.appendingPathComponent("slot-\(slot).summary.json")
+    private func summaryURL(_ location: SaveLocation) -> URL {
+        savesDirectory.appendingPathComponent("\(location.fileStem).summary.json")
     }
 
     private func ensureDirectory() throws {
@@ -45,23 +62,23 @@ final class SaveGameService {
 
     // MARK: - Writing
 
-    func save(_ state: GameState, to slot: Int) throws {
+    func save(_ state: GameState, to location: SaveLocation) throws {
         try ensureDirectory()
 
         let save = SaveGame(state: state)
         let data = try encoder.encode(save)
-        try data.write(to: saveURL(slot: slot), options: .atomic)
+        try data.write(to: saveURL(location), options: .atomic)
 
         var summary = save.summary
-        summary.slot = slot
+        if case .slot(let number) = location { summary.slot = number }
         let summaryData = try encoder.encode(summary)
-        try summaryData.write(to: summaryURL(slot: slot), options: .atomic)
+        try summaryData.write(to: summaryURL(location), options: .atomic)
     }
 
     // MARK: - Reading
 
-    func load(from slot: Int) throws -> GameState {
-        let url = saveURL(slot: slot)
+    func load(from location: SaveLocation) throws -> GameState {
+        let url = saveURL(location)
         guard fileManager.fileExists(atPath: url.path) else { throw SaveError.notFound }
 
         let data = try Data(contentsOf: url)
@@ -84,8 +101,8 @@ final class SaveGameService {
         return state
     }
 
-    func summary(for slot: Int) -> SaveSlotSummary? {
-        let url = summaryURL(slot: slot)
+    func summary(for location: SaveLocation) -> SaveSlotSummary? {
+        let url = summaryURL(location)
         guard let data = try? Data(contentsOf: url) else { return nil }
         return try? decoder.decode(SaveSlotSummary.self, from: data)
     }
@@ -93,15 +110,40 @@ final class SaveGameService {
     func allSummaries() -> [Int: SaveSlotSummary] {
         var result: [Int: SaveSlotSummary] = [:]
         for slot in 0..<Self.slotCount {
-            if let summary = summary(for: slot) {
+            if let summary = summary(for: .slot(slot)) {
                 result[slot] = summary
             }
         }
         return result
     }
 
-    func hasSave(in slot: Int) -> Bool {
-        fileManager.fileExists(atPath: saveURL(slot: slot).path)
+    /// The run in progress for each trial that has one, by trial id.
+    func trialSummaries() -> [String: SaveSlotSummary] {
+        var result: [String: SaveSlotSummary] = [:]
+        for trial in TrialContent.all {
+            if let summary = summary(for: .trial(trial.id)) {
+                result[trial.id] = summary
+            }
+        }
+        return result
+    }
+
+    func hasSave(at location: SaveLocation) -> Bool {
+        fileManager.fileExists(atPath: saveURL(location).path)
+    }
+
+    /// Moves any trial that was started in a save slot, by the build that put
+    /// trials in slots, out to the trial's own file, and frees the slot.
+    /// A run already in the trial's own file is newer and wins.
+    func moveTrialsOutOfSlots() {
+        for (slot, summary) in allSummaries() where summary.mode == .trial {
+            guard let state = try? load(from: .slot(slot)),
+                  let trialID = state.trialID else { continue }
+            if !hasSave(at: .trial(trialID)) {
+                guard (try? save(state, to: .trial(trialID))) != nil else { continue }
+            }
+            delete(.slot(slot))
+        }
     }
 
     var mostRecentSlot: Int? {
@@ -112,8 +154,8 @@ final class SaveGameService {
 
     // MARK: - Deleting
 
-    func delete(slot: Int) {
-        try? fileManager.removeItem(at: saveURL(slot: slot))
-        try? fileManager.removeItem(at: summaryURL(slot: slot))
+    func delete(_ location: SaveLocation) {
+        try? fileManager.removeItem(at: saveURL(location))
+        try? fileManager.removeItem(at: summaryURL(location))
     }
 }

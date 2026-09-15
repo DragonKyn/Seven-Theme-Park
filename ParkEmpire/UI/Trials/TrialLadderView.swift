@@ -78,14 +78,15 @@ struct TrialLadderView: View {
     private func rung(_ trial: TrialDefinition) -> some View {
         let unlocked = router.isTrialUnlocked(trial)
         let bestDay = router.completedTrials[trial.id]
+        let run = router.trialRuns[trial.id]
 
         if unlocked {
             NavigationLink(value: trial.id) {
-                TrialRungCard(trial: trial, unlocked: true, bestDay: bestDay)
+                TrialRungCard(trial: trial, unlocked: true, bestDay: bestDay, runDay: run?.day)
             }
             .buttonStyle(.plain)
         } else {
-            TrialRungCard(trial: trial, unlocked: false, bestDay: nil)
+            TrialRungCard(trial: trial, unlocked: false, bestDay: nil, runDay: nil)
         }
     }
 }
@@ -95,6 +96,8 @@ private struct TrialRungCard: View {
     let trial: TrialDefinition
     let unlocked: Bool
     let bestDay: Int?
+    /// The day an unfinished run of this trial has reached, if there is one.
+    let runDay: Int?
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -142,6 +145,11 @@ private struct TrialRungCard: View {
                     Text("\(trial.dayLimit) days  ·  starts with \(CurrencyFormatter.short(trial.startingCash))")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .foregroundStyle(Theme.textSecondary)
+                    if let runDay {
+                        Label("Park in progress, day \(runDay)", systemImage: "play.circle.fill")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.accent)
+                    }
                 } else {
                     Label("Beat trial \(trial.number - 1) to open", systemImage: "lock.fill")
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -186,7 +194,9 @@ private struct TrialBriefingView: View {
     @EnvironmentObject private var router: AppRouter
     let trial: TrialDefinition
 
-    @State private var slot = 0
+    @State private var confirmingRestart = false
+
+    private var run: SaveSlotSummary? { router.trialRuns[trial.id] }
 
     var body: some View {
         ScrollView {
@@ -230,28 +240,30 @@ private struct TrialBriefingView: View {
                     rule(trial.medal.symbolName, "Medal: \(trial.medal.name)")
                 }
 
-                section("SAVE SLOT") {
-                    Picker("Slot", selection: $slot) {
-                        ForEach(0..<SaveGameService.slotCount, id: \.self) { index in
-                            Text(slotLabel(index)).tag(index)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.white)
+                if let bestDay = router.completedTrials[trial.id] {
+                    Label("Medal earned. Best finish: day \(bestDay).", systemImage: trial.medal.symbolName)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.money)
                 }
 
-                Button {
-                    router.startTrial(trial, in: slot)
-                } label: {
-                    Label("Begin trial", systemImage: "flag.checkered")
-                        .font(.system(size: 17, weight: .heavy, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .foregroundStyle(.black.opacity(0.88))
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Theme.moneyGradient))
+                if let run {
+                    primaryButton("Resume, day \(run.day)", symbol: "play.fill") {
+                        router.resumeTrial(trial)
+                    }
+                    secondaryButton("Start over from day one") {
+                        confirmingRestart = true
+                    }
+                } else {
+                    primaryButton(router.completedTrials[trial.id] == nil ? "Begin trial" : "Play again",
+                                  symbol: "flag.checkered") {
+                        router.startTrial(trial)
+                    }
                 }
-                .buttonStyle(.plain)
+
+                Text("Trials keep their own saves. They never use one of your three park slots.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity)
             }
             .padding(18)
         }
@@ -263,7 +275,42 @@ private struct TrialBriefingView: View {
         )
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .onAppear { slot = router.firstEmptySlot }
+        .confirmationDialog("Start this trial over?",
+                            isPresented: $confirmingRestart,
+                            titleVisibility: .visible) {
+            Button("Start over", role: .destructive) { router.startTrial(trial) }
+            Button("Keep my park", role: .cancel) { }
+        } message: {
+            Text("The park you have on day \(run?.day ?? 1) is replaced with a fresh one. Medals you have earned are kept.")
+        }
+    }
+
+    private func primaryButton(_ title: String,
+                               symbol: String,
+                               action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 17, weight: .heavy, design: .rounded))
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .foregroundStyle(.black.opacity(0.88))
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.moneyGradient))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func secondaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .foregroundStyle(.white)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.12)))
+        }
+        .buttonStyle(.plain)
     }
 
     private func section<Content: View>(_ title: String,
@@ -287,10 +334,4 @@ private struct TrialBriefingView: View {
             .foregroundStyle(.white.opacity(0.9))
     }
 
-    private func slotLabel(_ index: Int) -> String {
-        if let summary = router.slotSummaries[index] {
-            return "Slot \(index + 1): replaces \(summary.parkName)"
-        }
-        return "Slot \(index + 1): empty"
-    }
 }

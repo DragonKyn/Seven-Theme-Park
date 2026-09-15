@@ -11,6 +11,7 @@ struct MainMenuView: View {
     @EnvironmentObject private var router: AppRouter
     @State private var showingNewGame = false
     @State private var showingTrials = false
+    @State private var showingAbout = false
     @State private var demo: DemoParkBackdrop?
     /// The slot the player has asked to delete, held until they confirm.
     @State private var slotToDelete: Int?
@@ -37,6 +38,7 @@ struct MainMenuView: View {
                 VStack(spacing: 14) {
                     primaryActions
                     savedParks
+                    aboutLink
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 22)
@@ -68,6 +70,9 @@ struct MainMenuView: View {
         }
         .fullScreenCover(isPresented: $showingTrials) {
             TrialLadderView()
+        }
+        .sheet(isPresented: $showingAbout) {
+            AboutView()
         }
         .onAppear {
             router.refreshSlots()
@@ -137,6 +142,29 @@ struct MainMenuView: View {
                             symbol: "plus",
                             prominent: router.slotSummaries.isEmpty)
         }
+    }
+
+    /// Small and at the foot of the menu: it matters, but nobody opens the
+    /// game to read it.
+    private var aboutLink: some View {
+        Button {
+            showingAbout = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Theme.danger)
+                Text("About \(AppInfo.gameName)  ·  No forced ads, no gems, no paywalls")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(Color.black.opacity(0.30)))
+        }
+        .buttonStyle(.plain)
     }
 
     private var savedParks: some View {

@@ -53,7 +53,9 @@ final class GameController: ObservableObject {
     private let engine = SimulationEngine()
     private let tutorial = TutorialDirector()
     private let saveService: SaveGameService
-    private(set) var slot: Int
+    /// Where this park is saved: one of the player's slots, or its trial's
+    /// own file.
+    private(set) var location: SaveLocation
     /// A demo controller drives the park behind the main menu. It simulates
     /// normally but never writes a save, and nothing routes input to it.
     let isDemo: Bool
@@ -65,11 +67,11 @@ final class GameController: ObservableObject {
     // MARK: - Init
 
     init(state: GameState,
-         slot: Int,
+         location: SaveLocation,
          saveService: SaveGameService = SaveGameService(),
          isDemo: Bool = false) {
         self.state = state
-        self.slot = slot
+        self.location = location
         self.saveService = saveService
         self.isDemo = isDemo
         refreshUI()
@@ -77,7 +79,7 @@ final class GameController: ObservableObject {
 
     /// The park that runs behind the main menu.
     static func demo() -> GameController {
-        GameController(state: DemoPark.makeState(), slot: -1, isDemo: true)
+        GameController(state: DemoPark.makeState(), location: .slot(-1), isDemo: true)
     }
 
     convenience init(newParkNamed name: String,
@@ -85,14 +87,14 @@ final class GameController: ObservableObject {
                      layout: MapLayout? = nil,
                      startingCash: Double = Balance.startingCash,
                      trialID: String? = nil,
-                     slot: Int,
+                     location: SaveLocation,
                      saveService: SaveGameService = SaveGameService()) {
         self.init(state: GameState(parkName: name,
                                    mode: mode,
                                    layout: layout,
                                    startingCash: startingCash,
                                    trialID: trialID),
-                  slot: slot,
+                  location: location,
                   saveService: saveService)
     }
 
@@ -703,7 +705,7 @@ final class GameController: ObservableObject {
 
     func save() {
         do {
-            try saveService.save(state, to: slot)
+            try saveService.save(state, to: location)
             saveMessage = "Park saved."
         } catch {
             saveMessage = "Could not save: \(error.localizedDescription)"
@@ -711,7 +713,7 @@ final class GameController: ObservableObject {
     }
 
     private func autosave() {
-        try? saveService.save(state, to: slot)
+        try? saveService.save(state, to: location)
     }
 
     func saveOnBackground() {
