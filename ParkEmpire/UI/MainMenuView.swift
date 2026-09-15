@@ -154,7 +154,7 @@ struct MainMenuView: View {
                 Image(systemName: "heart.fill")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Theme.danger)
-                Text("About \(AppInfo.gameName)  ·  No forced ads, no gems, no paywalls")
+                Text("About \(AppInfo.gameName)")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.75))
                     .lineLimit(1)
