@@ -13,6 +13,7 @@ struct GameView: View {
     @State private var showingAlerts = false
     @State private var showingStaff = false
     @State private var showingAchievements = false
+    @State private var showingBoosts = false
     @State private var trialExpanded = true
 
     var body: some View {
@@ -58,6 +59,7 @@ struct GameView: View {
                     }
 
                     ControlBarView(controller: controller,
+                                   onOpenBoosts: { showingBoosts = true },
                                    onOpenFinance: { showingFinance = true },
                                    onOpenManagement: { showingManagement = true },
                                    onOpenStaff: { showingStaff = true },
@@ -111,6 +113,9 @@ struct GameView: View {
         .sheet(isPresented: $showingAchievements) {
             AchievementsView(controller: controller)
         }
+        .sheet(isPresented: $showingBoosts) {
+            BoostsView(boosts: BoostCenter.shared, ads: RewardedAdCenter.shared)
+        }
         .sheet(isPresented: $showingSettings) {
             ParkSettingsView(controller: controller)
                 .presentationDetents([.medium])
@@ -155,6 +160,7 @@ struct GameView: View {
 
 private struct ControlBarView: View {
     @ObservedObject var controller: GameController
+    let onOpenBoosts: () -> Void
     let onOpenFinance: () -> Void
     let onOpenManagement: () -> Void
     let onOpenStaff: () -> Void
@@ -193,10 +199,14 @@ private struct ControlBarView: View {
 
             Spacer(minLength: 0)
 
-            SpeedControlView(speed: controller.hud.speed) { controller.setSpeed($0) }
+            SpeedControlView(speed: controller.hud.speed,
+                             turboUnlocked: controller.isTurboUnlocked,
+                             onSelect: { controller.setSpeed($0) },
+                             onLockedTap: onOpenBoosts)
 
             Menu {
                 Button("Achievements", systemImage: "rosette", action: onOpenAchievements)
+                Button("Boosts", systemImage: "bolt.fill", action: onOpenBoosts)
                 Button("Save park") { controller.save() }
                 // Only raises the question here. Leaving the park was an
                 // action on the menu item itself, and a menu item that tears

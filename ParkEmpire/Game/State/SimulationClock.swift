@@ -5,8 +5,13 @@ enum GameSpeed: Int, Codable, CaseIterable, Identifiable {
     case normal = 1
     case fast = 2
     case veryFast = 4
+    /// Only selectable while the speed boost is running.
+    case turbo = 5
 
     var id: Int { rawValue }
+
+    /// Whether this notch has to be unlocked before it can be chosen.
+    var needsBoost: Bool { self == .turbo }
     var multiplier: Double { Double(rawValue) }
 
     var label: String {
@@ -15,6 +20,7 @@ enum GameSpeed: Int, Codable, CaseIterable, Identifiable {
         case .normal: return "1x"
         case .fast: return "2x"
         case .veryFast: return "4x"
+        case .turbo: return "5x"
         }
     }
 }

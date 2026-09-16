@@ -303,6 +303,16 @@ enum Balance {
     /// or a live reading, so nothing is missed by looking a few seconds later.
     static let achievementCheckInterval: Double = 5
 
+    // MARK: - Boosts
+
+    /// Real minutes one advert is worth, and the most that can be banked at
+    /// once. The ceiling is there so nobody sits through twenty adverts and
+    /// then never sees the park run at its own pace again.
+    static let adBoostMinutes: Double = 10
+    static let adBoostMaximumMinutes: Double = 60
+    /// Extra arrivals the gate boost brings, as a share.
+    static let adVisitorBoost: Double = 0.05
+
     // MARK: - Autosave
 
     static let autosaveInterval: Double = 60

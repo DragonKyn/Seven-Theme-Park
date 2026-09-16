@@ -52,6 +52,7 @@ final class GameController: ObservableObject {
     private(set) var state: GameState
     private let engine = SimulationEngine()
     private let tutorial = TutorialDirector()
+    private let boosts = BoostCenter.shared
     private let saveService: SaveGameService
     /// Where this park is saved: one of the player's slots, or its trial's
     /// own file.
@@ -120,7 +121,13 @@ final class GameController: ObservableObject {
 
     // MARK: - Speed
 
+    /// Whether the fifth notch is unlocked just now.
+    var isTurboUnlocked: Bool { boosts.isActive(.turboSpeed) }
+
     func setSpeed(_ speed: GameSpeed) {
+        // A notch that needs a boost is refused rather than silently ignored,
+        // so a lapsed boost cannot be walked back into by tapping.
+        guard !speed.needsBoost || isTurboUnlocked else { return }
         state.clock.speed = speed
         engine.resetTiming()
         refreshUI()
@@ -737,6 +744,7 @@ final class GameController: ObservableObject {
     }
 
     private func refreshUI() {
+        applyBoosts()
         hud = HUDSnapshot(state: state)
 
         if celebration == nil, !state.pendingAwards.isEmpty {
@@ -829,6 +837,24 @@ final class GameController: ObservableObject {
 
     func dismissTrialResult() {
         trialResult = nil
+    }
+
+    /// Carries the player's boosts into the park, and takes them away again
+    /// when they lapse.
+    ///
+    /// Done on the UI refresh rather than on a timer of its own: it is five
+    /// times a second, it costs two date comparisons, and it means a boost
+    /// running out is noticed without anything else having to be scheduled.
+    private func applyBoosts() {
+        let arrivals = boosts.isActive(.extraVisitors) ? Balance.adVisitorBoost : 0
+        if state.adArrivalsBoost != arrivals {
+            state.adArrivalsBoost = arrivals
+        }
+        if state.clock.speed.needsBoost, !isTurboUnlocked {
+            state.clock.speed = .veryFast
+            engine.resetTiming()
+            boosts.refresh()
+        }
     }
 
     /// Retires a card once it has had its time. Driven from the same UI

@@ -46,6 +46,12 @@ final class GameState: Codable {
     /// How much of the car park outside the gate has been paved, 0 to
     /// `CarParkContent.maxLevel`.
     var carParkLevel: Int = 0
+    /// Extra arrivals from a boost the player switched on outside the park.
+    ///
+    /// Written by the controller from the boost centre every refresh rather
+    /// than counted here, because a boost belongs to the player and their
+    /// wall clock, not to this park and its save.
+    var adArrivalsBoost: Double = 0
     /// Sim time the next famous visitor may turn up, the boost their post is
     /// currently giving the park, and when it runs out.
     var nextInfluencerAt: Double = Balance.dayLength * 2.5
@@ -158,6 +164,7 @@ final class GameState: Codable {
         scheme = container.value(.scheme, or: ParkScheme())
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
+        adArrivalsBoost = 0
         nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 2.5)
         promotionBoost = container.value(.promotionBoost, or: 0)
         promotionEndsAt = container.value(.promotionEndsAt, or: 0)
