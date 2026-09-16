@@ -655,6 +655,32 @@ final class GameController: ObservableObject {
         return true
     }
 
+    // MARK: - Shop upgrades
+
+    func shopUpgradeCost(_ kind: ShopUpgradeKind, facilityID: UUID) -> Double? {
+        guard let facility = state.facility(id: facilityID),
+              let base = facility.baseDefinition,
+              base.acceptsUpgrades else { return nil }
+        let next = facility.upgradeLevel(kind) + 1
+        guard next <= kind.maxLevel else { return nil }
+        return kind.cost(forLevel: next, shopPrice: base.purchasePrice)
+    }
+
+    @discardableResult
+    func buyShopUpgrade(_ kind: ShopUpgradeKind, facilityID: UUID) -> Bool {
+        guard let cost = shopUpgradeCost(kind, facilityID: facilityID),
+              state.ledger.canAfford(cost),
+              let index = state.facilityIndex(id: facilityID) else { return false }
+
+        state.ledger.spend(cost, on: .construction)
+        let next = state.facilities[index].upgradeLevel(kind) + 1
+        state.facilities[index].upgrades[kind.rawValue] = next
+        state.statistics.upgradesBoughtTotal += 1
+
+        refreshUI()
+        return true
+    }
+
     /// What paving the next stretch of car park costs, or nil once it is
     /// finished.
     func carParkUpgradeCost() -> Double? {

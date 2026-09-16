@@ -28,6 +28,10 @@ struct Facility: Codable, Identifiable {
     var soiling: Double = 0
     var timesServiced: Int = 0
 
+    /// Purchased upgrade levels, keyed by `ShopUpgradeKind.rawValue`. Stored
+    /// by raw string so a build that drops an upgrade kind still decodes.
+    var upgrades: [String: Int] = [:]
+
     /// Prizes handed out, for carnival booths. Zero everywhere else.
     var prizesGiven: Int = 0
     var customersToday: Int = 0
@@ -41,7 +45,13 @@ struct Facility: Codable, Identifiable {
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
 
-    var definition: FacilityDefinition? { GameContent.facility(definitionID) }
+    /// Straight out of the catalogue, without anything the player has bought.
+    var baseDefinition: FacilityDefinition? { GameContent.facility(definitionID) }
+
+    /// What the shop actually is now, upgrades and all.
+    var definition: FacilityDefinition? { baseDefinition?.applying(upgrades) }
+
+    func upgradeLevel(_ kind: ShopUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
 
     var priceSentiment: Double? {
         guard sentimentCount > 0 else { return nil }
@@ -103,6 +113,7 @@ extension Facility {
         slots = container.value(.slots, or: [])
         soiling = container.value(.soiling, or: 0)
         timesServiced = container.value(.timesServiced, or: 0)
+        upgrades = container.value(.upgrades, or: [:])
         prizesGiven = container.value(.prizesGiven, or: 0)
         customersToday = container.value(.customersToday, or: 0)
         totalCustomers = container.value(.totalCustomers, or: 0)

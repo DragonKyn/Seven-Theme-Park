@@ -59,6 +59,7 @@ enum FacilityAppeal {
         }
 
         let appeal = desire(for: guest, facility: facility, definition: definition)
+            * definition.drawFactor
         let score = appeal * proximityFactor(distance) * queueFactor
         return score > 0.5 ? .wants(score) : .notWanted
     }

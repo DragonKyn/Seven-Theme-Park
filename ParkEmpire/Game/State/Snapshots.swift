@@ -252,6 +252,19 @@ struct FacilityDetail: Identifiable {
     let totalRevenue: Double
     let totalCost: Double
     let sentiment: Double?
+    /// Empty for anything that cannot be improved.
+    let upgrades: [ShopUpgradeLine]
+
+    struct ShopUpgradeLine: Identifiable {
+        let id: String
+        let kind: ShopUpgradeKind
+        let displayName: String
+        let summary: String
+        let symbolName: String
+        let level: Int
+        let maxLevel: Int
+        let cost: Double?
+    }
 
     init(facility: Facility) {
         id = facility.id
@@ -266,6 +279,27 @@ struct FacilityDetail: Identifiable {
         totalRevenue = facility.totalRevenue
         totalCost = facility.totalCost
         sentiment = facility.priceSentiment
+
+        let shopPrice = facility.baseDefinition?.purchasePrice ?? 0
+        if let definition = facility.definition, definition.acceptsUpgrades {
+            upgrades = ShopUpgradeKind.allCases.map { upgrade in
+                let level = facility.upgradeLevel(upgrade)
+                let next = level + 1
+                return ShopUpgradeLine(
+                    id: upgrade.rawValue,
+                    kind: upgrade,
+                    displayName: upgrade.displayName(for: definition.kind),
+                    summary: upgrade.summary(for: definition.kind),
+                    symbolName: upgrade.symbolName,
+                    level: level,
+                    maxLevel: upgrade.maxLevel,
+                    cost: next <= upgrade.maxLevel
+                        ? upgrade.cost(forLevel: next, shopPrice: shopPrice)
+                        : nil)
+            }
+        } else {
+            upgrades = []
+        }
 
         if let definition = facility.definition {
             typeName = definition.displayName

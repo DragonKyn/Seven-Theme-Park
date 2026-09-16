@@ -72,6 +72,14 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     /// How often a guest walks away from a carnival booth with a prize.
     /// Ignored by everything that is not a game.
     var winChance: Double = 0
+    /// How much harder this pulls a guest in than a plain one of its kind.
+    /// Raised by signage; 1 means no help.
+    var drawFactor: Double = 1
+
+    /// Whether this is something the player can pour money into after it is
+    /// built. Restrooms, benches and bins are not: there is nothing to sell
+    /// and nothing to improve about a bin.
+    var acceptsUpgrades: Bool { kind.sellsGoods }
 
     var category: BuildCategory {
         switch kind {
@@ -103,4 +111,42 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     var previewAppearance: BuildingAppearance? { appearance }
 
     var profitPerSale: Double { defaultPrice - unitCost }
+
+    /// The same shop with its purchased upgrades folded in.
+    ///
+    /// Returning a definition rather than a separate stats type means every
+    /// system that already reads a definition picks the upgrades up without
+    /// being told about them, exactly as rides work.
+    func applying(_ upgrades: [String: Int]) -> FacilityDefinition {
+        guard !upgrades.isEmpty else { return self }
+        func level(_ kind: ShopUpgradeKind) -> Double { Double(upgrades[kind.rawValue] ?? 0) }
+
+        let service = level(.service)
+        let quality = level(.quality)
+        let signage = level(.signage)
+
+        var improved = relief
+        improved.happiness += quality * 3
+
+        return FacilityDefinition(
+            id: id,
+            displayName: displayName,
+            summary: summary,
+            kind: kind,
+            purchasePrice: purchasePrice,
+            defaultPrice: defaultPrice,
+            unitCost: unitCost,
+            // What guests think it is worth. Raising this is what lets a
+            // better stall charge more without anybody feeling fleeced.
+            referencePrice: referencePrice * (1 + quality * 0.18),
+            serviceDuration: serviceDuration,
+            simultaneousCapacity: simultaneousCapacity + Int(service),
+            queueCapacity: queueCapacity + Int(service) * 2,
+            relief: improved,
+            footprint: footprint,
+            unlockLevel: unlockLevel,
+            appearance: appearance,
+            winChance: min(0.85, winChance > 0 ? winChance + quality * 0.06 : 0),
+            drawFactor: drawFactor * (1 + signage * 0.18))
+    }
 }

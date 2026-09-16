@@ -34,6 +34,77 @@ struct RideUpgradeDefinition: Identifiable {
     }
 }
 
+/// The things a player can improve about a shop or a booth they already own.
+///
+/// Rides had somewhere to go once built and shops did not, so a stall put up
+/// on day one was exactly as good on day thirty. These are the three levers
+/// that matter to a counter: how many people it can serve, how good what it
+/// sells is, and whether anybody notices it is there.
+enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
+    case service
+    case quality
+    case signage
+
+    var id: String { rawValue }
+
+    /// A booth and a burger stall want the same upgrade described in
+    /// different words, so the catalogue holds one entry and the wording
+    /// bends to the kind it is being shown for.
+    func displayName(for kind: FacilityKind) -> String {
+        switch self {
+        case .service: return kind == .game ? "Second Booth" : "Extra Till"
+        case .quality: return kind == .game ? "Better Prizes" : "Better Stock"
+        case .signage: return "Lit Signage"
+        }
+    }
+
+    func summary(for kind: FacilityKind) -> String {
+        switch self {
+        case .service:
+            return kind == .game
+                ? "Another set of stalls, so twice as many can play at once."
+                : "Another till, so the queue moves at twice the rate."
+        case .quality:
+            return kind == .game
+                ? "Bigger prizes and better odds. Winners leave far happier."
+                : "Better ingredients. Guests judge the price against what they get."
+        case .signage:
+            return "Lights and a painted board. Guests notice it from further down the path."
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .service: return "person.2.badge.plus"
+        case .quality: return "star.circle.fill"
+        case .signage: return "lightbulb.fill"
+        }
+    }
+
+    var maxLevel: Int {
+        switch self {
+        case .service: return 2
+        case .quality: return 3
+        case .signage: return 2
+        }
+    }
+
+    /// Price of the first level as a share of what the shop cost to build.
+    var costShare: Double {
+        switch self {
+        case .service: return 0.55
+        case .quality: return 0.40
+        case .signage: return 0.32
+        }
+    }
+
+    func cost(forLevel level: Int, shopPrice: Double) -> Double {
+        // The same shape rides use: later levels cost proportionally more, so
+        // a row of improved stalls beats one perfect one.
+        (shopPrice * costShare * Double(level) * 1.15).rounded()
+    }
+}
+
 /// Training makes an employee faster on their feet and quicker at the job,
 /// and puts their wage up to match. One track, three levels: the decision is
 /// how many people to train, not which of five skills to pick.

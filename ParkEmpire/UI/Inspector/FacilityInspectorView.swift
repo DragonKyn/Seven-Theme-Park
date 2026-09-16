@@ -60,6 +60,24 @@ struct FacilityInspectorView: View {
                 }
             }
 
+            if !facility.upgrades.isEmpty {
+                SectionCard(title: "Improvements") {
+                    VStack(spacing: 8) {
+                        ForEach(facility.upgrades) { upgrade in
+                            UpgradeRowView(title: upgrade.displayName,
+                                           summary: upgrade.summary,
+                                           symbolName: upgrade.symbolName,
+                                           level: upgrade.level,
+                                           maxLevel: upgrade.maxLevel,
+                                           cost: upgrade.cost,
+                                           affordable: controller.hud.cash >= (upgrade.cost ?? 0)) {
+                                controller.buyShopUpgrade(upgrade.kind, facilityID: facility.id)
+                            }
+                        }
+                    }
+                }
+            }
+
             Button {
                 controller.setFacilityOpen(!facility.isOpen, facilityID: facility.id)
             } label: {
