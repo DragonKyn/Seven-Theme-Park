@@ -107,6 +107,10 @@ enum InspectionSystem {
 
         let ride = state.attractions[index]
         let passed = !ride.isBroken && ride.condition >= Balance.safetyInspectionPassCondition
+        /// What the card reports. A pass shows the condition it was judged
+        /// on; a failure shows the state the ride is left in, because that is
+        /// what the player sees when they go and look at it.
+        var reportedCondition = ride.condition
 
         if passed {
             state.inspectionBonus = .lasting(Balance.safetyInspectionBonusMinutes,
@@ -122,6 +126,15 @@ enum InspectionSystem {
         } else {
             state.ledger.spend(Balance.safetyInspectionFine, on: .maintenance)
             state.attractions[index].isImpounded = true
+            // Left in the state the notice describes. Without this the ride
+            // could be sitting at ninety per cent with a prohibition notice
+            // against it, which reads as a bug rather than an event.
+            state.attractions[index].condition = min(ride.condition,
+                                                     Balance.safetyInspectionFailedCondition)
+            state.attractions[index].timeSinceInspection = Balance.inspectionInterval
+            state.attractions[index].phase = .loading
+            state.attractions[index].phaseTimer = 0
+            reportedCondition = state.attractions[index].condition
             MaintenanceSystem.evacuate(
                 attractionIndex: index,
                 state: state,
@@ -134,11 +147,18 @@ enum InspectionSystem {
                             key: "inspection.result",
                             target: .attraction(rideID),
                             cooldown: 60)
+
+            if state.staffCount(role: .mechanic) == 0 {
+                state.postAlert("You have no mechanics. A ride an inspector has shut stays shut.",
+                                severity: .critical,
+                                key: "staff.mechanic.missing",
+                                cooldown: 300)
+            }
         }
 
         state.pendingInspections.append(
             InspectionReport(rideName: ride.name,
-                             condition: ride.condition,
+                             condition: reportedCondition,
                              passed: passed,
                              fine: passed ? 0 : Balance.safetyInspectionFine,
                              bonus: passed ? Balance.safetyInspectionRatingBonus : 0,

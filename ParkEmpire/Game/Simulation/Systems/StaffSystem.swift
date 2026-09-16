@@ -299,8 +299,14 @@ final class StaffSystem {
         }
 
         switch job {
-        case .repairRide:
-            state.staff[staffIndex].workTimer = Balance.repairDuration / state.staff[staffIndex].workRate
+        case .repairRide(let id):
+            // An impound takes longer to lift than a breakdown takes to fix:
+            // there is paperwork as well as a spanner, and an impound nobody
+            // sees because it cleared in twelve seconds teaches nothing.
+            let work = state.attraction(id: id)?.isImpounded == true
+                ? Balance.impoundRepairDuration
+                : Balance.repairDuration
+            state.staff[staffIndex].workTimer = work / state.staff[staffIndex].workRate
         case .inspectRide:
             state.staff[staffIndex].workTimer = Balance.inspectionDuration / state.staff[staffIndex].workRate
         case .entertain:

@@ -142,6 +142,9 @@ struct AttractionDetail: Identifiable {
     let typeName: String
     let status: String
     let isOpen: Bool
+    /// Shut by an inspector. Separate from `isOpen`, which is the player's
+    /// own switch and stays wherever they left it.
+    let isImpounded: Bool
     let condition: Double
     let queueLength: Int
     let estimatedWait: Double
@@ -189,6 +192,7 @@ struct AttractionDetail: Identifiable {
         id = attraction.id
         name = attraction.name
         isOpen = attraction.isOpen
+        isImpounded = attraction.isImpounded
         status = attraction.statusDescription
         condition = attraction.condition
         queueLength = attraction.queue.count

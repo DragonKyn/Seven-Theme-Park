@@ -274,6 +274,18 @@ enum Balance {
     /// Condition at or above which a ride passes. Well below `repairedCondition`
     /// so a ride a mechanic has just touched cannot fail.
     static let safetyInspectionPassCondition: Double = 55
+    /// What a failed ride's condition is knocked down to.
+    ///
+    /// A notice that shuts a ride while the ride still reads as nearly new is
+    /// a confusing thing to be handed. Failing an inspection means the
+    /// inspector found something, so the ride is left in the state the notice
+    /// describes and a mechanic has real work to do putting it right.
+    static let safetyInspectionFailedCondition: Double = 20
+    /// Sim-seconds a mechanic spends lifting an impound, against
+    /// `repairDuration` for an ordinary breakdown. Longer on purpose: an
+    /// impound the player never sees because it was cleared in twelve seconds
+    /// teaches nothing.
+    static let impoundRepairDuration: Double = 130
     /// The fine, charged to maintenance. Comparable to the cost of the mechanic
     /// the park should have hired instead.
     static let safetyInspectionFine: Double = 1_200

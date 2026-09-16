@@ -186,6 +186,23 @@ struct AttractionInspectorView: View {
                 }
             }
 
+            if attraction.isImpounded {
+                // Said plainly, because the player's own open switch is still
+                // wherever they left it and on its own would suggest the ride
+                // is running.
+                Label("Shut by a safety inspector. It cannot take anybody until a mechanic has repaired it.",
+                      systemImage: "xmark.seal.fill")
+                    .font(.system(.footnote, design: .rounded).weight(.semibold))
+                    .foregroundStyle(Theme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.danger.opacity(0.18))
+                    )
+            }
+
             HStack(spacing: 8) {
                 Button {
                     controller.setRideOpen(!attraction.isOpen, attractionID: attraction.id)
@@ -201,6 +218,8 @@ struct AttractionInspectorView: View {
                         )
                         .foregroundStyle(.black)
                 }
+                .disabled(attraction.isImpounded)
+                .opacity(attraction.isImpounded ? 0.4 : 1)
 
                 Button {
                     draftName = attraction.name
