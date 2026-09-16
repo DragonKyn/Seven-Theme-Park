@@ -6,7 +6,11 @@ import Foundation
 /// Deliberately a value with no behaviour: the store works out the numbers
 /// once, the controller hands them to the park, and every system reads the
 /// one it cares about without knowing that perks or trials exist.
-struct ParkPerks: Equatable {
+/// Codable only because the park it rides along on is. The values written
+/// into a save are ignored on load and replaced with whatever the player's
+/// perk tree says now, which is what makes moving a point take effect in an
+/// old park straight away.
+struct ParkPerks: Codable, Equatable {
     /// Extra arrivals, as a share.
     var extraArrivals: Double = 0
     /// Points of happiness a guest walks in with, on top of the usual roll.
