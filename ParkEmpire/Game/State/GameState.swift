@@ -46,6 +46,12 @@ final class GameState: Codable {
     /// How much of the car park outside the gate has been paved, 0 to
     /// `CarParkContent.maxLevel`.
     var carParkLevel: Int = 0
+    /// What the player's spent trial points are worth here.
+    ///
+    /// Written by the controller rather than saved, for the same reason the
+    /// advert boost is: these belong to the player across every park, and a
+    /// park loaded after a point is moved should feel the move at once.
+    var perks = ParkPerks()
     /// Extra arrivals from a boost the player switched on outside the park.
     ///
     /// Written by the controller from the boost centre every refresh rather
@@ -164,6 +170,7 @@ final class GameState: Codable {
         scheme = container.value(.scheme, or: ParkScheme())
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
+        perks = ParkPerks()
         adArrivalsBoost = 0
         nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 2.5)
         promotionBoost = container.value(.promotionBoost, or: 0)

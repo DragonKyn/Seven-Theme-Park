@@ -43,9 +43,17 @@ struct TutorialSignals {
     var litteredTiles = 0
     var brokenRides = 0
     var longestQueue = 0
+    var securityCount = 0
+    var sceneryCount = 0
+    var impoundedRides = 0
+    /// Shops and booths standing at nothing but their opening spec.
+    var unimprovedShops = 0
     var isBuilding = false
     var isPlacing = false
     var isFreeBuild = false
+    /// A trial has its own goals screen and its own save, so a handful of
+    /// tips have nothing to say inside one.
+    var isTrial = false
 }
 
 enum TutorialContent {
@@ -64,7 +72,7 @@ enum TutorialContent {
         TutorialTip(
             id: "tip.paths",
             title: "Guests only walk on walkways",
-            message: "Everything you build has to touch one. Pick Paths, turn on the drag toggle, and draw a route; rides and shops go beside it, not on it.",
+            message: "Everything you build has to touch one. Pick Paths, turn on Draw, and drag out a route; rides and shops go beside it, not on it.",
             symbolName: "square.grid.3x3",
             priority: 90,
             condition: { $0.isBuilding }
@@ -88,7 +96,7 @@ enum TutorialContent {
         TutorialTip(
             id: "tip.inspect",
             title: "Tap anything to inspect it",
-            message: "A ride shows its queue, its takings and its upgrades. A guest shows what they want and what they are thinking, which is usually how you find out what your park is missing.",
+            message: "A ride shows its queue, its takings and what it can be improved with. A guest shows what they want and what they are thinking, which is usually how you find out what your park is missing.",
             symbolName: "hand.tap.fill",
             priority: 80,
             condition: { $0.rideCount >= 1 && $0.guestCount >= 5 }
@@ -176,7 +184,7 @@ enum TutorialContent {
         TutorialTip(
             id: "tip.coaster",
             title: "Build your own coaster",
-            message: "Under Coasters you can lay your own track, drop a station on it, and bolt on loops, corkscrews and a jump. The train runs whatever you build, so a longer, wilder circuit is a better ride.",
+            message: "Coaster Builder is a box of parts rather than a shelf of rides. Lay your own track, put a station beside it, and bolt on loops, corkscrews and a jump. The train runs whatever you build, so a longer, wilder circuit is a better ride.",
             symbolName: "point.topleft.down.curvedto.point.bottomright.up",
             priority: 66,
             condition: { $0.rideCount >= 4 }
@@ -190,9 +198,65 @@ enum TutorialContent {
             condition: { $0.guestCount >= 14 && $0.benchCount == 0 }
         ),
         TutorialTip(
+            id: "tip.inspector",
+            title: "An inspector has shut a ride",
+            message: "It stays shut, and it cannot take anybody, until a mechanic has been out to it. Hire one if you have not, and expect the repair to take a while.",
+            symbolName: "xmark.seal.fill",
+            priority: 97,
+            condition: { $0.impoundedRides > 0 }
+        ),
+        TutorialTip(
+            id: "tip.shopupgrades",
+            title: "Shops can be improved",
+            message: "Tap a stall or a booth and look under Improvements. Another till moves the queue, better stock lets you charge more without complaints, and lit signage pulls people in from further down the path.",
+            symbolName: "star.circle.fill",
+            priority: 72,
+            condition: { $0.unimprovedShops >= 1 && $0.day >= 2 && $0.cash >= 2_000 }
+        ),
+        TutorialTip(
+            id: "tip.security",
+            title: "Somebody to keep an eye on things",
+            message: "A guard makes the crowd around them feel looked after, and they are the only ones who can see a troublemaker off the premises. Without one, a troublemaker has the run of the park all afternoon.",
+            symbolName: "shield.lefthalf.filled",
+            priority: 63,
+            condition: { $0.guestCount >= 25 && $0.securityCount == 0 }
+        ),
+        TutorialTip(
+            id: "tip.alerts",
+            title: "The bell knows before you do",
+            message: "Breakdowns, long queues, litter and empty tills all end up under the bell at the top. Tapping a notice takes you straight to whatever it is about.",
+            symbolName: "bell.badge.fill",
+            priority: 76,
+            condition: { $0.brokenRides > 0 || $0.litteredTiles >= 10 }
+        ),
+        TutorialTip(
+            id: "tip.scenery",
+            title: "A park people want to look at",
+            message: "Trees, flowers, lamps and fountains raise how pretty the ground around them is, and the rating counts it. Scenery in Build has several styles of each, and Park settings paints the benches and lamps in your own colours.",
+            symbolName: "tree.fill",
+            priority: 58,
+            condition: { $0.rideCount >= 3 && $0.sceneryCount == 0 }
+        ),
+        TutorialTip(
+            id: "tip.boosts",
+            title: "A fifth gear, if you want it",
+            message: "The greyed-out 5x on the speed control, and a busier gate, can each be switched on for ten minutes by watching a short advert. Nothing in the game needs them, and nothing will ever interrupt your park to ask.",
+            symbolName: "hare.fill",
+            priority: 52,
+            condition: { $0.day >= 3 && $0.minutesPlayed >= 25 }
+        ),
+        TutorialTip(
+            id: "tip.trials",
+            title: "Fifteen parks against the clock",
+            message: "Park Trials on the main menu is a ladder of parks built to a deadline on harder and harder land. Every one you beat earns a medal and a point to spend on a permanent bonus that applies to every park you build.",
+            symbolName: "flag.checkered",
+            priority: 50,
+            condition: { !$0.isTrial && $0.day >= 4 && $0.rideCount >= 3 }
+        ),
+        TutorialTip(
             id: "tip.saving",
             title: "Your park saves itself",
-            message: "Progress is written to your slot as you play, and Menu has Save park if you want it now. Leaving through Save and exit always writes first.",
+            message: "Progress is written as you play. Menu has Save park if you want it now, and leaving through Menu asks first and saves before it goes.",
             symbolName: "externaldrive.fill",
             priority: 60,
             condition: { $0.day >= 2 && $0.minutesPlayed >= 6 }

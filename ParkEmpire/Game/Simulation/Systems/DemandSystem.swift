@@ -64,7 +64,7 @@ final class DemandSystem {
         // A post about the park, or a warm review, is a short sharp rush on
         // top of whatever the park had already earned.
         let word = 1 + state.activePromotionBoost + state.activeReviewArrivals
-            + state.adArrivalsBoost
+            + state.adArrivalsBoost + state.perks.extraArrivals
 
         return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * word,
                              0,
@@ -146,6 +146,7 @@ final class DemandSystem {
         // and booth in it stood empty. Demand is still what an expensive park
         // pays for, through `admissionWillingness` below.
         let spendingMoney = state.rng.double(cashRange) * spendingScale * cashScale
+            * (1 + state.perks.guestSpending)
         let startingCash = spendingMoney + state.admissionPrice
 
         let speedScale: Double
@@ -156,7 +157,7 @@ final class DemandSystem {
         }
 
         let name = GuestNames.random(using: &state.rng)
-        let happiness = state.rng.double(62...86)
+        let happiness = SimMath.clamp(state.rng.double(62...86) + state.perks.guestHappiness)
         let hunger = state.rng.double(5...35)
         let thirst = state.rng.double(10...40)
         let energy = state.rng.double(72...100)

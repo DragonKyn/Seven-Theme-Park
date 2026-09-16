@@ -6,11 +6,14 @@ struct TrialLadderView: View {
     @EnvironmentObject private var router: AppRouter
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showingPerks = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    perksLink
 
                     ForEach(TrialContent.all) { trial in
                         rung(trial)
@@ -39,7 +42,65 @@ struct TrialLadderView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingPerks) {
+            PerkTreeView()
+        }
         .onAppear { router.refreshTrials() }
+    }
+
+    /// The other half of the ladder: what beating a rung is worth afterwards.
+    private var perksLink: some View {
+        Button {
+            showingPerks = true
+        } label: {
+            HStack(spacing: 11) {
+                Image(systemName: "seal.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.85))
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(Theme.moneyGradient))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Park Perks")
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                    Text(perkPointsLine)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white.opacity(0.09))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(unspentPoints > 0 ? Theme.money.opacity(0.6) : Color.white.opacity(0.08),
+                                  lineWidth: unspentPoints > 0 ? 2 : 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var unspentPoints: Int {
+        PerkStore().available(completedTrials: router.completedTrials.count)
+    }
+
+    private var perkPointsLine: String {
+        let spare = unspentPoints
+        if spare == 0 {
+            return router.completedTrials.isEmpty
+                ? "Every trial you beat is worth a permanent bonus"
+                : "Every point is spent. Move them whenever you like."
+        }
+        return spare == 1 ? "1 point waiting to be spent" : "\(spare) points waiting to be spent"
     }
 
     private var header: some View {

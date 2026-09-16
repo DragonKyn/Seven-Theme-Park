@@ -26,7 +26,8 @@ final class RatingSystem {
         // the weights are normalised, so the breakdown the dashboard shows
         // stays honest.
         let earned = components.reduce(0.0) { $0 + $1.weight * $1.value } / totalWeight * 100
-        let target = SimMath.clamp(earned + state.activeRatingModifier)
+        let target = SimMath.clamp(earned + state.activeRatingModifier
+                                   + state.perks.ratingBonus)
 
         let previousStars = state.starRating
         state.parkRating += (target - state.parkRating) * Balance.ratingSmoothing

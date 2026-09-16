@@ -47,7 +47,7 @@ final class StaffSystem {
     private func chargeWages(state: GameState, dt: Double) {
         guard !state.staff.isEmpty else { return }
         let perSecond = state.staff.reduce(0.0) { $0 + $1.wagePerSecond }
-        state.ledger.spend(perSecond * dt, on: .wages)
+        state.ledger.spend(perSecond * state.perks.wageFactor * dt, on: .wages)
     }
 
     // MARK: - Job assignment

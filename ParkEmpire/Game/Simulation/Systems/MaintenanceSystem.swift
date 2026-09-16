@@ -17,7 +17,8 @@ final class MaintenanceSystem {
                   state.attractions[index].phase == .running else { continue }
 
             state.attractions[index].condition = SimMath.clamp(
-                state.attractions[index].condition - definition.maintenanceRate * dt)
+                state.attractions[index].condition
+                    - definition.maintenanceRate * state.perks.wearFactor * dt)
 
             rollForBreakdown(index: index, definition: definition, state: state, dt: dt)
         }
@@ -38,6 +39,7 @@ final class MaintenanceSystem {
         // per-cycle chance.
         let hazardPerSecond = Balance.breakdownChanceAtZeroCondition
             * missingCondition * missingCondition * overdue / cycleLength
+            * state.perks.breakdownFactor
 
         guard state.rng.chance(hazardPerSecond * dt) else { return }
         breakDown(index: index, state: state)

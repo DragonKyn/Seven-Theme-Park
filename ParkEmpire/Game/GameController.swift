@@ -53,6 +53,7 @@ final class GameController: ObservableObject {
     private let engine = SimulationEngine()
     private let tutorial = TutorialDirector()
     private let boosts = BoostCenter.shared
+    private let perkStore = PerkStore()
     private let saveService: SaveGameService
     /// Where this park is saved: one of the player's slots, or its trial's
     /// own file.
@@ -819,10 +820,17 @@ final class GameController: ObservableObject {
         signals.isBuilding = build.isActive
         signals.isPlacing = build.pending != nil
         signals.isFreeBuild = state.mode.hasUnlimitedMoney
+        signals.isTrial = state.mode == .trial
+        signals.securityCount = state.staffCount(role: .security)
+        signals.sceneryCount = state.scenery.count
+        signals.impoundedRides = state.attractions.filter(\.isImpounded).count
 
         for facility in state.facilities {
-            guard let kind = facility.definition?.kind else { continue }
-            switch kind {
+            guard let definition = facility.definition else { continue }
+            if definition.acceptsUpgrades && facility.upgrades.isEmpty {
+                signals.unimprovedShops += 1
+            }
+            switch definition.kind {
             case .food, .drink: signals.shopCount += 1
             case .game: signals.boothCount += 1
             case .bench: signals.benchCount += 1
@@ -872,6 +880,11 @@ final class GameController: ObservableObject {
     /// times a second, it costs two date comparisons, and it means a boost
     /// running out is noticed without anything else having to be scheduled.
     private func applyBoosts() {
+        // Re-read every refresh rather than once at launch, so a point moved
+        // in the perk tree is felt in the park behind it straight away.
+        let perks = perkStore.bonuses
+        if state.perks != perks { state.perks = perks }
+
         let arrivals = boosts.isActive(.extraVisitors) ? Balance.adVisitorBoost : 0
         if state.adArrivalsBoost != arrivals {
             state.adArrivalsBoost = arrivals

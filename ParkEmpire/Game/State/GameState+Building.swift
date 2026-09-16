@@ -11,7 +11,15 @@ extension GameState {
                                  origin: origin,
                                  rotation: rotation,
                                  map: map,
-                                 cash: ledger.spendableCash)
+                                 cash: ledger.spendableCash,
+                                 price: price(of: definition))
+    }
+
+    /// What this actually costs to build here, with the player's permanent
+    /// discount applied. The one place the answer is worked out, so the
+    /// price checked against the wallet and the price charged cannot drift.
+    func price(of definition: BuildableDefinition) -> Double {
+        (definition.purchasePrice * perks.buildCostFactor).rounded()
     }
 
     @discardableResult
@@ -99,7 +107,7 @@ extension GameState {
             return false
         }
 
-        ledger.spend(definition.purchasePrice, on: .construction)
+        ledger.spend(price(of: definition), on: .construction)
         return true
     }
 

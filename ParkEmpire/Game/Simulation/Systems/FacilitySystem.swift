@@ -206,12 +206,13 @@ final class FacilitySystem {
 
         state.facilities[facilityIndex].revenueToday += price
         state.facilities[facilityIndex].totalRevenue += price
-        state.facilities[facilityIndex].totalCost += definition.unitCost
+        let stockCost = definition.unitCost * state.perks.stockFactor
+        state.facilities[facilityIndex].totalCost += stockCost
         state.facilities[facilityIndex].customersToday += 1
         state.facilities[facilityIndex].totalCustomers += 1
 
         state.ledger.receive(price, as: revenueCategory(for: definition.kind))
-        state.ledger.spend(definition.unitCost, on: .inventory)
+        state.ledger.spend(stockCost, on: .inventory)
         state.statistics.itemsSoldTotal += 1
         switch definition.kind {
         case .food: state.statistics.foodSoldTotal += 1

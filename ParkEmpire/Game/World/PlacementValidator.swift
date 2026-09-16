@@ -14,11 +14,14 @@ struct PlacementCheck {
 /// them every time the ghost moves without touching game state.
 enum PlacementValidator {
 
+    /// `price` is what it costs here once the player's permanent discount is
+    /// applied. Nil means the list price.
     static func check(definition: BuildableDefinition,
                       origin: GridCoord,
                       rotation: Int = 0,
                       map: ParkMap,
-                      cash: Double) -> PlacementCheck {
+                      cash: Double,
+                      price: Double? = nil) -> PlacementCheck {
         let rect = GridRect(origin: origin, size: definition.footprint(rotatedBy: rotation))
 
         for coord in rect.coords where !map.isInside(coord) {
@@ -113,7 +116,7 @@ enum PlacementValidator {
             }
         }
 
-        guard cash >= definition.purchasePrice else {
+        guard cash >= (price ?? definition.purchasePrice) else {
             return .invalid("Not enough cash")
         }
 
