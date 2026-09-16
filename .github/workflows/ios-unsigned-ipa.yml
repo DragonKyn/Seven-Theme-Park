@@ -63,6 +63,13 @@ jobs:
             echo "=== exit code: ${{ steps.build.outputs.exit_code || 'unknown' }}"
             echo "=== products tree"
             ls -lR "$products" 2>&1 | head -80
+            echo "=== app bundle"
+            ls -la "$products/ParkEmpire.app" 2>&1
+            echo "=== embedded frameworks"
+            ls -la "$products/ParkEmpire.app/Frameworks" 2>&1
+            echo "=== advert keys in the built plist"
+            plutil -extract GADApplicationIdentifier raw "$products/ParkEmpire.app/Info.plist" 2>&1
+            plutil -extract CFBundleDisplayName raw "$products/ParkEmpire.app/Info.plist" 2>&1
             echo "=== app binary"
             file "$products/ParkEmpire.app/ParkEmpire" 2>&1
             ls -l "$products/ParkEmpire.app/ParkEmpire" 2>&1
