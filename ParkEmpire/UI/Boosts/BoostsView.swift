@@ -16,7 +16,7 @@ struct BoostsView: View {
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             ScrollView {
                 VStack(spacing: 14) {
                     intro
@@ -35,7 +35,7 @@ struct BoostsView: View {
             )
             .navigationTitle("Boosts")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .darkNavigationBar()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

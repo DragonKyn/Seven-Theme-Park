@@ -16,8 +16,8 @@ struct MapEditorView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        NavigationContainer {
+            LockedScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     TextField("Map name", text: $model.name)
                         .font(.system(.title3, design: .rounded).weight(.semibold))
@@ -38,7 +38,6 @@ struct MapEditorView: View {
                 }
                 .padding(16)
             }
-            .scrollDisabled(true)
             .navigationTitle("Draw a Map")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -51,7 +50,7 @@ struct MapEditorView: View {
                         onSave(map)
                         dismiss()
                     }
-                    .fontWeight(.semibold)
+                    .font(.body.weight(.semibold))
                     .disabled(model.problem != nil)
                 }
             }

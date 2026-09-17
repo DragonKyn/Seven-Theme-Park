@@ -5,7 +5,7 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     masthead
@@ -25,7 +25,7 @@ struct AboutView: View {
             )
             .navigationTitle("About")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .darkNavigationBar()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

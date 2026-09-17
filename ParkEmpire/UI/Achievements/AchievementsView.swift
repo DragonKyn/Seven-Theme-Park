@@ -11,7 +11,7 @@ struct AchievementsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             List {
                 if !controller.hud.mode.earnsAchievements {
                     Section {
@@ -23,9 +23,9 @@ struct AchievementsView: View {
                 }
 
                 Section {
-                    LabeledContent("Tiers earned",
+                    LabelledValue("Tiers earned",
                                    value: "\(earnedTiers) of \(AchievementContent.totalTiers)")
-                    LabeledContent("Awards paid", value: CurrencyFormatter.short(totalPaid))
+                    LabelledValue("Awards paid", value: CurrencyFormatter.short(totalPaid))
                 }
 
                 Section {

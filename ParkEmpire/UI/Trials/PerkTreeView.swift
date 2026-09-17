@@ -20,7 +20,7 @@ struct PerkTreeView: View {
     private var available: Int { store.available(completedTrials: medals) }
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
@@ -40,7 +40,7 @@ struct PerkTreeView: View {
             )
             .navigationTitle("Park Perks")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .darkNavigationBar()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

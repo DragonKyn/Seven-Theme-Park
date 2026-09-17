@@ -12,7 +12,7 @@ struct FinanceView: View {
     var body: some View {
         let snapshot = controller.makeFinanceSnapshot()
 
-        NavigationStack {
+        NavigationContainer {
             List {
                 Section("Trend") {
                     FinanceChartView(points: controller.makeFinanceSeries(range: range),
@@ -34,13 +34,13 @@ struct FinanceView: View {
 
                 Section("Today - revenue") {
                     ForEach(snapshot.todayRevenue) { line in
-                        LabeledContent(line.label, value: CurrencyFormatter.exact(line.amount))
+                        LabelledValue(line.label, value: CurrencyFormatter.exact(line.amount))
                     }
                 }
 
                 Section("Today - expenses") {
                     ForEach(snapshot.todayExpenses) { line in
-                        LabeledContent(line.label, value: CurrencyFormatter.exact(line.amount))
+                        LabelledValue(line.label, value: CurrencyFormatter.exact(line.amount))
                     }
                 }
 
@@ -53,10 +53,10 @@ struct FinanceView: View {
 
                 Section("Lifetime breakdown") {
                     ForEach(snapshot.lifetimeRevenue) { line in
-                        LabeledContent(line.label, value: CurrencyFormatter.short(line.amount))
+                        LabelledValue(line.label, value: CurrencyFormatter.short(line.amount))
                     }
                     ForEach(snapshot.lifetimeExpenses) { line in
-                        LabeledContent(line.label, value: CurrencyFormatter.short(line.amount))
+                        LabelledValue(line.label, value: CurrencyFormatter.short(line.amount))
                     }
                 }
             }

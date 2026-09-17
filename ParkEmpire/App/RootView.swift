@@ -13,7 +13,7 @@ struct RootView: View {
                 GameView(controller: controller)
             }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             // Guard against the app being killed in the background.
             if phase != .active {
                 router.saveActiveGame()

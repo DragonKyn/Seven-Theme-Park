@@ -6,11 +6,11 @@ struct StaffView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             List {
                 Section("Payroll") {
-                    LabeledContent("Employees", value: "\(controller.state.staff.count)")
-                    LabeledContent("Wages per day",
+                    LabelledValue("Employees", value: "\(controller.state.staff.count)")
+                    LabelledValue("Wages per day",
                                    value: CurrencyFormatter.short(controller.state.dailyPayroll))
                     Text("Wages are charged continuously through the day, whether or not there is work to do.")
                         .font(.caption)

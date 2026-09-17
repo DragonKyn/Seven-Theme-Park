@@ -9,7 +9,7 @@ struct TrialLadderView: View {
     @State private var showingPerks = false
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
@@ -29,16 +29,11 @@ struct TrialLadderView: View {
             )
             .navigationTitle("Park Trials")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .darkNavigationBar()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                         .foregroundStyle(.white)
-                }
-            }
-            .navigationDestination(for: String.self) { id in
-                if let trial = TrialContent.definition(id: id) {
-                    TrialBriefingView(trial: trial)
                 }
             }
         }
@@ -142,7 +137,9 @@ struct TrialLadderView: View {
         let run = router.trialRuns[trial.id]
 
         if unlocked {
-            NavigationLink(value: trial.id) {
+            NavigationLink {
+                TrialBriefingView(trial: trial)
+            } label: {
                 TrialRungCard(trial: trial, unlocked: true, bestDay: bestDay, runDay: run?.day)
             }
             .buttonStyle(.plain)
@@ -362,7 +359,7 @@ private struct TrialBriefingView: View {
                 .ignoresSafeArea()
         )
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .darkNavigationBar()
         .confirmationDialog("Start this trial over?",
                             isPresented: $confirmingRestart,
                             titleVisibility: .visible) {

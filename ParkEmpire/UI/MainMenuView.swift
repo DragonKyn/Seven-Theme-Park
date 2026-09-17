@@ -50,7 +50,6 @@ struct MainMenuView: View {
                 router.startNewGame(named: name, mode: mode, map: map, in: slot)
                 showingNewGame = false
             }
-            .presentationDetents([.large])
         }
         .confirmationDialog("Delete this park?",
                             isPresented: Binding(get: { slotToDelete != nil },
@@ -412,7 +411,7 @@ private struct NewParkSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             Form {
                 Section("Park name") {
                     TextField("New Park", text: $parkName)
@@ -490,7 +489,7 @@ private struct NewParkSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Start") { onStart(parkName, mode, selectedMap, slot) }
-                        .fontWeight(.semibold)
+                        .font(.body.weight(.semibold))
                 }
             }
             .onAppear { slot = suggestedSlot }

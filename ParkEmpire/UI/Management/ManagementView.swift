@@ -9,50 +9,50 @@ struct ManagementView: View {
     var body: some View {
         let snapshot = controller.makeDashboardSnapshot()
 
-        NavigationStack {
+        NavigationContainer {
             List {
                 Section("Overview") {
-                    LabeledContent("Cash", value: CurrencyFormatter.short(snapshot.cash))
-                    LabeledContent("Guests in park", value: "\(snapshot.guestCount)")
-                    LabeledContent("Park rating",
+                    LabelledValue("Cash", value: CurrencyFormatter.short(snapshot.cash))
+                    LabelledValue("Guests in park", value: "\(snapshot.guestCount)")
+                    LabelledValue("Park rating",
                                    value: "\(Int(snapshot.parkRating)) / 100  (\(snapshot.starRating) stars)")
-                    LabeledContent("Profit today", value: CurrencyFormatter.signed(snapshot.todayProfit))
-                    LabeledContent("Arrivals", value: String(format: "%.1f per minute", snapshot.arrivalsPerMinute))
+                    LabelledValue("Profit today", value: CurrencyFormatter.signed(snapshot.todayProfit))
+                    LabelledValue("Arrivals", value: String(format: "%.1f per minute", snapshot.arrivalsPerMinute))
                 }
 
                 Section("Guests") {
-                    LabeledContent("Average happiness", value: "\(Int(snapshot.averageHappiness))%")
-                    LabeledContent("Average hunger", value: "\(Int(snapshot.averageHunger))")
-                    LabeledContent("Average thirst", value: "\(Int(snapshot.averageThirst))")
-                    LabeledContent("Average energy", value: "\(Int(snapshot.averageEnergy))")
-                    LabeledContent("Common complaint", value: snapshot.commonComplaint ?? "None yet")
+                    LabelledValue("Average happiness", value: "\(Int(snapshot.averageHappiness))%")
+                    LabelledValue("Average hunger", value: "\(Int(snapshot.averageHunger))")
+                    LabelledValue("Average thirst", value: "\(Int(snapshot.averageThirst))")
+                    LabelledValue("Average energy", value: "\(Int(snapshot.averageEnergy))")
+                    LabelledValue("Common complaint", value: snapshot.commonComplaint ?? "None yet")
                 }
 
                 Section("Attractions") {
-                    LabeledContent("Total rides", value: "\(snapshot.attractionCount)")
-                    LabeledContent("Closed rides", value: "\(snapshot.closedAttractions)")
-                    LabeledContent("Average queue", value: String(format: "%.1f", snapshot.averageQueueLength))
-                    LabeledContent("Most popular", value: snapshot.mostPopular ?? "No data")
+                    LabelledValue("Total rides", value: "\(snapshot.attractionCount)")
+                    LabelledValue("Closed rides", value: "\(snapshot.closedAttractions)")
+                    LabelledValue("Average queue", value: String(format: "%.1f", snapshot.averageQueueLength))
+                    LabelledValue("Most popular", value: snapshot.mostPopular ?? "No data")
                     if let least = snapshot.leastPopular {
-                        LabeledContent("Least popular", value: least)
+                        LabelledValue("Least popular", value: least)
                     }
-                    LabeledContent("Facilities", value: "\(snapshot.facilityCount)")
+                    LabelledValue("Facilities", value: "\(snapshot.facilityCount)")
                 }
 
                 Section("Upkeep and looks") {
-                    LabeledContent("Park cleanliness", value: "\(Int(snapshot.cleanliness * 100))%")
-                    LabeledContent("Littered tiles", value: "\(snapshot.litteredTiles)")
-                    LabeledContent("Decoration", value: "\(Int(snapshot.beauty * 100))%")
-                    LabeledContent("Scenery placed", value: "\(snapshot.sceneryCount)")
-                    LabeledContent("Broken rides", value: "\(snapshot.brokenRides)")
+                    LabelledValue("Park cleanliness", value: "\(Int(snapshot.cleanliness * 100))%")
+                    LabelledValue("Littered tiles", value: "\(snapshot.litteredTiles)")
+                    LabelledValue("Decoration", value: "\(Int(snapshot.beauty * 100))%")
+                    LabelledValue("Scenery placed", value: "\(snapshot.sceneryCount)")
+                    LabelledValue("Broken rides", value: "\(snapshot.brokenRides)")
                 }
 
                 Section("Staff") {
-                    LabeledContent("Employees", value: "\(snapshot.staffCount)")
-                    LabeledContent("Wages per day", value: CurrencyFormatter.short(snapshot.dailyPayroll))
-                    LabeledContent("Currently on a task", value: "\(snapshot.staffOnTask)")
+                    LabelledValue("Employees", value: "\(snapshot.staffCount)")
+                    LabelledValue("Wages per day", value: CurrencyFormatter.short(snapshot.dailyPayroll))
+                    LabelledValue("Currently on a task", value: "\(snapshot.staffOnTask)")
                     ForEach(snapshot.staffByRole) { entry in
-                        LabeledContent(entry.id, value: "\(entry.count)")
+                        LabelledValue(entry.id, value: "\(entry.count)")
                     }
                 }
 
@@ -78,11 +78,11 @@ struct ManagementView: View {
                 }
 
                 Section("Finance") {
-                    LabeledContent("Revenue today",
+                    LabelledValue("Revenue today",
                                    value: CurrencyFormatter.short(snapshot.finance.todayTotalRevenue))
-                    LabeledContent("Expenses today",
+                    LabelledValue("Expenses today",
                                    value: CurrencyFormatter.short(snapshot.finance.todayTotalExpenses))
-                    LabeledContent("Lifetime profit",
+                    LabelledValue("Lifetime profit",
                                    value: CurrencyFormatter.signed(snapshot.finance.lifetimeProfit))
                 }
             }

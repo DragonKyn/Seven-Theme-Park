@@ -7,7 +7,7 @@ struct ParkSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        NavigationContainer {
             Form {
                 Section("Admission price") {
                     VStack(alignment: .leading, spacing: 10) {
@@ -98,10 +98,10 @@ struct ParkSettingsView: View {
                 }
 
                 Section("Right now") {
-                    LabeledContent("Arrivals",
+                    LabelledValue("Arrivals",
                                    value: String(format: "%.1f guests per minute", controller.hud.arrivalsPerMinute))
-                    LabeledContent("Guests in park", value: "\(controller.hud.guestCount)")
-                    LabeledContent("Park rating", value: "\(Int(controller.hud.parkRating)) / 100")
+                    LabelledValue("Guests in park", value: "\(controller.hud.guestCount)")
+                    LabelledValue("Park rating", value: "\(Int(controller.hud.parkRating)) / 100")
                 }
 
                 Section {

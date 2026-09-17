@@ -118,14 +118,14 @@ struct GameView: View {
         }
         .sheet(isPresented: $showingSettings) {
             ParkSettingsView(controller: controller)
-                .presentationDetents([.medium])
+                .parkSheetDetents(mediumOnly: true)
         }
         .sheet(isPresented: $showingAlerts) {
             AlertListView(alerts: controller.alerts) { target in
                 controller.focus(on: target)
                 showingAlerts = false
             }
-            .presentationDetents([.medium, .large])
+            .parkSheetDetents()
         }
         .alert("Remove this structure?",
                isPresented: Binding(get: { controller.pendingDemolition != nil },
