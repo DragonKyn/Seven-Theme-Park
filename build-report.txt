@@ -1,0 +1,150 @@
+=== exit code: 0
+=== products tree
+total 16
+drwxr-xr-x   7 runner  staff   224 Nov 21  2024 GoogleMobileAds.framework
+-rw-r--r--   1 runner  staff  3704 Sep 17 03:45 GoogleMobileAdsTarget.o
+drwxr-xr-x   6 runner  staff   192 Sep 17 03:45 GoogleMobileAdsTarget.swiftmodule
+drwxr-xr-x@  2 runner  staff    64 Sep 17 03:45 PackageFrameworks
+drwxr-xr-x  10 runner  staff   320 Sep 17 03:47 ParkEmpire.app
+drwxr-xr-x   3 runner  staff    96 Sep 17 03:47 ParkEmpire.app.dSYM
+drwxr-xr-x   6 runner  staff   192 Sep 17 03:47 ParkEmpire.swiftmodule
+drwxr-xr-x   7 runner  staff   224 Oct 28  2024 UserMessagingPlatform.framework
+-rw-r--r--   1 runner  staff   400 Sep 17 03:45 UserMessagingPlatformTarget.o
+
+build/Build/Products/Release-iphoneos/GoogleMobileAds.framework:
+total 17944
+-r--r--r--   1 runner  staff  9174040 Nov 21  2024 GoogleMobileAds
+drwxr-xr-x  81 runner  staff     2592 Nov 21  2024 Headers
+-r--r--r--   1 runner  staff     1593 Nov 21  2024 Info.plist
+drwxr-xr-x   3 runner  staff       96 Nov 21  2024 Modules
+-r--r--r--   1 runner  staff     4491 Nov 21  2024 PrivacyInfo.xcprivacy
+
+build/Build/Products/Release-iphoneos/GoogleMobileAds.framework/Headers:
+total 656
+-r--r--r--   1 runner  staff   529 Nov 21  2024 GADAdChoicesPosition.h
+-r--r--r--   1 runner  staff   441 Nov 21  2024 GADAdChoicesView.h
+-r--r--r--   1 runner  staff   597 Nov 21  2024 GADAdFormat.h
+-r--r--r--   1 runner  staff  1923 Nov 21  2024 GADAdLoader.h
+-r--r--r--   1 runner  staff   617 Nov 21  2024 GADAdLoader+ServerToServer.h
+-r--r--r--   1 runner  staff  1042 Nov 21  2024 GADAdLoaderAdTypes.h
+-r--r--r--   1 runner  staff   627 Nov 21  2024 GADAdLoaderDelegate.h
+-r--r--r--   1 runner  staff   994 Nov 21  2024 GADAdMetadata.h
+-r--r--r--   1 runner  staff   443 Nov 21  2024 GADAdNetworkExtras.h
+-r--r--r--   1 runner  staff   776 Nov 21  2024 GADAdReward.h
+-r--r--r--   1 runner  staff  8190 Nov 21  2024 GADAdSize.h
+-r--r--r--   1 runner  staff   591 Nov 21  2024 GADAdSizeDelegate.h
+-r--r--r--   1 runner  staff  1084 Nov 21  2024 GADAdValue.h
+-r--r--r--   1 runner  staff   815 Nov 21  2024 GADAppEventDelegate.h
+-r--r--r--   1 runner  staff  3510 Nov 21  2024 GADAppOpenAd.h
+-r--r--r--   1 runner  staff  1339 Nov 21  2024 GADAudioVideoManager.h
+-r--r--r--   1 runner  staff  1696 Nov 21  2024 GADAudioVideoManagerDelegate.h
+-r--r--r--   1 runner  staff  3584 Nov 21  2024 GADBannerView.h
+-r--r--r--   1 runner  staff  1882 Nov 21  2024 GADBannerViewDelegate.h
+-r--r--r--   1 runner  staff  1598 Nov 21  2024 GADCustomEventBanner.h
+-r--r--r--   1 runner  staff  3113 Nov 21  2024 GADCustomEventBannerDelegate.h
+-r--r--r--   1 runner  staff  1069 Nov 21  2024 GADCustomEventExtras.h
+-r--r--r--   1 runner  staff  1974 Nov 21  2024 GADCustomEventInterstitial.h
+-r--r--r--   1 runner  staff  2922 Nov 21  2024 GADCustomEventInterstitialDelegate.h
+-r--r--r--   1 runner  staff  2844 Nov 21  2024 GADCustomEventNativeAd.h
+-r--r--r--   1 runner  staff  1138 Nov 21  2024 GADCustomEventNativeAdDelegate.h
+-r--r--r--   1 runner  staff   483 Nov 21  2024 GADCustomEventParameters.h
+-r--r--r--   1 runner  staff  1220 Nov 21  2024 GADCustomEventRequest.h
+-r--r--r--   1 runner  staff  3950 Nov 21  2024 GADCustomNativeAd.h
+-r--r--r--   1 runner  staff  1661 Nov 21  2024 GADCustomNativeAdDelegate.h
+-r--r--r--   1 runner  staff  1055 Nov 21  2024 GADDebugOptionsViewController.h
+-r--r--r--   1 runner  staff   811 Nov 21  2024 GADDisplayAdMeasurement.h
+-r--r--r--   1 runner  staff  5394 Nov 21  2024 GADDynamicHeightSearchRequest.h
+-r--r--r--   1 runner  staff   423 Nov 21  2024 GADExtras.h
+-r--r--r--   1 runner  staff  2079 Nov 21  2024 GADFullScreenContentDelegate.h
+-r--r--r--   1 runner  staff  1448 Nov 21  2024 GADInitializationStatus.h
+-r--r--r--   1 runner  staff  3574 Nov 21  2024 GADInterstitialAd.h
+-r--r--r--   1 runner  staff   609 Nov 21  2024 GADMediaAspectRatio.h
+-r--r--r--   1 runner  staff  1295 Nov 21  2024 GADMediaContent.h
+-r--r--r--   1 runner  staff   949 Nov 21  2024 GADMediaView.h
+-r--r--r--   1 runner  staff  6124 Nov 21  2024 GADMobileAds.h
+-r--r--r--   1 runner  staff  1003 Nov 21  2024 GADMultipleAdsAdLoaderOptions.h
+-r--r--r--   1 runner  staff   386 Nov 21  2024 GADMuteThisAdReason.h
+-r--r--r--   1 runner  staff  6936 Nov 21  2024 GADNativeAd.h
+-r--r--r--   1 runner  staff   959 Nov 21  2024 GADNativeAd+ConfirmationClick.h
+-r--r--r--   1 runner  staff   653 Nov 21  2024 GADNativeAd+CustomClickGesture.h
+-r--r--r--   1 runner  staff  1166 Nov 21  2024 GADNativeAdAssetIdentifiers.h
+-r--r--r--   1 runner  staff  1109 Nov 21  2024 GADNativeAdCustomClickGestureOptions.h
+-r--r--r--   1 runner  staff  1888 Nov 21  2024 GADNativeAdDelegate.h
+-r--r--r--   1 runner  staff   542 Nov 21  2024 GADNativeAdImage.h
+-r--r--r--   1 runner  staff   594 Nov 21  2024 GADNativeAdImage+Mediation.h
+-r--r--r--   1 runner  staff   739 Nov 21  2024 GADNativeAdImageAdLoaderOptions.h
+-r--r--r--   1 runner  staff   623 Nov 21  2024 GADNativeAdMediaAdLoaderOptions.h
+-r--r--r--   1 runner  staff  1187 Nov 21  2024 GADNativeAdUnconfirmedClickDelegate.h
+-r--r--r--   1 runner  staff   512 Nov 21  2024 GADNativeAdViewAdOptions.h
+-r--r--r--   1 runner  staff   420 Nov 21  2024 GADNativeMuteThisAdLoaderOptions.h
+-r--r--r--   1 runner  staff   882 Nov 21  2024 GADPresentationError.h
+-r--r--r--   1 runner  staff  2056 Nov 21  2024 GADQueryInfo.h
+-r--r--r--   1 runner  staff  3168 Nov 21  2024 GADRequest.h
+=== app bundle
+total 21464
+drwxr-xr-x  10 runner  staff       320 Sep 17 03:47 .
+drwxr-xr-x@ 11 runner  staff       352 Sep 17 03:47 ..
+-rw-r--r--   1 runner  staff     10230 Sep 17 03:45 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     13428 Sep 17 03:45 AppIcon76x76@2x~ipad.png
+-rw-r--r--   1 runner  staff    215288 Sep 17 03:45 Assets.car
+drwxr-xr-x   4 runner  staff       128 Sep 17 03:45 Frameworks
+-rw-r--r--   1 runner  staff      2734 Sep 17 03:45 Info.plist
+-rwxr-xr-x   1 runner  staff  10731480 Sep 17 03:47 ParkEmpire
+-rw-r--r--   1 runner  staff         8 Sep 17 03:45 PkgInfo
+-rw-r--r--   1 runner  staff      1868 Sep 17 03:45 PrivacyInfo.xcprivacy
+=== embedded frameworks
+total 0
+drwxr-xr-x   4 runner  staff  128 Sep 17 03:45 .
+drwxr-xr-x  10 runner  staff  320 Sep 17 03:47 ..
+drwxr-xr-x   5 runner  staff  160 Sep 17 03:45 GoogleMobileAds.framework
+drwxr-xr-x   5 runner  staff  160 Sep 17 03:45 UserMessagingPlatform.framework
+=== privacy manifest
+-rw-r--r--  1 runner  staff  1868 Sep 17 03:45 build/Build/Products/Release-iphoneos/ParkEmpire.app/PrivacyInfo.xcprivacy
+=== version
+1.0
+com.wickedstudios.wonderlot.7X49UN26T8
+=== oldest iOS this build runs on
+15.0
+=== app icon wiring in the built plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundlePrimaryIcon</key>
+	<dict>
+		<key>CFBundleIconFiles</key>
+		<array>
+			<string>AppIcon60x60</string>
+		</array>
+		<key>CFBundleIconName</key>
+		<string>AppIcon</string>
+	</dict>
+</dict>
+</plist>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundlePrimaryIcon</key>
+	<dict>
+		<key>CFBundleIconFiles</key>
+		<array>
+			<string>AppIcon60x60</string>
+			<string>AppIcon76x76</string>
+		</array>
+		<key>CFBundleIconName</key>
+		<string>AppIcon</string>
+	</dict>
+</dict>
+</plist>
+-rw-r--r--   1 runner  staff     10230 Sep 17 03:45 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     13428 Sep 17 03:45 AppIcon76x76@2x~ipad.png
+=== advert keys in the built plist
+ca-app-pub-6085748649825153~1304019904
+Wonder Lot
+=== app binary
+build/Build/Products/Release-iphoneos/ParkEmpire.app/ParkEmpire: Mach-O 64-bit executable arm64
+-rwxr-xr-x  1 runner  staff  10731480 Sep 17 03:47 build/Build/Products/Release-iphoneos/ParkEmpire.app/ParkEmpire
+=== swift sources xcodebuild saw
+3
+=== errors
