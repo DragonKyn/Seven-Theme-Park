@@ -39,11 +39,14 @@ enum FacilityAppeal {
 
     /// `distance` is the walking distance in tiles to the nearest tile a guest
     /// can stand on to use it, or nil when there is no route.
+    /// `spendBoost` is what an advert boost is doing to how readily guests
+    /// part with their money: 1 when none is running.
     static func evaluate(facility: Facility,
                          definition: FacilityDefinition,
                          guest: Guest,
                          hasAccess: Bool,
-                         distance: Int?) -> Verdict {
+                         distance: Int?,
+                         spendBoost: Double = 1) -> Verdict {
         guard facility.isOpen else { return .notOpen }
         guard !facility.isUnusable else { return .unusable }
         guard hasAccess else { return .noWalkway }
@@ -58,7 +61,8 @@ enum FacilityAppeal {
             return .cannotAfford
         }
 
-        let appeal = desire(for: guest, facility: facility, definition: definition)
+        let appeal = desire(for: guest, facility: facility, definition: definition,
+                            spendBoost: spendBoost)
             * definition.drawFactor
         let score = appeal * proximityFactor(distance) * queueFactor
         return score > 0.5 ? .wants(score) : .notWanted
@@ -68,7 +72,8 @@ enum FacilityAppeal {
     /// queue are taken into account.
     private static func desire(for guest: Guest,
                                facility: Facility,
-                               definition: FacilityDefinition) -> Double {
+                               definition: FacilityDefinition,
+                               spendBoost: Double) -> Double {
         switch definition.kind {
         case .bathroom:
             var score = 430 * pow(guest.bathroomNeed / 100, 3.5)
@@ -83,13 +88,13 @@ enum FacilityAppeal {
             return 150 * urgency
 
         case .food:
-            return 260 * pow(guest.hunger / 100, 2.2) * willingness(guest, facility, definition)
+            return 260 * pow(guest.hunger / 100, 2.2) * willingness(guest, facility, definition, boost: spendBoost)
 
         case .drink:
-            return 250 * pow(guest.thirst / 100, 2.2) * willingness(guest, facility, definition)
+            return 250 * pow(guest.thirst / 100, 2.2) * willingness(guest, facility, definition, boost: spendBoost)
 
         case .souvenir:
-            return 90 * (guest.happiness / 100) * willingness(guest, facility, definition)
+            return 90 * (guest.happiness / 100) * willingness(guest, facility, definition, boost: spendBoost)
 
         case .game:
             // A booth competes with the rides for the same idle guest, so it
@@ -105,7 +110,7 @@ enum FacilityAppeal {
             // Somebody already carrying a bear is playing for the fun of it
             // rather than for the prize.
             if guest.prize != nil { appetite *= 0.45 }
-            return 240 * appetite * willingness(guest, facility, definition)
+            return 240 * appetite * willingness(guest, facility, definition, boost: spendBoost)
 
         case .bench:
             let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)
@@ -113,12 +118,15 @@ enum FacilityAppeal {
         }
     }
 
+    /// A boost makes guests readier to buy at the price already on the
+    /// board, rather than changing the price.
     static func willingness(_ guest: Guest,
                             _ facility: Facility,
-                            _ definition: FacilityDefinition) -> Double {
+                            _ definition: FacilityDefinition,
+                            boost: Double = 1) -> Double {
         GuestEconomics.purchaseWillingness(price: facility.price,
                                            reference: definition.referencePrice,
-                                           spending: guest.personality.spending)
+                                           spending: guest.personality.spending) * boost
     }
 
     static func proximityFactor(_ tileDistance: Int) -> Double {

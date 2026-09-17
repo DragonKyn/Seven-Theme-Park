@@ -52,12 +52,12 @@ final class GameState: Codable {
     /// advert boost is: these belong to the player across every park, and a
     /// park loaded after a point is moved should feel the move at once.
     var perks = ParkPerks()
-    /// Extra arrivals from a boost the player switched on outside the park.
+    /// What the boosts the player has switched on are doing here.
     ///
     /// Written by the controller from the boost centre every refresh rather
     /// than counted here, because a boost belongs to the player and their
     /// wall clock, not to this park and its save.
-    var adArrivalsBoost: Double = 0
+    var adBoosts = AdBoostEffects()
     /// Sim time the next famous visitor may turn up, the boost their post is
     /// currently giving the park, and when it runs out.
     var nextInfluencerAt: Double = Balance.dayLength * 2.5
@@ -171,7 +171,7 @@ final class GameState: Codable {
         coasterTrackColour = container.value(.coasterTrackColour, or: .amber)
         carParkLevel = container.value(.carParkLevel, or: 0)
         perks = ParkPerks()
-        adArrivalsBoost = 0
+        adBoosts = AdBoostEffects()
         nextInfluencerAt = container.value(.nextInfluencerAt, or: Balance.dayLength * 2.5)
         promotionBoost = container.value(.promotionBoost, or: 0)
         promotionEndsAt = container.value(.promotionEndsAt, or: 0)

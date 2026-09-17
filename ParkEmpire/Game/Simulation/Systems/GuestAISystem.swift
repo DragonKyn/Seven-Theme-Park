@@ -207,7 +207,9 @@ final class GuestAISystem {
                                                                    definition: definition,
                                                                    guest: guest,
                                                                    hasAccess: !access.isEmpty,
-                                                                   distance: distance) else { continue }
+                                                                   distance: distance,
+                                                                   spendBoost: state.adBoosts.spendFactor)
+            else { continue }
             options.append(Option(target: .facility(facility.id), score: score, departureReason: nil))
         }
 

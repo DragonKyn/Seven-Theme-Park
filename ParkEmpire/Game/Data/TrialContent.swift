@@ -15,13 +15,36 @@ enum TrialGoal: Equatable {
     case rides(Int)
     /// Average guest happiness, 0-100.
     case happiness(Double)
+    /// A particular thing, built this many times. The one goal that names
+    /// something in the catalogue, which is what lets a trial ask for the
+    /// expensive ride rather than for six of anything.
+    case build(String, Int)
+    /// Tiles of the player's own coaster track under one station.
+    case coasterLength(Int)
+    /// Own a ride at least this exciting, upgrades and track included.
+    case thrillRide(Double)
+    /// Shops, kiosks and booths of any kind.
+    case shops(Int)
+    /// Pieces of scenery placed.
+    case scenery(Int)
+    /// Employees on the payroll.
+    case staff(Int)
+    /// Ride upgrades and shop improvements bought, all told.
+    case improvements(Int)
+    /// Prizes handed over the counter of a carnival booth.
+    case prizes(Int)
 
     var target: Double {
         switch self {
-        case .guestsInPark(let count), .guestsAdmitted(let count), .rides(let count):
+        case .guestsInPark(let count), .guestsAdmitted(let count), .rides(let count),
+             .coasterLength(let count), .shops(let count), .scenery(let count),
+             .staff(let count), .improvements(let count), .prizes(let count):
             return Double(count)
-        case .parkRating(let value), .cash(let value), .happiness(let value):
+        case .parkRating(let value), .cash(let value), .happiness(let value),
+             .thrillRide(let value):
             return value
+        case .build(_, let count):
+            return Double(count)
         }
     }
 
@@ -33,7 +56,34 @@ enum TrialGoal: Equatable {
         case .cash: return state.ledger.cash
         case .rides: return Double(state.attractions.count)
         case .happiness: return state.averageHappiness
+        case .build(let definitionID, _):
+            return Double(Self.count(of: definitionID, in: state))
+        case .coasterLength:
+            return Double(state.attractions.map(\.trackLength).max() ?? 0)
+        case .thrillRide:
+            return state.attractions.compactMap { $0.definition?.excitement }.max() ?? 0
+        case .shops:
+            return Double(state.facilities.filter { $0.definition?.kind.sellsGoods == true }.count)
+        case .scenery: return Double(state.scenery.count)
+        case .staff: return Double(state.staff.count)
+        case .improvements: return Double(state.statistics.upgradesBoughtTotal)
+        case .prizes: return Double(state.statistics.prizesWonTotal)
         }
+    }
+
+    /// How many of one catalogue entry stand in the park, wherever it lives.
+    private static func count(of definitionID: String, in state: GameState) -> Int {
+        state.attractions.filter { $0.definitionID == definitionID }.count
+            + state.facilities.filter { $0.definitionID == definitionID }.count
+            + state.scenery.filter { $0.definitionID == definitionID }.count
+    }
+
+    /// What the catalogue calls it, for the goal to read as a sentence.
+    static func name(of definitionID: String) -> String {
+        GameContent.attraction(definitionID)?.displayName
+            ?? GameContent.facility(definitionID)?.displayName
+            ?? GameContent.scenery(definitionID)?.displayName
+            ?? "it"
     }
 
     func isMet(in state: GameState) -> Bool {
@@ -49,6 +99,16 @@ enum TrialGoal: Equatable {
         case .cash(let value): return "\(CurrencyFormatter.short(value)) in the bank"
         case .rides(let count): return "\(count) rides built"
         case .happiness(let value): return "Guests \(Int(value))% happy on average"
+        case .build(let definitionID, let count):
+            let name = Self.name(of: definitionID)
+            return count == 1 ? "Build a \(name)" : "Build \(count) of the \(name)"
+        case .coasterLength(let count): return "\(count) tiles of your own coaster track"
+        case .thrillRide(let value): return "A ride rated \(Int(value)) for excitement"
+        case .shops(let count): return "\(count) shops and booths"
+        case .scenery(let count): return "\(count) pieces of scenery"
+        case .staff(let count): return "\(count) staff on the payroll"
+        case .improvements(let count): return "\(count) upgrades and improvements bought"
+        case .prizes(let count): return "\(count) prizes won at your booths"
         }
     }
 
@@ -61,6 +121,14 @@ enum TrialGoal: Equatable {
         case .cash: return "Bank"
         case .rides: return "Rides"
         case .happiness: return "Happy"
+        case .build: return "Built"
+        case .coasterLength: return "Track"
+        case .thrillRide: return "Thrill"
+        case .shops: return "Shops"
+        case .scenery: return "Scenery"
+        case .staff: return "Staff"
+        case .improvements: return "Upgrades"
+        case .prizes: return "Prizes"
         }
     }
 
@@ -72,6 +140,14 @@ enum TrialGoal: Equatable {
         case .cash: return "banknote.fill"
         case .rides: return "sparkles"
         case .happiness: return "face.smiling"
+        case .build: return "hammer.fill"
+        case .coasterLength: return "point.topleft.down.curvedto.point.bottomright.up"
+        case .thrillRide: return "bolt.fill"
+        case .shops: return "cart.fill"
+        case .scenery: return "tree.fill"
+        case .staff: return "person.2.badge.gearshape.fill"
+        case .improvements: return "star.circle.fill"
+        case .prizes: return "gift.fill"
         }
     }
 
@@ -155,7 +231,7 @@ enum TrialContent {
             mapID: MapCatalogue.openMeadowID,
             startingCash: 20_000,
             dayLimit: 7,
-            goals: [.cash(30_000)],
+            goals: [.cash(30_000), .shops(3)],
             medal: TrialMedal(name: "Bookkeeper", symbolName: "banknote.fill")),
 
         TrialDefinition(
@@ -166,7 +242,7 @@ enum TrialContent {
             mapID: "map.pinewood",
             startingCash: 22_000,
             dayLimit: 8,
-            goals: [.parkRating(40), .guestsAdmitted(150)],
+            goals: [.parkRating(40), .guestsAdmitted(150), .scenery(12)],
             medal: TrialMedal(name: "Three-Star Host", symbolName: "star.circle.fill")),
 
         TrialDefinition(
@@ -177,7 +253,7 @@ enum TrialContent {
             mapID: "map.willowlake",
             startingCash: 25_000,
             dayLimit: 10,
-            goals: [.rides(6), .guestsInPark(50)],
+            goals: [.rides(6), .guestsInPark(50), .build("ride.ferriswheel", 1)],
             medal: TrialMedal(name: "Bridge Builder", symbolName: "water.waves")),
 
         TrialDefinition(
@@ -188,7 +264,7 @@ enum TrialContent {
             mapID: "map.longpier",
             startingCash: 20_000,
             dayLimit: 10,
-            goals: [.cash(35_000), .parkRating(45)],
+            goals: [.cash(35_000), .parkRating(45), .staff(5)],
             medal: TrialMedal(name: "Pier Master", symbolName: "sailboat.fill")),
 
         TrialDefinition(
@@ -199,7 +275,7 @@ enum TrialContent {
             mapID: "map.riverbend",
             startingCash: 10_000,
             dayLimit: 10,
-            goals: [.guestsAdmitted(400), .happiness(65)],
+            goals: [.guestsAdmitted(400), .happiness(65), .prizes(60)],
             medal: TrialMedal(name: "Penny Pincher", symbolName: "dollarsign.circle.fill")),
 
         TrialDefinition(
@@ -210,7 +286,7 @@ enum TrialContent {
             mapID: "map.canyon",
             startingCash: 22_000,
             dayLimit: 12,
-            goals: [.parkRating(60), .guestsInPark(60)],
+            goals: [.parkRating(60), .guestsInPark(60), .coasterLength(40)],
             medal: TrialMedal(name: "Canyon Runner", symbolName: "mountain.2.fill")),
 
         TrialDefinition(
@@ -221,7 +297,7 @@ enum TrialContent {
             mapID: "map.twinplateaus",
             startingCash: 22_000,
             dayLimit: 12,
-            goals: [.guestsInPark(80), .happiness(72)],
+            goals: [.guestsInPark(80), .happiness(72), .improvements(8)],
             medal: TrialMedal(name: "Crowd Tamer", symbolName: "person.3.fill")),
 
         TrialDefinition(
@@ -232,7 +308,7 @@ enum TrialContent {
             mapID: "map.harbour",
             startingCash: 18_000,
             dayLimit: 14,
-            goals: [.cash(60_000), .parkRating(65)],
+            goals: [.cash(60_000), .parkRating(65), .build("ride.wavepool", 1)],
             maxAdmission: 20,
             medal: TrialMedal(name: "Harbour Master", symbolName: "light.beacon.max.fill")),
 
@@ -244,7 +320,7 @@ enum TrialContent {
             mapID: "map.willowlake",
             startingCash: 12_000,
             dayLimit: 18,
-            goals: [.parkRating(80), .guestsInPark(90), .cash(80_000)],
+            goals: [.parkRating(80), .guestsInPark(90), .cash(80_000), .build("ride.bigcoaster", 1)],
             medal: TrialMedal(name: "Wonder Maker", symbolName: "crown.fill")),
 
         // The back five. Each asks for everything the one before it did and
@@ -258,7 +334,7 @@ enum TrialContent {
             mapID: "map.archipelago",
             startingCash: 12_000,
             dayLimit: 18,
-            goals: [.parkRating(80), .guestsInPark(90), .cash(90_000), .rides(8)],
+            goals: [.parkRating(80), .guestsInPark(90), .cash(90_000), .build("ride.logflume", 2)],
             medal: TrialMedal(name: "Island Magnate", symbolName: "beach.umbrella.fill")),
 
         TrialDefinition(
@@ -269,7 +345,7 @@ enum TrialContent {
             mapID: "map.pinewood",
             startingCash: 10_000,
             dayLimit: 18,
-            goals: [.cash(70_000), .parkRating(82), .happiness(75)],
+            goals: [.cash(70_000), .parkRating(82), .happiness(75), .improvements(20)],
             maxAdmission: 10,
             medal: TrialMedal(name: "Open Door", symbolName: "door.left.hand.open")),
 
@@ -281,7 +357,7 @@ enum TrialContent {
             mapID: "map.longpier",
             startingCash: 10_000,
             dayLimit: 20,
-            goals: [.guestsAdmitted(1_500), .parkRating(84), .cash(100_000)],
+            goals: [.guestsAdmitted(1_500), .parkRating(84), .cash(100_000), .build("transport.station", 2)],
             medal: TrialMedal(name: "Marathon Maker", symbolName: "figure.walk")),
 
         TrialDefinition(
@@ -292,7 +368,7 @@ enum TrialContent {
             mapID: "map.switchback",
             startingCash: 8_000,
             dayLimit: 20,
-            goals: [.parkRating(86), .guestsInPark(92), .happiness(78), .cash(100_000)],
+            goals: [.parkRating(86), .guestsInPark(92), .happiness(78), .cash(100_000), .thrillRide(85)],
             maxAdmission: 25,
             medal: TrialMedal(name: "Ridge Runner", symbolName: "arrow.triangle.turn.up.right.diamond.fill")),
 
@@ -304,7 +380,7 @@ enum TrialContent {
             mapID: "map.canyon",
             startingCash: 6_000,
             dayLimit: 24,
-            goals: [.parkRating(88), .guestsInPark(95), .happiness(80), .cash(120_000), .rides(12)],
+            goals: [.parkRating(88), .guestsInPark(95), .happiness(80), .cash(120_000), .rides(12), .coasterLength(70)],
             maxAdmission: 20,
             medal: TrialMedal(name: "Legend of the Lot", symbolName: "trophy.fill"))
     ]

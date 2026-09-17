@@ -2,13 +2,19 @@ import Foundation
 
 /// Something a player can switch on for a while by watching an advert.
 ///
-/// Both are conveniences rather than advantages you cannot earn: the park
-/// still has to be built, and nothing here is sold for money.
+/// Every one of them is a convenience rather than an advantage you cannot
+/// earn: the park still has to be built, and nothing here is sold for money.
 enum BoostKind: String, CaseIterable, Identifiable {
     /// Unlocks the fifth notch on the speed control.
     case turboSpeed
     /// A few more people through the gate.
     case extraVisitors
+    /// Guests part with their money more readily.
+    case bigSpenders
+    /// Rides stop wearing and stop failing.
+    case smoothRunning
+    /// Guests stop dropping rubbish.
+    case spotless
 
     var id: String { rawValue }
 
@@ -16,6 +22,9 @@ enum BoostKind: String, CaseIterable, Identifiable {
         switch self {
         case .turboSpeed: return "5x Speed"
         case .extraVisitors: return "Busier Gate"
+        case .bigSpenders: return "Big Spenders"
+        case .smoothRunning: return "Smooth Running"
+        case .spotless: return "Spotless"
         }
     }
 
@@ -25,6 +34,12 @@ enum BoostKind: String, CaseIterable, Identifiable {
             return "Adds a fifth notch to the speed control, so a park day passes in a couple of minutes."
         case .extraVisitors:
             return "\(Int(Balance.adVisitorBoost * 100))% more arrivals while it lasts, on top of whatever the park has earned."
+        case .bigSpenders:
+            return "Guests are \(Int(Balance.adSpendBoost * 100))% readier to buy, so shops and booths take more at the same prices."
+        case .smoothRunning:
+            return "Rides barely wear and almost never fail. A good hour to run a tired park while a mechanic catches up."
+        case .spotless:
+            return "Guests hold on to their rubbish instead of dropping it, so one janitor goes a great deal further."
         }
     }
 
@@ -32,6 +47,9 @@ enum BoostKind: String, CaseIterable, Identifiable {
         switch self {
         case .turboSpeed: return "hare.fill"
         case .extraVisitors: return "person.3.sequence.fill"
+        case .bigSpenders: return "creditcard.fill"
+        case .smoothRunning: return "gearshape.2.fill"
+        case .spotless: return "sparkles"
         }
     }
 }

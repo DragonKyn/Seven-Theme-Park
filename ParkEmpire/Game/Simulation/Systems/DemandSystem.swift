@@ -64,7 +64,7 @@ final class DemandSystem {
         // A post about the park, or a warm review, is a short sharp rush on
         // top of whatever the park had already earned.
         let word = 1 + state.activePromotionBoost + state.activeReviewArrivals
-            + state.adArrivalsBoost + state.perks.extraArrivals
+            + state.adBoosts.extraArrivals + state.perks.extraArrivals
 
         return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * word,
                              0,

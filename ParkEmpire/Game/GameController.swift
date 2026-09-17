@@ -554,7 +554,8 @@ final class GameController: ObservableObject {
                                        definition: definition,
                                        guest: nearest,
                                        hasAccess: true,
-                                       distance: distance).summary
+                                       distance: distance,
+                                       spendBoost: state.adBoosts.spendFactor).summary
     }
 
     func setFacilityOpen(_ isOpen: Bool, facilityID: UUID) {
@@ -885,10 +886,8 @@ final class GameController: ObservableObject {
         let perks = perkStore.bonuses
         if state.perks != perks { state.perks = perks }
 
-        let arrivals = boosts.isActive(.extraVisitors) ? Balance.adVisitorBoost : 0
-        if state.adArrivalsBoost != arrivals {
-            state.adArrivalsBoost = arrivals
-        }
+        let effects = AdBoostEffects { boosts.isActive($0) }
+        if state.adBoosts != effects { state.adBoosts = effects }
         if state.clock.speed.needsBoost, !isTurboUnlocked {
             state.clock.speed = .veryFast
             engine.resetTiming()

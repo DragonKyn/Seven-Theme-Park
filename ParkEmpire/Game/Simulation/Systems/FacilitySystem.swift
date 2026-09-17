@@ -175,17 +175,22 @@ final class FacilitySystem {
         let price = state.facilities[facilityIndex].price
         let guest = state.guests[guestIndex]
 
-        let willingness = GuestEconomics.purchaseWillingness(
+        // What the guest makes of the price on the board, and then how ready
+        // a boost has made them to buy anyway. The shop records the first of
+        // those, because how fair the crowd found the price is not something
+        // an advert should be able to flatter.
+        let fairness = GuestEconomics.purchaseWillingness(
             price: price,
             reference: definition.referencePrice,
             spending: guest.personality.spending)
+        let willingness = fairness * state.adBoosts.spendFactor
 
-        state.facilities[facilityIndex].sentimentSum += willingness
+        state.facilities[facilityIndex].sentimentSum += fairness
         state.facilities[facilityIndex].sentimentCount += 1
 
         let (text, mood) = ThoughtCatalog.priceReaction(item: definition.displayName.lowercased(),
                                                         price: price,
-                                                        willingness: willingness)
+                                                        willingness: fairness)
         state.guests[guestIndex].think(text, mood: mood, at: now, icon: .money)
 
         guard guest.cash >= price else {

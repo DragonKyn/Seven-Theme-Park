@@ -324,6 +324,14 @@ enum Balance {
     static let adBoostMaximumMinutes: Double = 60
     /// Extra arrivals the gate boost brings, as a share.
     static let adVisitorBoost: Double = 0.05
+    /// How much readier guests are to buy while the spending boost runs.
+    static let adSpendBoost: Double = 0.25
+    /// What a spell of smooth running is worth: rides barely wear, and are
+    /// far less likely to fail while it lasts.
+    static let adWearReduction: Double = 0.85
+    static let adBreakdownReduction: Double = 0.75
+    /// How much less rubbish reaches the ground while the tidy boost runs.
+    static let adLitterReduction: Double = 0.80
 
     // MARK: - Autosave
 

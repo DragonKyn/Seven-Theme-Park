@@ -61,6 +61,7 @@ final class CleanlinessSystem {
         if !hasUsableBin { chance *= 2.5 }
         // Nobody drops a wrapper in front of a guard.
         if watched { chance *= (1 - Balance.securityLitterDeterrence) }
+        chance *= state.adBoosts.litterFactor
 
         guard state.rng.chance(chance) else { return }
 
