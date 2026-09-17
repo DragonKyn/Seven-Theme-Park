@@ -1,0 +1,31 @@
+=== what this run intends: upload
+=== version
+1.0
+=== build
+2026.0917.0345
+=== bundle identifier
+com.wickedstudios.wonderlot.7X49UN26T8
+=== oldest iOS this build runs on
+15.0
+=== export compliance answered
+false
+=== privacy manifest present
+-rw-r--r--  1 runner  staff  1868 Sep 17 03:45 /Users/runner/work/_temp/ParkEmpire.xcarchive/Products/Applications/ParkEmpire.app/PrivacyInfo.xcprivacy
+=== embedded frameworks
+GoogleMobileAds.framework
+UserMessagingPlatform.framework
+=== signature
+Executable=/Users/runner/work/_temp/ParkEmpire.xcarchive/Products/Applications/ParkEmpire.app/ParkEmpire
+Identifier=com.wickedstudios.wonderlot.7X49UN26T8
+Format=app bundle with Mach-O thin (arm64)
+Signature size=4788
+Authority=Apple Development: Created via API (F9UWGC85WY)
+Authority=Apple Worldwide Developer Relations Certification Authority
+Authority=Apple Root CA
+Signed Time=Sep 17, 2026 at 3:46:55 AM
+Info.plist entries=35
+TeamIdentifier=7X49UN26T8
+Sealed Resources version=2 rules=10 files=13
+Internal requirements count=1 size=204
+=== provisioning profile
+iOS Team Provisioning Profile: com.wickedstudios.wonderlot.7X49UN26T8
