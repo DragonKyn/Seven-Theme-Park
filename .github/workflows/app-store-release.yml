@@ -1,0 +1,342 @@
+name: Release to App Store Connect
+
+# Archives a signed build and hands it to Apple.
+#
+# Never runs on a push. A build number, once Apple has accepted it, is spent
+# forever and cannot be reused or withdrawn, so this only ever runs when it is
+# started by hand — and it starts on "validate", which does everything an
+# upload does except deliver. Run it that way first.
+#
+# What it does NOT do is submit anything for review or release anything to the
+# public. The build lands in TestFlight; putting it in front of a reviewer, and
+# then in front of buyers, stays a deliberate click in App Store Connect.
+#
+# Secrets this needs, all set under Settings > Secrets and variables > Actions:
+#
+#   APPSTORE_KEY_ID       the key's ten-character id, e.g. A1B2C3D4E5
+#   APPSTORE_ISSUER_ID    the issuer UUID shown above the key list
+#   APPSTORE_PRIVATE_KEY  the whole AuthKey_XXXXXXXXXX.p8 file, BEGIN and
+#                         END lines included, pasted as-is
+#   APPLE_TEAM_ID         the ten-character team id from the developer portal
+#
+# Optional, and worth adding once the first release has gone through:
+#
+#   DIST_CERT_P12_BASE64  an Apple Distribution certificate exported from
+#                         Keychain Access as .p12 and base64-encoded
+#   DIST_CERT_PASSWORD    the password set when exporting it
+#
+# Without those two, Xcode issues a fresh distribution certificate on every
+# run using the API key. That works, but Apple caps how many a team may hold,
+# and a runner that is thrown away each time will eventually hit the cap.
+# Supplying the certificate makes the job reuse one instead.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "validate (rehearse only) or upload (deliver to TestFlight)"
+        type: choice
+        default: validate
+        options: [validate, upload]
+      build_number:
+        description: "Build number. Leave empty for a UTC timestamp, which always increases."
+        type: string
+        default: ""
+      marketing_version:
+        description: "Version shown in the store. Leave empty to keep the one in the project."
+        type: string
+        default: ""
+
+# An App Store Connect environment exists so a required reviewer can be added
+# to it later. Until one is, this changes nothing.
+concurrency:
+  group: app-store-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 60
+    environment: app-store
+
+    env:
+      SCHEME: ParkEmpire
+      PROJECT: ParkEmpire.xcodeproj
+      APP_NAME: ParkEmpire
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Refuse to start without the credentials
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "$KEY_ID" ]      || missing="$missing APPSTORE_KEY_ID"
+          [ -n "$ISSUER_ID" ]   || missing="$missing APPSTORE_ISSUER_ID"
+          [ -n "$PRIVATE_KEY" ] || missing="$missing APPSTORE_PRIVATE_KEY"
+          [ -n "$TEAM_ID" ]     || missing="$missing APPLE_TEAM_ID"
+          if [ -n "$missing" ]; then
+            echo "Missing repository secrets:$missing"
+            echo "See the comment at the top of this workflow for what each one is."
+            exit 1
+          fi
+          echo "All four credentials are present."
+
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then
+            sudo xcode-select -s "$latest"
+          fi
+          xcodebuild -version
+
+      # The key is written where both xcodebuild and altool look for it, with
+      # permissions that keep it to this user. The runner is destroyed when the
+      # job ends; nothing here is ever written to the log.
+      - name: Install the App Store Connect key
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          dir="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$dir"
+          printf '%s\n' "$PRIVATE_KEY" > "$dir/AuthKey_${KEY_ID}.p8"
+          chmod 600 "$dir/AuthKey_${KEY_ID}.p8"
+          echo "AUTH_KEY_PATH=$dir/AuthKey_${KEY_ID}.p8" >> "$GITHUB_ENV"
+          # Proof it arrived intact without showing any of it.
+          head -1 "$dir/AuthKey_${KEY_ID}.p8" | grep -q "BEGIN PRIVATE KEY" \
+            || { echo "The private key does not look like a .p8 file. Paste the whole file, BEGIN and END lines included."; exit 1; }
+          echo "Key installed."
+
+      # Signing needs somewhere to keep a certificate. A keychain made here and
+      # thrown away with the runner keeps it out of the login keychain, which on
+      # a hosted runner does not exist in a usable state anyway.
+      - name: Make a throwaway keychain
+        env:
+          P12: ${{ secrets.DIST_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/build.keychain-db"
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$keychain"
+          echo "KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
+          if [ -n "${P12:-}" ]; then
+            echo "$P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+            security import "$RUNNER_TEMP/dist.p12" \
+              -k "$keychain" -P "${P12_PASSWORD:-}" \
+              -T /usr/bin/codesign -T /usr/bin/security -f pkcs12
+            rm -f "$RUNNER_TEMP/dist.p12"
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+            echo "Imported the supplied distribution certificate:"
+            security find-identity -v -p codesigning "$keychain" | sed 's/[0-9A-F]\{40\}/<hash>/'
+          else
+            echo "No certificate supplied; Xcode will ask Apple for one using the API key."
+          fi
+
+      # Apple will not take the same build number twice, whatever happened to
+      # the upload that used it. The default is the time in UTC, split so every
+      # component stays a small integer and each one only ever goes up.
+      - name: Decide the version and build number
+        run: |
+          set -euo pipefail
+          build="${{ inputs.build_number }}"
+          if [ -z "$build" ]; then
+            build=$(date -u +%Y.%m%d.%H%M)
+          fi
+          echo "BUILD_NUMBER=$build" >> "$GITHUB_ENV"
+
+          version="${{ inputs.marketing_version }}"
+          if [ -z "$version" ]; then
+            version=$(grep -m1 "MARKETING_VERSION" "$PROJECT/project.pbxproj" \
+                      | sed 's/.*= *//; s/;.*//')
+          fi
+          echo "MARKETING_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Releasing version $version, build $build."
+
+      - name: Archive
+        id: archive
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -o pipefail
+          set +e
+          xcodebuild \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$AUTH_KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" \
+            clean archive 2>&1 | tee archive.log
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Write the export options
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          options="$RUNNER_TEMP/ExportOptions.plist"
+          # Built key by key rather than written out as XML, because a heredoc
+          # inside a YAML block cannot produce a file whose first character is
+          # the "<" of the declaration, and a plist with a blank line in front
+          # of it is not a plist.
+          #
+          # manageAppVersionAndBuildNumber is off so the numbers decided above
+          # are the numbers Apple receives, rather than Xcode quietly choosing
+          # its own and leaving the two out of step.
+          plutil -create xml1 "$options"
+          plutil -insert method -string "app-store-connect" "$options"
+          plutil -insert destination -string "export" "$options"
+          plutil -insert teamID -string "$TEAM_ID" "$options"
+          plutil -insert signingStyle -string "automatic" "$options"
+          plutil -insert uploadSymbols -bool true "$options"
+          plutil -insert manageAppVersionAndBuildNumber -bool false "$options"
+          plutil -lint "$options"
+          plutil -p "$options" | grep -v teamID
+
+      - name: Export the IPA
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$AUTH_KEY_PATH" \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" 2>&1 | tee export.log
+          ls -lh "$RUNNER_TEMP/export"
+          ipa=$(ls "$RUNNER_TEMP/export"/*.ipa | head -1)
+          echo "IPA_PATH=$ipa" >> "$GITHUB_ENV"
+
+      - name: Check what is about to be sent
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/$APP_NAME.xcarchive/Products/Applications/$APP_NAME.app"
+          {
+            echo "=== what this run intends: ${{ inputs.action }}"
+            echo "=== version"
+            plutil -extract CFBundleShortVersionString raw "$app/Info.plist"
+            echo "=== build"
+            plutil -extract CFBundleVersion raw "$app/Info.plist"
+            echo "=== bundle identifier"
+            plutil -extract CFBundleIdentifier raw "$app/Info.plist"
+            echo "=== oldest iOS this build runs on"
+            plutil -extract MinimumOSVersion raw "$app/Info.plist"
+            echo "=== export compliance answered"
+            plutil -extract ITSAppUsesNonExemptEncryption raw "$app/Info.plist"
+            echo "=== privacy manifest present"
+            ls -la "$app/PrivacyInfo.xcprivacy"
+            echo "=== embedded frameworks"
+            ls -1 "$app/Frameworks" 2>/dev/null || echo "none"
+            echo "=== signature"
+            codesign -dv --verbose=2 "$app" 2>&1 | grep -vi "hash\|CDHash" || true
+            echo "=== provisioning profile"
+            security cms -D -i "$app/embedded.mobileprovision" 2>/dev/null \
+              | plutil -extract Name raw - 2>/dev/null || echo "none embedded"
+          } > release-report.txt 2>&1
+          cat release-report.txt
+
+      # Everything an upload does except deliver. If this passes, an upload
+      # will too, and nothing has been spent.
+      - name: Validate with Apple
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcrun altool --validate-app \
+            -f "$IPA_PATH" \
+            -t ios \
+            --apiKey "$KEY_ID" \
+            --apiIssuer "$ISSUER_ID" 2>&1 | tee validate.log
+
+      - name: Upload to App Store Connect
+        if: ${{ inputs.action == 'upload' }}
+        env:
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcrun altool --upload-app \
+            -f "$IPA_PATH" \
+            -t ios \
+            --apiKey "$KEY_ID" \
+            --apiIssuer "$ISSUER_ID" 2>&1 | tee upload.log
+          echo
+          echo "Delivered. Apple processes the build for a few minutes to an"
+          echo "hour before it appears in TestFlight. Nothing has been"
+          echo "submitted for review: that is still yours to do in App Store"
+          echo "Connect."
+
+      - name: Say what happened, when nothing was sent
+        if: ${{ inputs.action != 'upload' }}
+        run: |
+          echo "Rehearsal only. The build was archived, exported, signed and"
+          echo "accepted by Apple's validation, and then thrown away. Run this"
+          echo "again with action: upload to deliver it."
+
+      - name: Keep the IPA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WonderLot-appstore-ipa
+          path: ${{ env.IPA_PATH }}
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Actions logs need a signed-in session even on a public repository, so
+      # the logs go to a branch that can be read through the contents API. The
+      # credentials are never echoed by any step above, and GitHub redacts
+      # secrets from anything a step does print.
+      - name: Publish the logs to the release-logs branch
+        if: always()
+        run: |
+          set -euo pipefail
+          workdir=$(mktemp -d)
+          cp release-report.txt archive.log export.log validate.log upload.log "$workdir/" 2>/dev/null || true
+          cd "$workdir"
+          {
+            echo "run ${{ github.run_number }} · ${{ inputs.action }} · commit ${{ github.sha }}"
+            echo "$(date -u)"
+          } > README.md
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Release log for run ${{ github.run_number }}" --allow-empty
+          git branch -M release-logs
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" release-logs

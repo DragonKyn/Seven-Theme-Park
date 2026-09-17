@@ -61,6 +61,21 @@ build.
 CI builds an unsigned IPA for sideloading on every push to `main`; the log and
 a build report are published to the `ci-logs` branch.
 
+## Releasing
+
+`.github/workflows/app-store-release.yml` archives a signed build and hands it
+to Apple. It only ever runs when started by hand, from the Actions tab, and it
+defaults to `validate`, which does everything an upload does except deliver —
+run it that way first. Nothing in it submits for review or releases to the
+public; the build lands in TestFlight and the rest stays a deliberate click in
+App Store Connect. Its logs go to the `release-logs` branch.
+
+It needs four repository secrets — `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`,
+`APPSTORE_PRIVATE_KEY` (the whole `.p8` file) and `APPLE_TEAM_ID` — and two
+optional ones that let it reuse a distribution certificate instead of asking
+Apple for a new one each run. The comment at the top of the workflow says what
+each is.
+
 ## Before submitting
 
 - The bundle identifier is `com.wickedstudios.wonderlot`. It must match both
