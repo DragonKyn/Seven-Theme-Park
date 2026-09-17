@@ -283,6 +283,13 @@ jobs:
             -t ios \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" 2>&1 | tee validate.log
+          status=${PIPESTATUS[0]}
+          # altool can print an error and still exit 0, so its word is not
+          # taken for it: any ERROR line fails the step.
+          if [ "$status" -ne 0 ] || grep -q "ERROR" validate.log; then
+            echo "::error::Apple rejected the build at validation. See validate.log on the release-logs branch."
+            exit 1
+          fi
 
       - name: Upload to App Store Connect
         if: ${{ inputs.action == 'upload' }}
@@ -296,6 +303,11 @@ jobs:
             -t ios \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" 2>&1 | tee upload.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ] || grep -q "ERROR" upload.log; then
+            echo "::error::Apple did not accept the upload. See upload.log on the release-logs branch."
+            exit 1
+          fi
           echo
           echo "Delivered. Apple processes the build for a few minutes to an"
           echo "hour before it appears in TestFlight. Nothing has been"
