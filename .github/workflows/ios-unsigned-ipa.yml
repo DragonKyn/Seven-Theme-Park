@@ -72,6 +72,8 @@ jobs:
             echo "=== version"
             plutil -extract CFBundleShortVersionString raw "$products/ParkEmpire.app/Info.plist" 2>&1
             plutil -extract CFBundleIdentifier raw "$products/ParkEmpire.app/Info.plist" 2>&1
+            echo "=== oldest iOS this build runs on"
+            plutil -extract MinimumOSVersion raw "$products/ParkEmpire.app/Info.plist" 2>&1
             echo "=== advert keys in the built plist"
             plutil -extract GADApplicationIdentifier raw "$products/ParkEmpire.app/Info.plist" 2>&1
             plutil -extract CFBundleDisplayName raw "$products/ParkEmpire.app/Info.plist" 2>&1

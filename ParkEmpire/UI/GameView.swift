@@ -141,7 +141,9 @@ struct GameView: View {
     @ViewBuilder
     private var parkSurface: some View {
         if let scene {
-            SpriteView(scene: scene, options: [.ignoresSiblingOrder])
+            SpriteView(scene: scene,
+                       preferredFramesPerSecond: GraphicsBudget.framesPerSecond,
+                       options: [.ignoresSiblingOrder])
         } else {
             Color(red: 0.42, green: 0.66, blue: 0.38)
         }

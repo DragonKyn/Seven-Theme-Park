@@ -609,7 +609,8 @@ enum SpriteFactory {
     /// combinations to cache forever — a crowd of guests, where every one is
     /// dressed differently — the caller keeps its own bounded cache instead.
     static func render(size: CGSize, draw: (CGContext, CGSize) -> Void) -> SKTexture {
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let renderer = UIGraphicsImageRenderer(size: size,
+                                               format: GraphicsBudget.rendererFormat())
         let image = renderer.image { rendererContext in
             draw(rendererContext.cgContext, size)
         }

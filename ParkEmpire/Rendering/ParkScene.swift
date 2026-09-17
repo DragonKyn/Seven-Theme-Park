@@ -54,7 +54,10 @@ final class ParkScene: SKScene {
     private var bubbleNodes: [SKNode] = []
     /// Ceiling on bubbles on screen at once. A park where every guest is
     /// thinking out loud is noise rather than information.
-    private static let maxBubbles = 10
+    /// Ceiling on bubbles at once. Read from the graphics setting rather
+    /// than fixed, because a crowd of thought bubbles is the cheapest thing
+    /// to give up on a phone that is struggling.
+    private static var maxBubbles: Int { GraphicsBudget.bubbles }
     private var staffNodes: [UUID: SKSpriteNode] = [:]
     private var staffTextures: [StaffRole: SKTexture] = [:]
     /// The uniform the cached staff textures were drawn in.
@@ -1088,14 +1091,41 @@ final class ParkScene: SKScene {
                        y: (guest.position.y + offset.y) * Self.tileSide)
     }
 
+    /// The part of the park the camera can actually see, with a tile of slack
+    /// so a figure is never seen popping in at the edge.
+    private var visibleWorldRect: CGRect {
+        let scale = cameraNode.xScale
+        let width = size.width * scale + Self.tileSide * 2
+        let height = size.height * scale + Self.tileSide * 2
+        return CGRect(x: cameraNode.position.x - width / 2,
+                      y: cameraNode.position.y - height / 2,
+                      width: width,
+                      height: height)
+    }
+
     private func syncGuests(state: GameState) {
         let height = Self.guestHeight
         let guestSize = CGSize(width: height * GuestArtwork.aspect, height: height)
         let now = state.clock.simTime
 
+        // On the lighter setting only the guests the camera can see are given
+        // a sprite, and only so many of those. The simulation is untouched:
+        // every guest still walks, queues, spends and complains, and the
+        // numbers on the management screen are the same either way. This is
+        // purely how many figures are put on the glass.
+        let culls = GraphicsBudget.cullsOffscreenGuests
+        let budget = GraphicsBudget.guestSprites
+        let window = culls ? visibleWorldRect : .infinite
+        var drawn = 0
+
         var seen = Set<UUID>()
 
         for guest in state.guests where guest.isActive {
+            let place = drawPosition(of: guest)
+            if culls {
+                guard window.contains(place), drawn < budget else { continue }
+            }
+            drawn += 1
             seen.insert(guest.id)
             let mood = GuestMood(happiness: guest.happiness)
 
@@ -1135,7 +1165,7 @@ final class ParkScene: SKScene {
                                                     height: height)
             }
 
-            node.position = drawPosition(of: guest)
+            node.position = place
 
             showBubbleIfNeeded(for: guest, on: node, now: now)
         }

@@ -32,8 +32,9 @@ final class SimulationEngine {
 
         accumulator += realDelta * speed
 
+        let ceiling = GraphicsBudget.maxTicksPerFrame
         var ticks = 0
-        while accumulator >= Balance.tickDuration && ticks < Balance.maxTicksPerFrame {
+        while accumulator >= Balance.tickDuration && ticks < ceiling {
             accumulator -= Balance.tickDuration
             tick(state: state)
             ticks += 1
@@ -41,7 +42,7 @@ final class SimulationEngine {
 
         // If we hit the ceiling the device could not keep up; drop the backlog
         // rather than spiralling further behind.
-        if ticks >= Balance.maxTicksPerFrame {
+        if ticks >= ceiling {
             accumulator = 0
         }
 

@@ -12,6 +12,7 @@ struct MainMenuView: View {
     @State private var showingNewGame = false
     @State private var showingTrials = false
     @State private var showingAbout = false
+    @State private var showingDisplay = false
     @State private var demo: DemoParkBackdrop?
     /// The slot the player has asked to delete, held until they confirm.
     @State private var slotToDelete: Int?
@@ -38,7 +39,7 @@ struct MainMenuView: View {
                 VStack(spacing: 14) {
                     primaryActions
                     savedParks
-                    aboutLink
+                    footerLinks
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 22)
@@ -73,10 +74,15 @@ struct MainMenuView: View {
         .sheet(isPresented: $showingAbout) {
             AboutView()
         }
+        .sheet(isPresented: $showingDisplay) {
+            DisplaySettingsView(settings: DisplaySettings.shared)
+        }
         .onAppear {
             router.refreshSlots()
             router.refreshTrials()
-            if demo == nil { demo = DemoParkBackdrop() }
+            if demo == nil, GraphicsBudget.animatesMenuBackdrop {
+                demo = DemoParkBackdrop()
+            }
             if router.opensLadderOnMenu {
                 router.opensLadderOnMenu = false
                 showingTrials = true
@@ -143,8 +149,36 @@ struct MainMenuView: View {
         }
     }
 
-    /// Small and at the foot of the menu: it matters, but nobody opens the
-    /// game to read it.
+    /// Small and at the foot of the menu: both matter, but nobody opens the
+    /// game to read them.
+    private var footerLinks: some View {
+        HStack(spacing: 8) {
+            aboutLink
+            displayLink
+        }
+    }
+
+    private var displayLink: some View {
+        Button {
+            showingDisplay = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+                Text("Graphics")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(Color.black.opacity(0.30)))
+        }
+        .buttonStyle(.plain)
+    }
+
     private var aboutLink: some View {
         Button {
             showingAbout = true
@@ -186,7 +220,9 @@ struct MainMenuView: View {
     @ViewBuilder
     private var backdrop: some View {
         if let demo {
-            SpriteView(scene: demo.scene, options: [.ignoresSiblingOrder])
+            SpriteView(scene: demo.scene,
+                       preferredFramesPerSecond: GraphicsBudget.framesPerSecond,
+                       options: [.ignoresSiblingOrder])
                 .allowsHitTesting(false)
         } else {
             LinearGradient(colors: [Color(red: 0.20, green: 0.44, blue: 0.62),

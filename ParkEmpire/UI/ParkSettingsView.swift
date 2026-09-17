@@ -97,6 +97,21 @@ struct ParkSettingsView: View {
                     .padding(.vertical, 2)
                 }
 
+                Section("Graphics") {
+                    NavigationLink {
+                        DisplaySettingsForm(settings: DisplaySettings.shared)
+                            .navigationTitle("Graphics")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        LabelledValue("Detail",
+                                      value: DisplaySettings.shared.isReduced ? "Compatibility" : "Full detail")
+                    }
+
+                    Text("How hard the park works this phone. Nothing here changes the park itself.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Right now") {
                     LabelledValue("Arrivals",
                                    value: String(format: "%.1f guests per minute", controller.hud.arrivalsPerMinute))
