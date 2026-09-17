@@ -74,6 +74,10 @@ jobs:
             plutil -extract CFBundleIdentifier raw "$products/ParkEmpire.app/Info.plist" 2>&1
             echo "=== oldest iOS this build runs on"
             plutil -extract MinimumOSVersion raw "$products/ParkEmpire.app/Info.plist" 2>&1
+            echo "=== app icon wiring in the built plist"
+            plutil -extract CFBundleIcons xml1 -o - "$products/ParkEmpire.app/Info.plist" 2>&1
+            plutil -extract "CFBundleIcons~ipad" xml1 -o - "$products/ParkEmpire.app/Info.plist" 2>&1
+            ls -la "$products/ParkEmpire.app/" | grep -i appicon 2>&1
             echo "=== advert keys in the built plist"
             plutil -extract GADApplicationIdentifier raw "$products/ParkEmpire.app/Info.plist" 2>&1
             plutil -extract CFBundleDisplayName raw "$products/ParkEmpire.app/Info.plist" 2>&1
