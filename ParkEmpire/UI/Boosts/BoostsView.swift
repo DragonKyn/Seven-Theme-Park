@@ -44,6 +44,7 @@ struct BoostsView: View {
             }
         }
         .onReceive(ticker) { _ in boosts.refresh() }
+        .task { await ads.requestTrackingPermissionIfNeeded() }
     }
 
     // MARK: - Pieces

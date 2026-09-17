@@ -2,21 +2,39 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- The app itself does not track anybody across other companies' apps
-	     and does not ask to. Adverts are served without the tracking
-	     permission, which is why there is no ATT prompt. If personalised
-	     adverts are ever turned on, this becomes true and a tracking usage
-	     description has to go in Info.plist alongside it. -->
+	<!-- True because the advert network may use the advertising identifier
+	     once the player allows it. The prompt is asked for at the point the
+	     player opens the boosts sheet, and refusing changes nothing about
+	     the game. -->
 	<key>NSPrivacyTracking</key>
-	<false/>
+	<true/>
 	<key>NSPrivacyTrackingDomains</key>
-	<array/>
-	<!-- Nothing leaves the device that the app itself gathered. Parks, medals
-	     and perk points are files and defaults on the phone. The advert SDK
-	     declares its own collection in its own manifest, which ships inside
-	     its framework. -->
+	<array>
+		<string>googleads.g.doubleclick.net</string>
+		<string>googlesyndication.com</string>
+		<string>googleadservices.com</string>
+		<string>doubleclick.net</string>
+		<string>admob.com</string>
+	</array>
+	<!-- Nothing the app itself gathers leaves the device: parks, medals and
+	     perk points are files and defaults on the phone. What is declared
+	     here is the advertising identifier the advert network may read, and
+	     it is declared because this app is what ships it. -->
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

@@ -5,6 +5,10 @@ import UIKit
 import GoogleMobileAds
 #endif
 
+#if canImport(AppTrackingTransparency)
+import AppTrackingTransparency
+#endif
+
 /// Identifiers for the advert network, in one place.
 enum AdConfiguration {
     /// The app as the network knows it. Also has to appear in the Info.plist
@@ -57,6 +61,22 @@ final class RewardedAdCenter: ObservableObject {
         #if canImport(GoogleMobileAds)
         GADMobileAds.sharedInstance().start(completionHandler: nil)
         Task { await load() }
+        #endif
+    }
+
+    /// Asks Apple's tracking question, once, at a moment where it makes
+    /// sense.
+    ///
+    /// Deliberately not at launch. The first thing a new player should see is
+    /// their park, not a permission sheet about adverts they have not been
+    /// offered yet; this is asked when they open the boosts screen, which is
+    /// the first time adverts are anything to do with them. The system only
+    /// shows it once however often this is called, and every answer is fine:
+    /// a refusal means less relevant adverts and nothing else.
+    func requestTrackingPermissionIfNeeded() async {
+        #if canImport(AppTrackingTransparency)
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+        _ = await ATTrackingManager.requestTrackingAuthorization()
         #endif
     }
 

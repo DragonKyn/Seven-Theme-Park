@@ -6,6 +6,11 @@
 	     is answered here once rather than on every upload. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Shown in Apple's own tracking prompt. Says what the permission buys
+	     the player rather than what it buys us, and makes plain that saying
+	     no costs them nothing. -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Allowing this lets the adverts you choose to watch be more relevant, which earns more for the game. Saying no changes nothing about how you play: every ride, map and trial stays open either way.</string>
 	<!-- The advert network refuses to start without this, and it has to be
 	     the application id rather than the ad unit id. Kept alongside the
 	     copy in AdConfiguration, which is where the code reads it. -->

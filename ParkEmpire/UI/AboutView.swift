@@ -103,6 +103,9 @@ struct AboutView: View {
             promise("dollarsign.circle.fill", Theme.money,
                     "No in-game currency.",
                     "No gems, no tokens, no bundles of coins. I do not believe in them. The money in your park is money you earned by running it well.")
+            promise("hand.point.up.braille.fill", Theme.textSecondary,
+                    "Your answer to the tracking question is yours.",
+                    "Say no and nothing about the game changes. Every ride, map, trial and medal stays exactly as open as it was.")
             promise("lock.open.fill", Theme.accentWarm,
                     "Everything is playable without spending a cent.",
                     "Every ride, every map, every trial and every medal can be reached just by playing. Nothing is locked behind a purchase.")
