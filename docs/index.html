@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wonder Lot — Support &amp; Privacy</title>
+<meta name="description" content="Support and privacy policy for Wonder Lot, a theme park builder for iPhone and iPad.">
+<style>
+  :root {
+    --panel-top: #1d2a3f;
+    --panel-bottom: #0f1726;
+    --card: rgba(255, 255, 255, 0.06);
+    --card-edge: rgba(255, 255, 255, 0.10);
+    --text: #eef2f7;
+    --muted: #a8b3c4;
+    --gold: #f4c451;
+    --gold-deep: #e39b2d;
+    --teal: #5fd0c0;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font: 16px/1.6 ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom)) fixed;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+
+  header { padding: 56px 0 28px; text-align: center; }
+  .icon {
+    width: 88px; height: 88px; border-radius: 20px; margin: 0 auto 18px;
+    background: linear-gradient(145deg, #57b86a, #2f7d4a);
+    display: grid; place-items: center; font-size: 46px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  h1 {
+    margin: 0; font-size: 44px; font-weight: 900; letter-spacing: -.5px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-deep));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tagline { margin: 4px 0 22px; color: var(--muted); font-weight: 600; }
+
+  nav { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  nav a {
+    padding: 8px 16px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 14px;
+    color: var(--text); background: var(--card); border: 1px solid var(--card-edge);
+  }
+  nav a:hover { border-color: var(--gold); }
+
+  section { padding: 30px 0; }
+  h2 {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+    margin: 0 0 10px; font-weight: 900;
+  }
+  h3 { font-size: 18px; margin: 26px 0 6px; }
+  p, li { color: #d9e0ea; }
+  .lead { font-size: 22px; font-weight: 800; color: var(--text); margin: 0 0 12px; line-height: 1.3; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--card-edge);
+    border-radius: 16px; padding: 20px 22px; margin: 16px 0;
+  }
+  .mail {
+    display: inline-block; margin: 6px 0 4px; padding: 13px 22px; border-radius: 12px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-deep));
+    color: #1b1406; font-weight: 900; text-decoration: none; word-break: break-all;
+  }
+  .small { font-size: 14px; color: var(--muted); }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  a { color: var(--teal); }
+  details { border-top: 1px solid var(--card-edge); padding: 12px 0; }
+  details:first-of-type { border-top: 0; }
+  summary { cursor: pointer; font-weight: 700; color: var(--text); }
+  details p { margin: 8px 0 0; }
+  hr { border: 0; border-top: 1px solid var(--card-edge); margin: 10px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 8px; vertical-align: top; border-top: 1px solid var(--card-edge); }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-top: 0; }
+  .table-scroll { overflow-x: auto; }
+  footer { padding: 30px 0 50px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 36px; }
+    header { padding-top: 40px; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="icon" aria-hidden="true">🎡</div>
+    <h1>Wonder Lot</h1>
+    <p class="tagline">From empty lot to endless fun.</p>
+    <nav>
+      <a href="#support">Support</a>
+      <a href="#privacy">Privacy Policy</a>
+    </nav>
+  </header>
+
+  <!-- ============================== SUPPORT ============================== -->
+  <section id="support">
+    <h2>Support</h2>
+    <p class="lead">Something not working? Get in touch.</p>
+    <p>Wonder Lot is made by one person, and every message gets read. Found a bug, got stuck on a Park Trial, or have an idea for the game? Send an email.</p>
+
+    <div class="card">
+      <a class="mail" href="mailto:wickedstudiosca@gmail.com?subject=Wonder%20Lot%20support">wickedstudiosca@gmail.com</a>
+      <p class="small">Replies usually come within a few days.</p>
+      <hr>
+      <p style="margin-bottom:4px"><strong>If you're reporting a problem, it helps to include:</strong></p>
+      <ul>
+        <li>Your device and iOS version (for example, iPhone 12 on iOS 18)</li>
+        <li>Which mode you were playing: Park, Free Build or a Park Trial</li>
+        <li>What you did just before it happened, and what you expected instead</li>
+        <li>A screenshot or screen recording, if you can</li>
+      </ul>
+    </div>
+
+    <h3>Common questions</h3>
+    <div class="card">
+      <details>
+        <summary>Do I have to watch ads?</summary>
+        <p>No. Wonder Lot never shows an ad you didn't choose to watch. Ads only appear on the Boosts screen, where you can watch one for a short in-game boost if you want it. Everything in the game can be reached without watching a single ad.</p>
+      </details>
+      <details>
+        <summary>Is there anything to buy?</summary>
+        <p>No. There are no in-app purchases and no in-game currency. Every ride, map and trial is unlocked by playing.</p>
+      </details>
+      <details>
+        <summary>The game feels slow on my older phone.</summary>
+        <p>Open <strong>Graphics</strong> from the main menu (or from Park Settings inside a park) and choose <strong>Compatibility</strong>. It lowers the frame rate and the amount drawn on screen without changing how the park itself plays. Some changes take full effect the next time you open the game.</p>
+      </details>
+      <details>
+        <summary>Where are my parks saved? Can I move them to another device?</summary>
+        <p>Your parks, custom maps, trial progress and perk points are stored only on your device. There's no account and no cloud sync, so deleting the app deletes your parks too. They may be included in your device's own iCloud or computer backup, depending on your backup settings.</p>
+      </details>
+      <details>
+        <summary>Why doesn't a Park Trial use one of my save slots?</summary>
+        <p>That's by design. Trials keep their own progress separately, so starting one never overwrites a park you're building.</p>
+      </details>
+      <details>
+        <summary>A ride closed after a safety inspection. How do I reopen it?</summary>
+        <p>A ride that fails inspection stays closed until a mechanic repairs it. Hire a mechanic if you don't have one. They'll head to the ride on their own, and it reopens once the repair is done.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============================== PRIVACY ============================== -->
+  <section id="privacy">
+    <h2>Privacy Policy</h2>
+    <p class="lead">The short version</p>
+    <div class="card">
+      <ul>
+        <li>Wonder Lot has no accounts, and we don't run any servers. Your parks stay on your device.</li>
+        <li>We don't collect, sell or share any personal information ourselves.</li>
+        <li>The game includes Google's advertising service (AdMob) for optional rewarded ads. Google may collect some device and usage information to show and measure those ads, as described below.</li>
+        <li>If you're asked whether the app may track you, saying no changes nothing about the game.</li>
+      </ul>
+    </div>
+    <p class="small">Effective September 16, 2026. This policy covers the Wonder Lot app for iPhone and iPad (“the app”), published by Wicked Studios (“we”, “us”).</p>
+
+    <h3>1. Information stored on your device</h3>
+    <p>The app saves your game data locally on your device. That includes your parks, custom maps, Park Trial progress, perk points, active boosts, and settings like graphics detail and tips. This data is never sent to us, and we can't access it. You can delete it at any time by deleting the app.</p>
+
+    <h3>2. Advertising (Google AdMob)</h3>
+    <p>The app uses the Google Mobile Ads SDK to offer optional rewarded ads. The SDK only shows an ad when you choose to watch one on the Boosts screen, but it may start up and load ads in advance while the app is open. To serve ads, measure their performance and prevent fraud, Google may collect and process information such as:</p>
+    <div class="card table-scroll">
+      <table>
+        <tr><th>Information</th><th>Used for</th></tr>
+        <tr><td>Your device's advertising identifier (IDFA), <em>only if you allow tracking</em></td><td>Showing more relevant ads and measuring them across apps</td></tr>
+        <tr><td>IP address, and an approximate location derived from it</td><td>Choosing ads suitable for your region, and preventing fraud</td></tr>
+        <tr><td>Device and app details (model, iOS version, language, app version)</td><td>Showing ads that work on your device</td></tr>
+        <tr><td>Ad interactions (ads loaded, viewed or tapped)</td><td>Measuring ads and confirming rewards</td></tr>
+        <tr><td>Diagnostic data (crashes and performance of the ad SDK)</td><td>Keeping the ad service working</td></tr>
+      </table>
+    </div>
+    <p>Google processes this information under its own privacy policy. We don't receive personal information about you from Google, only aggregate reports (for example, how many ads were shown).</p>
+    <ul>
+      <li><a href="https://policies.google.com/privacy" rel="noopener">Google Privacy Policy</a></li>
+      <li><a href="https://policies.google.com/technologies/partner-sites" rel="noopener">How Google uses information from apps that use its services</a></li>
+      <li><a href="https://policies.google.com/technologies/ads" rel="noopener">How Google uses advertising</a></li>
+    </ul>
+
+    <h3>3. App Tracking Transparency</h3>
+    <p>The first time you open the Boosts screen, iOS may ask whether Wonder Lot may track your activity across other companies' apps and websites. If you allow it, Google may use your advertising identifier to show more relevant ads. If you don't, the identifier isn't shared, ads may be less relevant, and <strong>nothing about the game changes</strong>. You can change this at any time in <em>Settings → Privacy &amp; Security → Tracking</em>.</p>
+
+    <h3>4. When you email us</h3>
+    <p>If you contact support, we receive your email address and whatever you include in your message. We use it only to reply to you and to fix the problem you reported. We don't add you to any mailing list, and we don't share your message with anyone. You can ask us to delete your emails at any time.</p>
+
+    <h3>5. What we don't do</h3>
+    <ul>
+      <li>We don't require an account or ask for your name, email, contacts, photos or precise location inside the app.</li>
+      <li>We don't use our own analytics, and we don't sell personal information.</li>
+      <li>There are no in-app purchases, so the app never handles payment details.</li>
+    </ul>
+
+    <h3>6. Children</h3>
+    <p>Wonder Lot isn't directed at children under 13, and we don't knowingly collect personal information from them. If you believe a child has sent us personal information, email us and we'll delete it.</p>
+
+    <h3>7. Your choices and rights</h3>
+    <ul>
+      <li><strong>Limit ad tracking:</strong> decline the tracking prompt, or turn off <em>Allow Apps to Request to Track</em> in iOS Settings.</li>
+      <li><strong>Delete your game data:</strong> delete the app from your device.</li>
+      <li><strong>Google ad data:</strong> manage it through Google's privacy tools linked above.</li>
+      <li><strong>Everything else:</strong> depending on where you live (for example, the EU, UK or California), you may have rights to access or delete personal information. We hold none about you beyond any emails you've sent, and we'll act on any request sent to the address below.</li>
+    </ul>
+
+    <h3>8. Changes to this policy</h3>
+    <p>If this policy changes, we'll update this page and change the effective date above. Significant changes will also be noted in the app's release notes.</p>
+
+    <h3>9. Contact</h3>
+    <p>Questions about privacy? Email <a href="mailto:wickedstudiosca@gmail.com?subject=Wonder%20Lot%20privacy">wickedstudiosca@gmail.com</a>.</p>
+  </section>
+
+  <footer>
+    © 2026 Wicked Studios · <a href="#support">Support</a> · <a href="#privacy">Privacy Policy</a>
+  </footer>
+
+</div>
+</body>
+</html>
