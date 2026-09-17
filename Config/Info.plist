@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The app uses nothing beyond Apple's own HTTPS, so export compliance
+	     is answered here once rather than on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- The advert network refuses to start without this, and it has to be
 	     the application id rather than the ad unit id. Kept alongside the
 	     copy in AdConfiguration, which is where the code reads it. -->

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The app itself does not track anybody across other companies' apps
+	     and does not ask to. Adverts are served without the tracking
+	     permission, which is why there is no ATT prompt. If personalised
+	     adverts are ever turned on, this becomes true and a tracking usage
+	     description has to go in Info.plist alongside it. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<!-- Nothing leaves the device that the app itself gathered. Parks, medals
+	     and perk points are files and defaults on the phone. The advert SDK
+	     declares its own collection in its own manifest, which ships inside
+	     its framework. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- Saves, trial medals, perk points, tutorial state and boost
+			     timers are all kept in user defaults, read and written only
+			     by this app. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
