@@ -78,7 +78,7 @@ each is.
 
 ## Before submitting
 
-- The bundle identifier is `com.wickedstudios.wonderlot`. It must match both
+- The bundle identifier is `com.wickedstudios.wonderlot.7X49UN26T8`. It must match both
   the App Store Connect record and the AdMob app, or adverts will not serve.
 - `Config/Info.plist` carries the AdMob application id, the tracking usage
   description and the export compliance answer.
