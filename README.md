@@ -28,6 +28,9 @@ the Xcode target stays `ParkEmpire` so file paths remain stable.
   once.
 - **Progression that lasts.** Rides, shops and booths can all be improved, and
   every trial beaten pays a permanent point into a tree of park-wide perks.
+- **Runs on an old phone.** iOS 15 and later, so an iPhone X, 8, 7 or 6s is
+  included. A graphics setting turns the drawing down on the phones that need
+  it and leaves everything else exactly as it was.
 
 ### Technical notes
 
@@ -39,11 +42,21 @@ the Xcode target stays `ParkEmpire` so file paths remain stable.
   still loads.
 - Ads are optional and rewarded only. Nothing interrupts the park, there is no
   in-game currency, and nothing is locked behind a purchase.
+- The deployment target is iOS 15. Everything SwiftUI added after that has a
+  fallback in `ParkEmpire/UI/Common/Compatibility.swift`, which is the whole
+  list of things to delete when the floor eventually rises. Swift Charts is the
+  one real gap: below iOS 16 the money graph is drawn by hand into a `Canvas`
+  from the same palette.
+- The graphics setting (`ParkEmpire/Game/Settings/DisplaySettings.swift`)
+  only ever changes rendering — frame rate, how many guests are drawn, bubble
+  count, texture scale. The simulation never reads it, so a park runs the same
+  on every phone and a Park Trial is equally hard on all of them.
 
 ## Building
 
-Open `ParkEmpire.xcodeproj` in Xcode 16 or later and build for iOS 17. The
-Google Mobile Ads SDK is resolved as a Swift package on first build.
+Open `ParkEmpire.xcodeproj` in Xcode 16 or later and build for iOS 15 or
+later. The Google Mobile Ads SDK is resolved as a Swift package on first
+build.
 
 CI builds an unsigned IPA for sideloading on every push to `main`; the log and
 a build report are published to the `ci-logs` branch.
@@ -57,3 +70,6 @@ a build report are published to the `ci-logs` branch.
 - `ParkEmpire/PrivacyInfo.xcprivacy` declares the required-reason API the app
   uses and the advertising identifier the ad network may read.
 - Debug builds use Google's test ad unit. Release builds use the live one.
+- The oldest supported device is an iPhone 6s on iOS 15. Worth a pass on a
+  small screen before uploading: the layouts were drawn for a taller phone,
+  and 375x667 is the tightest thing the game has to fit into.
