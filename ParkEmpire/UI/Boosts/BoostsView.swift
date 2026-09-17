@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The two things an advert can switch on, and how long each has left.
+/// The things an advert can switch on, and how long each has left.
 ///
 /// Deliberately a quiet screen. Nothing here is sold, nothing is on a timer
 /// counting down to a sales pitch, and the player can close it and never come
