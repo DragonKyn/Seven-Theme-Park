@@ -277,12 +277,23 @@ private final class AdPresenter: NSObject, GADFullScreenContentDelegate {
     private var finish: ((Outcome) -> Void)?
     private var earned = false
 
+    /// Shows the advert and waits for it to be finished with.
+    ///
+    /// The presenting call is put on the main queue explicitly. This class is
+    /// not actor-isolated, so awaiting it from the main-actor centre hops off
+    /// the main thread, and the SDK refuses to present from anywhere else:
+    /// "Presentation must be called on the main thread", code 21, which looks
+    /// from the outside like a button that flashes and does nothing. Every
+    /// callback below already arrives on the main thread, so the state this
+    /// class keeps stays on one thread throughout.
     func present(_ ad: GADRewardedAd, from root: UIViewController) async -> Outcome {
         await withCheckedContinuation { continuation in
             finish = { continuation.resume(returning: $0) }
             ad.fullScreenContentDelegate = self
-            ad.present(fromRootViewController: root) { [weak self] in
-                self?.earned = true
+            DispatchQueue.main.async { [weak self] in
+                ad.present(fromRootViewController: root) {
+                    self?.earned = true
+                }
             }
         }
     }
