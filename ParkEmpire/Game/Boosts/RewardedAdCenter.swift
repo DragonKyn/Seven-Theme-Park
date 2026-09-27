@@ -196,13 +196,14 @@ final class RewardedAdCenter: ObservableObject {
 
         let presenter = AdPresenter()
         self.presenter = presenter
-        let earned = await presenter.present(ad, from: root)
+        let outcome = await presenter.present(ad, from: root)
         self.presenter = nil
+        lastError = outcome.failure
 
         // The next one starts loading straight away, so a player who wants a
         // second helping is not left waiting on a spinner.
         Task { await load() }
-        return earned
+        return outcome.earned
         #else
         lastError = "Adverts are not part of this build."
         return false
@@ -220,12 +221,23 @@ final class RewardedAdCenter: ObservableObject {
     private var presenter: AdPresenter?
 
     /// The view controller an advert is presented over.
+    ///
+    /// The topmost one, not the window's root. The boosts screen is a sheet
+    /// presented over the root, and UIKit refuses to present anything over a
+    /// controller that is already presenting: the advert would be turned away
+    /// the instant it was asked for, which looks from the outside like a
+    /// button that flashes and does nothing.
     private static var rootViewController: UIViewController? {
-        UIApplication.shared.connectedScenes
+        let root = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
             .first(where: \.isKeyWindow)?
             .rootViewController
+        var top = root
+        while let presented = top?.presentedViewController {
+            top = presented
+        }
+        return top
     }
     #endif
 }
@@ -238,10 +250,17 @@ final class RewardedAdCenter: ObservableObject {
 /// whether the reward landed, and resolve on dismissal.
 private final class AdPresenter: NSObject, GADFullScreenContentDelegate {
 
-    private var finish: ((Bool) -> Void)?
+    /// What came of showing an advert: whether the reward was earned, and if
+    /// it was not, why, so the screen can say something rather than nothing.
+    struct Outcome {
+        let earned: Bool
+        let failure: String?
+    }
+
+    private var finish: ((Outcome) -> Void)?
     private var earned = false
 
-    func present(_ ad: GADRewardedAd, from root: UIViewController) async -> Bool {
+    func present(_ ad: GADRewardedAd, from root: UIViewController) async -> Outcome {
         await withCheckedContinuation { continuation in
             finish = { continuation.resume(returning: $0) }
             ad.fullScreenContentDelegate = self
@@ -253,18 +272,20 @@ private final class AdPresenter: NSObject, GADFullScreenContentDelegate {
 
     func ad(_ ad: GADFullScreenPresentingAd,
             didFailToPresentFullScreenContentWithError error: Error) {
-        complete(false)
+        let failure = error as NSError
+        complete(Outcome(earned: false,
+                         failure: "The advert could not be shown. \(failure.localizedDescription) (code \(failure.code))"))
     }
 
     func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
-        complete(earned)
+        complete(Outcome(earned: earned, failure: nil))
     }
 
     /// Guarded, because resuming a continuation twice is a crash.
-    private func complete(_ value: Bool) {
+    private func complete(_ outcome: Outcome) {
         let handler = finish
         finish = nil
-        handler?(value)
+        handler?(outcome)
     }
 }
 #endif
