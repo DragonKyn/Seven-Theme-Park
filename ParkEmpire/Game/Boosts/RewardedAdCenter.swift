@@ -88,36 +88,63 @@ final class RewardedAdCenter: ObservableObject {
         #endif
     }
 
-    /// Fetches the next advert, so one is ready before the button is pressed.
+    /// Makes sure an advert is on its way, and does not return until the
+    /// answer is known either way.
     ///
-    /// An empty advert exchange is an ordinary event rather than a fault, and
-    /// it usually clears within a minute, so a failed request is tried again a
-    /// couple of times before the player is told anything.
-    func load(attempt: Int = 1) async {
+    /// Callers share one request. The button and the launch-time preload can
+    /// easily ask at the same moment, and the second caller waiting on the
+    /// first is the difference between "here is your advert" and a button
+    /// that says nothing is ready while an advert is in fact seconds away.
+    func load() async {
         #if canImport(GoogleMobileAds)
-        guard !isLoading, !isReady else { return }
-        isLoading = true
-        lastError = nil
-        do {
-            loaded = try await GADRewardedAd.load(withAdUnitID: AdConfiguration.activeRewardedUnitID,
-                                                  request: GADRequest())
-            isReady = true
-            isLoading = false
-        } catch {
-            loaded = nil
-            isReady = false
-            isLoading = false
+        if isReady { return }
 
-            if attempt < Self.loadAttempts {
-                // Backs off so a network that is merely slow is not hammered.
-                try? await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
-                await load(attempt: attempt + 1)
-                return
-            }
-            lastError = Self.explain(error)
+        if let running = inFlight {
+            await running.value
+            return
         }
+
+        let task = Task { @MainActor [weak self] in
+            await self?.request()
+        }
+        inFlight = task
+        await task.value
+        inFlight = nil
         #endif
     }
+
+    #if canImport(GoogleMobileAds)
+    /// One request, tried a few times.
+    ///
+    /// An empty advert exchange is an ordinary event rather than a fault and
+    /// usually clears within a minute, so a failure is tried again with a
+    /// backoff before the player is told anything.
+    private func request() async {
+        isLoading = true
+        lastError = nil
+        var failure: Error?
+
+        for attempt in 1...Self.loadAttempts {
+            do {
+                loaded = try await GADRewardedAd.load(withAdUnitID: AdConfiguration.activeRewardedUnitID,
+                                                      request: GADRequest())
+                isReady = true
+                isLoading = false
+                return
+            } catch {
+                failure = error
+                loaded = nil
+                isReady = false
+                if attempt < Self.loadAttempts {
+                    try? await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
+                }
+            }
+        }
+
+        isLoading = false
+        if let failure { lastError = Self.explain(failure) }
+    }
+    #endif
 
     /// How many times a request is tried before giving up.
     private static let loadAttempts = 3
@@ -149,9 +176,17 @@ final class RewardedAdCenter: ObservableObject {
     /// reward. Closing it early, or any failure, returns false.
     func show() async -> Bool {
         #if canImport(GoogleMobileAds)
-        if !isReady { await load() }
-        guard let ad = loaded, let root = Self.rootViewController else {
-            if lastError == nil { lastError = "No advert is ready just now." }
+        // Waits on whatever request is already running rather than racing it.
+        await load()
+
+        guard let ad = loaded else {
+            if lastError == nil {
+                lastError = "No advert was available just now. Try again in a moment."
+            }
+            return false
+        }
+        guard let root = Self.rootViewController else {
+            lastError = "There is no screen to show the advert over."
             return false
         }
 
@@ -176,6 +211,8 @@ final class RewardedAdCenter: ObservableObject {
     #if canImport(GoogleMobileAds)
     /// The SDK is only started once, however many times `start()` is called.
     private var hasStarted = false
+    /// The request in progress, so everybody who asks waits on the same one.
+    private var inFlight: Task<Void, Never>?
     private var loaded: GADRewardedAd?
     /// Held for as long as the advert is on screen, because the SDK keeps
     /// only a weak reference to its delegate.
