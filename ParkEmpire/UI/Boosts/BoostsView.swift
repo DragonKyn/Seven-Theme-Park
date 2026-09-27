@@ -144,6 +144,9 @@ struct BoostsView: View {
                     .foregroundStyle(Theme.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Text(ads.statusLine)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.textSecondary)
             Text("No advert will ever interrupt your park. The only ones in \(AppInfo.gameName) are the ones you choose to watch here.")
                 .font(.system(size: 11, weight: .medium, design: .rounded))
                 .foregroundStyle(Theme.textSecondary)

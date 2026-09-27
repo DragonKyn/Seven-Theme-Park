@@ -47,6 +47,15 @@ final class RewardedAdCenter: ObservableObject {
     /// Set when the last attempt failed, for the sheet to show.
     @Published private(set) var lastError: String?
 
+    /// What the advert side is doing, for the boosts screen to show. Plain
+    /// enough for a player, specific enough to diagnose a quiet failure.
+    var statusLine: String {
+        if !isSupported { return "Adverts are not part of this build." }
+        if isLoading { return "Fetching an advert." }
+        if isReady { return "An advert is ready." }
+        return "No advert ready yet."
+    }
+
     /// Whether this build can show adverts at all.
     var isSupported: Bool {
         #if canImport(GoogleMobileAds)
@@ -122,15 +131,19 @@ final class RewardedAdCenter: ObservableObject {
     /// backoff before the player is told anything.
     private func request() async {
         isLoading = true
-        lastError = nil
         var failure: Error?
 
+        // Deliberately not clearing lastError here. Showing an advert starts
+        // a preload for the next one straight afterwards, and clearing on the
+        // way in wiped the message explaining what had just gone wrong before
+        // anybody could read it. It is cleared on success instead.
         for attempt in 1...Self.loadAttempts {
             do {
                 loaded = try await GADRewardedAd.load(withAdUnitID: AdConfiguration.activeRewardedUnitID,
                                                       request: GADRequest())
                 isReady = true
                 isLoading = false
+                lastError = nil
                 return
             } catch {
                 failure = error
@@ -198,7 +211,11 @@ final class RewardedAdCenter: ObservableObject {
         self.presenter = presenter
         let outcome = await presenter.present(ad, from: root)
         self.presenter = nil
-        lastError = outcome.failure
+        if outcome.earned {
+            lastError = nil
+        } else if let failure = outcome.failure {
+            lastError = failure
+        }
 
         // The next one starts loading straight away, so a player who wants a
         // second helping is not left waiting on a spinner.
