@@ -57,10 +57,18 @@ final class RewardedAdCenter: ObservableObject {
     }
 
     /// Called once at launch.
+    ///
+    /// The first advert is only asked for once the SDK says it has finished
+    /// starting up. Asking sooner is the quickest way to a request error:
+    /// the SDK has no configuration yet and fails the request rather than
+    /// queuing it.
     func start() {
         #if canImport(GoogleMobileAds)
-        GADMobileAds.sharedInstance().start(completionHandler: nil)
-        Task { await load() }
+        guard !hasStarted else { return }
+        hasStarted = true
+        GADMobileAds.sharedInstance().start { [weak self] _ in
+            Task { @MainActor in await self?.load() }
+        }
         #endif
     }
 
@@ -81,7 +89,11 @@ final class RewardedAdCenter: ObservableObject {
     }
 
     /// Fetches the next advert, so one is ready before the button is pressed.
-    func load() async {
+    ///
+    /// An empty advert exchange is an ordinary event rather than a fault, and
+    /// it usually clears within a minute, so a failed request is tried again a
+    /// couple of times before the player is told anything.
+    func load(attempt: Int = 1) async {
         #if canImport(GoogleMobileAds)
         guard !isLoading, !isReady else { return }
         isLoading = true
@@ -90,14 +102,48 @@ final class RewardedAdCenter: ObservableObject {
             loaded = try await GADRewardedAd.load(withAdUnitID: AdConfiguration.activeRewardedUnitID,
                                                   request: GADRequest())
             isReady = true
+            isLoading = false
         } catch {
             loaded = nil
             isReady = false
-            lastError = error.localizedDescription
+            isLoading = false
+
+            if attempt < Self.loadAttempts {
+                // Backs off so a network that is merely slow is not hammered.
+                try? await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
+                await load(attempt: attempt + 1)
+                return
+            }
+            lastError = Self.explain(error)
         }
-        isLoading = false
         #endif
     }
+
+    /// How many times a request is tried before giving up.
+    private static let loadAttempts = 3
+
+    #if canImport(GoogleMobileAds)
+    /// Turns the SDK's error into something a player can act on, keeping the
+    /// code on the end so a report names the real cause.
+    private static func explain(_ error: Error) -> String {
+        let failure = error as NSError
+        let code = GADErrorCode(rawValue: failure.code)
+        let detail: String
+        switch code {
+        case .noFill:
+            detail = "No advert was available just now. This is normal for a new app, and it usually clears in a few minutes."
+        case .networkError, .timeout:
+            detail = "Could not reach the advert service. Check the connection and try again."
+        case .invalidRequest:
+            detail = "This build asked for an advert the network does not recognise."
+        case .serverError, .internalError:
+            detail = "The advert service had a problem. Try again shortly."
+        default:
+            detail = failure.localizedDescription
+        }
+        return "\(detail) (code \(failure.code))"
+    }
+    #endif
 
     /// Shows the advert and returns true only when the viewer earned the
     /// reward. Closing it early, or any failure, returns false.
@@ -128,6 +174,8 @@ final class RewardedAdCenter: ObservableObject {
     }
 
     #if canImport(GoogleMobileAds)
+    /// The SDK is only started once, however many times `start()` is called.
+    private var hasStarted = false
     private var loaded: GADRewardedAd?
     /// Held for as long as the advert is on screen, because the SDK keeps
     /// only a weak reference to its delegate.
