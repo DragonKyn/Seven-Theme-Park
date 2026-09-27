@@ -104,8 +104,9 @@ final class RewardedAdCenter: ObservableObject {
             return
         }
 
-        let task = Task { @MainActor [weak self] in
-            await self?.request()
+        let task: Task<Void, Never> = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.request()
         }
         inFlight = task
         await task.value
