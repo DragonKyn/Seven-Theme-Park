@@ -75,6 +75,38 @@ enum PathMotion {
         node.run(.repeatForever(.sequence(legs)))
     }
 
+    /// Carries a sprite round a loop without steering it.
+    ///
+    /// A raft on a river has no front: it is taken wherever the water goes and
+    /// spins as it goes there. Turning it to face the current would be exactly
+    /// wrong, and leaving the rotation alone also leaves it free for the spin
+    /// the caller adds on top.
+    static func float(_ node: SKSpriteNode,
+                      around points: [CGPoint],
+                      duration: TimeInterval) {
+        guard points.count > 1 else { return }
+
+        var lengths: [CGFloat] = []
+        lengths.reserveCapacity(points.count)
+        for index in points.indices {
+            let next = points[(index + 1) % points.count]
+            lengths.append(max(hypot(next.x - points[index].x,
+                                     next.y - points[index].y), 0.0001))
+        }
+        let total = lengths.reduce(0, +)
+
+        node.position = points[0]
+
+        var legs: [SKAction] = []
+        for index in points.indices {
+            let to = points[(index + 1) % points.count]
+            let move = SKAction.move(to: to, duration: duration * Double(lengths[index] / total))
+            move.timingMode = .linear
+            legs.append(move)
+        }
+        node.run(.repeatForever(.sequence(legs)))
+    }
+
     private static func heading(from: CGPoint, to: CGPoint) -> CGFloat {
         atan2(to.y - from.y, to.x - from.x)
     }

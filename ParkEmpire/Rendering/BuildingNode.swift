@@ -324,6 +324,18 @@ final class BuildingNode: SKSpriteNode {
 
         case .bumper:
             applyBumper(to: node, index: index, buildingSize: buildingSize)
+
+        case .orbit:
+            applyOrbit(to: node, index: index, buildingSize: buildingSize)
+
+        case .invert:
+            applyInvert(to: node, buildingSize: buildingSize)
+
+        case .drift:
+            applyDrift(to: node, index: index, motif: motif, buildingSize: buildingSize)
+
+        case .zip:
+            applyZip(to: node, index: index, motif: motif, buildingSize: buildingSize)
         }
     }
 
@@ -333,6 +345,8 @@ final class BuildingNode: SKSpriteNode {
         switch motif {
         case .megaCoaster: return 8.5
         case .logFlume: return 11.0
+        // The slowest thing in the park, and sold as such.
+        case .lanternCruise: return 16.0
         default: return 5.5
         }
     }
@@ -388,6 +402,153 @@ final class BuildingNode: SKSpriteNode {
                                       .scale(to: 1.0, duration: 0.13)])
         node.run(.repeatForever(.sequence([.wait(forDuration: 1.4 + Double(slot) * 0.55),
                                            jolt])))
+    }
+
+    /// A chair on the end of its chains: round the mast, and flung a little
+    /// further out as the ride winds up.
+    ///
+    /// The chairs are not steered. A swing chair always faces the way it is
+    /// sitting, so turning it to follow the ring would spin the riders about
+    /// their own axis, which is a different ride.
+    private func applyOrbit(to node: SKSpriteNode, index: Int, buildingSize: CGSize) {
+        let steps = 48
+        let chairs = BuildingArtwork.motionPartCount(for: .swingChairs)
+        let startAngle = CGFloat(index) / CGFloat(chairs) * .pi * 2
+        let points = PathMotion.ovalPoints(BuildingArtwork.swingRingRect(in: buildingSize),
+                                           in: buildingSize,
+                                           inset: 0,
+                                           startAngle: startAngle,
+                                           steps: steps)
+
+        // Hung from the crown, so the chains stay under it however far round
+        // the ring the chair is.
+        node.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+        PathMotion.drive(node,
+                         around: points,
+                         duration: Self.orbitLap,
+                         headings: Array(repeating: 0, count: steps))
+
+        // Winding up and settling again, two laps to a cycle. Every chair
+        // swells together, which is what reads as the whole ring lifting.
+        let out = SKAction.scale(to: 1.10, duration: Self.orbitLap)
+        let back = SKAction.scale(to: 0.94, duration: Self.orbitLap)
+        out.timingMode = .easeInEaseOut
+        back.timingMode = .easeInEaseOut
+        node.run(.repeatForever(.sequence([out, back])))
+    }
+
+    private static let orbitLap: TimeInterval = 4.4
+
+    /// Swings further on every pass until it goes over the top twice, then
+    /// comes back down to a rest.
+    ///
+    /// Every angle is less than a half turn from the one before it, which keeps
+    /// `shortestUnitArc` honest: the arm builds up through the bottom of the
+    /// swing rather than taking the short way over the towers.
+    private func applyInvert(to node: SKSpriteNode, buildingSize: CGSize) {
+        // Hung from the hub the towers meet at.
+        node.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+        node.position = CGPoint(x: 0, y: buildingSize.height * 0.16)
+
+        func swing(to angle: CGFloat, _ duration: TimeInterval) -> SKAction {
+            let action = SKAction.rotate(toAngle: angle,
+                                         duration: duration,
+                                         shortestUnitArc: true)
+            action.timingMode = .easeInEaseOut
+            return action
+        }
+
+        // Over the top, twice, at speed. `byAngle` rather than `toAngle`,
+        // because a full turn has nowhere in particular to be.
+        let over = SKAction.repeat(.rotate(byAngle: .pi * 2, duration: 1.15), count: 2)
+
+        node.run(.repeatForever(.sequence([
+            .wait(forDuration: 1.4),
+            swing(to: -0.5, 1.0),
+            swing(to: 0.9, 1.2),
+            swing(to: -1.5, 1.2),
+            swing(to: 1.5, 1.1),
+            over,
+            swing(to: -1.2, 1.1),
+            swing(to: 0.8, 1.0),
+            swing(to: -0.4, 0.9),
+            swing(to: 0, 0.8),
+            .wait(forDuration: 1.6)
+        ])))
+    }
+
+    /// A raft on a river: carried round the channel, turning all the way, and
+    /// never pointing anywhere in particular.
+    private func applyDrift(to node: SKSpriteNode,
+                            index: Int,
+                            motif: BuildingMotif,
+                            buildingSize: CGSize) {
+        let points = BuildingArtwork.motionPath(for: motif, buildingSize: buildingSize)
+        guard points.count > 1 else { return }
+
+        // Spread round the river rather than leaving the station together.
+        let rafts = max(BuildingArtwork.motionPartCount(for: motif), 1)
+        let back = (index * points.count / rafts) % points.count
+        let offset = (points.count - back) % points.count
+        let ordered = Array(points[offset...] + points[..<offset])
+
+        PathMotion.float(node, around: ordered, duration: 13.0)
+
+        // Each raft spins at its own rate, and one of them the other way, so
+        // three rafts on one river never look like three copies of one raft.
+        let turns: [(angle: CGFloat, duration: TimeInterval)] = [
+            (.pi * 2, 6.5), (-.pi * 2, 8.0), (.pi * 2, 9.5)
+        ]
+        let spin = turns[index % turns.count]
+        node.run(.repeatForever(.rotate(byAngle: spin.angle, duration: spin.duration)))
+    }
+
+    /// One rider down the wire: away fast, braked into the landing, and back up
+    /// to the tower for the next one.
+    ///
+    /// The return trip is not shown. A rider gliding backwards up a zip wire
+    /// would be the most memorable thing in the park for the wrong reason, so
+    /// they fade at the deck and reappear at the top.
+    private func applyZip(to node: SKSpriteNode,
+                          index: Int,
+                          motif: BuildingMotif,
+                          buildingSize: CGSize) {
+        let cable = BuildingArtwork.motionPath(for: motif, buildingSize: buildingSize)
+        guard let start = cable.first, let end = cable.last else { return }
+
+        // Hanging under the wire rather than centred on it.
+        node.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+        node.position = start
+        node.alpha = 0
+
+        let middle = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+        let away = SKAction.move(to: middle, duration: 0.85)
+        away.timingMode = .easeIn
+        let brake = SKAction.move(to: end, duration: 0.95)
+        brake.timingMode = .easeOut
+
+        // A short rebound off the spring at the far end.
+        let rebound = SKAction.sequence([
+            .move(to: CGPoint(x: end.x - (end.x - start.x) * 0.06,
+                              y: end.y - (end.y - start.y) * 0.06),
+                  duration: 0.22),
+            .move(to: end, duration: 0.26)
+        ])
+
+        node.run(.sequence([
+            .wait(forDuration: 1.1 + Double(index) * 2.6),
+            .repeatForever(.sequence([
+                .move(to: start, duration: 0.01),
+                .fadeIn(withDuration: 0.20),
+                .wait(forDuration: 0.7),
+                away,
+                brake,
+                rebound,
+                .wait(forDuration: 0.8),
+                .fadeOut(withDuration: 0.25),
+                .wait(forDuration: 1.4)
+            ]))
+        ]))
     }
 
     /// Winched down, held, then fired well clear of the masts, spinning, with

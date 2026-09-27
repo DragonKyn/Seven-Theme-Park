@@ -102,6 +102,16 @@ enum BuildingMotif: String, Codable {
     case skyGliders
     /// Squat mirrored box.
     case mirrorMaze
+    /// Ring of chairs on chains, flung out from a centre mast.
+    case swingChairs
+    /// A long arm on a pivot between two towers, swinging up and over.
+    case pendulumArm
+    /// A winding white-water channel with round rafts loose on it.
+    case riverRapids
+    /// A lantern-lit canal looping in front of a show building.
+    case lanternCruise
+    /// A high tower, a taut cable, and a landing platform at the far end.
+    case zipLine
     /// A putting course: striped fairways, flags, a windmill and a hut.
     case miniGolf
     /// Boarding platform with the foot of a lift hill behind it.
@@ -201,7 +211,12 @@ enum BuildingMotif: String, Codable {
         case .carousel, .ferrisWheel, .teacups: return .spin
         case .swingBoat: return .swing
         case .dropTower: return .rise
-        case .coaster, .megaCoaster, .logFlume, .fishingBoats, .skyGliders: return .circuit
+        case .coaster, .megaCoaster, .logFlume, .fishingBoats, .skyGliders,
+             .lanternCruise: return .circuit
+        case .swingChairs: return .orbit
+        case .pendulumArm: return .invert
+        case .riverRapids: return .drift
+        case .zipLine: return .zip
         case .goKarts: return .race
         case .bumperCars, .bumperBoats: return .bumper
         case .slingshot: return .launch
@@ -253,6 +268,14 @@ enum BuildingMotion: String, Codable {
     case bumper
     /// Up out of a hole, and straight back down again.
     case pop
+    /// Swung round one centre on the end of something, rising as it goes.
+    case orbit
+    /// Swings further each pass until it goes over the top.
+    case invert
+    /// Carried along a channel by the water, spinning as it drifts.
+    case drift
+    /// Runs the length of a cable, one rider at a time.
+    case zip
 }
 
 /// Named colours the park is drawn from. Naming them rather than storing raw

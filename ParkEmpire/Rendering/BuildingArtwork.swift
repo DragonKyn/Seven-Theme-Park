@@ -70,6 +70,11 @@ enum BuildingArtwork {
         case .fishingBoats: drawFishingBoatsBase(context, size, primary, secondary, accent)
         case .wavePool: drawWavePoolBase(context, size, primary, secondary, accent)
         case .skyGliders: drawSkyGlidersBase(context, size, primary, secondary, accent)
+        case .swingChairs: drawSwingChairsBase(context, size, primary, secondary, accent)
+        case .pendulumArm: drawPendulumArmBase(context, size, primary, secondary, accent)
+        case .zipLine: drawZipLineBase(context, size, primary, secondary, accent)
+        case .riverRapids: drawRiverRapidsBase(context, size, primary, secondary, accent)
+        case .lanternCruise: drawLanternCruiseBase(context, size, primary, secondary, accent)
         case .mirrorMaze: drawMirrorMaze(context, size, primary, secondary, accent)
         case .miniGolf:  drawMiniGolf(context, size, primary, secondary, accent)
         case .coasterStation: drawCoasterStation(context, size, primary, secondary, accent)
@@ -125,6 +130,14 @@ enum BuildingArtwork {
         case .fishingBoats: return 3
         case .wavePool: return 2
         case .skyGliders: return 5
+        // Six chairs on the ring. Fewer than that and the gaps between them
+        // are wider than the chairs.
+        case .swingChairs: return 6
+        // Three rafts on the river, so one is always in the rough water.
+        case .riverRapids: return 3
+        case .lanternCruise: return 3
+        // Two riders on the cable, one waiting their turn at the top.
+        case .zipLine: return 2
         // Four lanes, four mats. One mat on a four-lane slide looks like the
         // other three are shut.
         case .carpetSlide: return 4
@@ -165,6 +178,11 @@ enum BuildingArtwork {
             case .fishingBoats: drawRowBoat(context, size, variant)
             case .wavePool: drawSurfer(context, size, variant)
             case .skyGliders: drawGliderChair(context, size, variant)
+            case .swingChairs: drawSwingChair(context, size, primary, secondary, accent)
+            case .pendulumArm: drawPendulumGondola(context, size, primary, secondary, accent)
+            case .riverRapids: drawRaft(context, size, variant)
+            case .lanternCruise: drawCanalBoat(context, size, primary, secondary, accent)
+            case .zipLine: drawZipRider(context, size, variant)
             case .slingshot: drawCapsule(context, size, primary, secondary, accent)
             case .carpetSlide: drawMat(context, size, primary, secondary, accent)
             case .hauntedHouse: drawGhost(context, size, primary, secondary, accent)
@@ -213,6 +231,22 @@ enum BuildingArtwork {
             return CGSize(width: shortest * 0.26, height: shortest * 0.15)
         case .skyGliders:
             return CGSize(width: shortest * 0.13, height: shortest * 0.20)
+        case .swingChairs:
+            return CGSize(width: shortest * 0.16, height: shortest * 0.22)
+        case .pendulumArm:
+            // The whole arm, pivot to gondola, so it can be hung from the top
+            // of the towers and swung about that point.
+            return CGSize(width: shortest * 0.22, height: shortest * 0.62)
+        case .riverRapids:
+            // A raft has to sit in the channel it is drawn in, so it is
+            // measured off the same short side the channel widths are.
+            return CGSize(width: shortest * 0.12, height: shortest * 0.12)
+        case .lanternCruise:
+            return CGSize(width: buildingSize.width * 0.13,
+                          height: buildingSize.height * 0.09)
+        case .zipLine:
+            return CGSize(width: buildingSize.width * 0.075,
+                          height: buildingSize.height * 0.34)
         case .slingshot:
             return CGSize(width: shortest * 0.26, height: shortest * 0.26)
         case .carpetSlide:
@@ -502,6 +536,15 @@ enum BuildingArtwork {
             texturePoints = megaCoasterPoints(in: buildingSize)
         case .logFlume:
             texturePoints = logFlumePoints(in: buildingSize)
+        case .lanternCruise:
+            texturePoints = lanternCanalPoints(in: buildingSize)
+        case .zipLine:
+            // Not a loop: the two ends of the cable, and the rider is sent
+            // down it and put back at the top.
+            let cable = zipCable(in: buildingSize)
+            texturePoints = [cable.start, cable.end]
+        case .riverRapids:
+            texturePoints = riverRapidsPoints(in: buildingSize)
         case .skyGliders:
             // Out along the upper wire and back along the lower one. Still a
             // loop, but a flat one hugging the cables rather than an orbit of
@@ -697,9 +740,12 @@ enum BuildingArtwork {
     /// Livery for the vehicles a motif has several of. Fixed rather than taken
     /// from the building's own colours, because four karts in four shades of
     /// the same colour is not a race.
-    private static let liveries: [ParkColour] = [.red, .blue, .yellow, .green, .violet]
+    static let liveries: [ParkColour] = [.red, .blue, .yellow, .green, .violet]
 
-    private static func livery(_ variant: Int) -> UIColor {
+    /// Not private: the rides drawn in the neighbouring files take their
+    /// vehicle colours from the same list, so a raft and a kart belong to the
+    /// same park.
+    static func livery(_ variant: Int) -> UIColor {
         ParkPalette.colour(liveries[variant % liveries.count])
     }
 
