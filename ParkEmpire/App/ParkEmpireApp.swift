@@ -9,8 +9,10 @@ struct ParkEmpireApp: App {
             RootView()
                 .environmentObject(router)
                 .preferredColorScheme(.dark)
-                // Started here so the first advert is already loaded by the
-                // time anybody opens the boosts sheet.
+                // Asks the tracking question and then, once it has been
+                // answered, starts the advert SDK and preloads the first
+                // advert, so one is ready by the time anybody opens the
+                // boosts sheet.
                 .task { RewardedAdCenter.shared.start() }
         }
     }

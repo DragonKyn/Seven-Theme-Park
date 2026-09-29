@@ -67,6 +67,12 @@ final class RewardedAdCenter: ObservableObject {
 
     /// Called once at launch.
     ///
+    /// The order here is the whole point of it, and it is an order Apple
+    /// requires: the tracking question is asked first, and the advert SDK is
+    /// only started once it has been answered. The SDK reads the advertising
+    /// identifier as it starts up, so starting it first would collect the
+    /// very thing the question is asking permission for.
+    ///
     /// The first advert is only asked for once the SDK says it has finished
     /// starting up. Asking sooner is the quickest way to a request error:
     /// the SDK has no configuration yet and fails the request rather than
@@ -75,26 +81,60 @@ final class RewardedAdCenter: ObservableObject {
         #if canImport(GoogleMobileAds)
         guard !hasStarted else { return }
         hasStarted = true
-        GADMobileAds.sharedInstance().start { [weak self] _ in
-            Task { @MainActor in await self?.load() }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await Self.waitUntilActive()
+            await self.requestTrackingPermissionIfNeeded()
+            self.startAdvertSDK()
         }
         #endif
     }
 
-    /// Asks Apple's tracking question, once, at a moment where it makes
-    /// sense.
+    #if canImport(GoogleMobileAds)
+    private func startAdvertSDK() {
+        GADMobileAds.sharedInstance().start { [weak self] _ in
+            Task { @MainActor in await self?.load() }
+        }
+    }
+    #endif
+
+    /// Asks Apple's tracking question, once.
     ///
-    /// Deliberately not at launch. The first thing a new player should see is
-    /// their park, not a permission sheet about adverts they have not been
-    /// offered yet; this is asked when they open the boosts screen, which is
-    /// the first time adverts are anything to do with them. The system only
-    /// shows it once however often this is called, and every answer is fine:
-    /// a refusal means less relevant adverts and nothing else.
+    /// This used to wait until the player opened the boosts screen, on the
+    /// grounds that the first thing a new player should see is their park
+    /// rather than a permission sheet about adverts nobody has offered them
+    /// yet. That was the wrong trade twice over: the advert SDK was already
+    /// running by then, so the question came after the identifier had been
+    /// read, and a reviewer who never found the boosts screen never saw the
+    /// question at all.
+    ///
+    /// So it is asked at launch, before anything advert-related starts. The
+    /// system only shows it once however often this is called, and every
+    /// answer is fine: a refusal means less relevant adverts and nothing else.
     func requestTrackingPermissionIfNeeded() async {
         #if canImport(AppTrackingTransparency)
         guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+        await Self.waitUntilActive()
         _ = await ATTrackingManager.requestTrackingAuthorization()
         #endif
+    }
+
+    /// Waits for the app to be frontmost before asking anything of the player.
+    ///
+    /// The tracking prompt is dropped silently if the app is not active when
+    /// it is requested: no sheet, no error, and the status stays undetermined,
+    /// which looks exactly like a prompt that was never implemented. Launch is
+    /// precisely when that is likely, because the first view appears before
+    /// the scene finishes becoming active.
+    ///
+    /// Polled rather than waiting on the notification, because the answer is
+    /// usually yes on the first check, and a ceiling means this can never hang
+    /// on to a launch that is going nowhere.
+    private static func waitUntilActive() async {
+        for _ in 0..<40 {
+            if UIApplication.shared.applicationState == .active { return }
+            try? await Task.sleep(nanoseconds: 250_000_000)
+        }
     }
 
     /// Makes sure an advert is on its way, and does not return until the
