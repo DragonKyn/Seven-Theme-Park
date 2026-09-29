@@ -1,0 +1,9 @@
+Running altool at path '/Applications/Xcode_26.3.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-09-29 23:59:25.887  INFO: [ContentDelivery.Uploader.6000010204C0] 
+==========================================
+UPLOAD SUCCEEDED with no errors
+Delivery UUID: 9204e6b8-4e71-4f7e-bc06-97e65bba8ff3
+Transferred 4144198 bytes in 0.028 seconds (150.1MB/s, 1200.550Mbps)
+==========================================
+No errors uploading archive at '/Users/runner/work/_temp/export/ParkEmpire.ipa'.
