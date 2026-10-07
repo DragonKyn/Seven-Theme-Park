@@ -45,25 +45,6 @@ extension StaffArtwork {
         }
     }
 
-    /// Three balls in an arc over the hands.
-    static func drawJugglingBalls(layout: PersonArtwork.Layout) {
-        let unit = layout.body.width
-        let colours: [ParkColour] = [.red, .yellow, .blue]
-        let spots: [(CGFloat, CGFloat)] = [(-0.34, 0.20), (0.0, 0.70), (0.38, 0.28)]
-
-        for (index, spot) in spots.enumerated() {
-            let centre = CGPoint(x: layout.body.midX + unit * spot.0,
-                                 y: layout.body.minY - unit * spot.1)
-            let side = unit * 0.34
-            ParkPalette.colour(colours[index]).setFill()
-            UIBezierPath(ovalIn: CGRect(x: centre.x - side / 2, y: centre.y - side / 2,
-                                        width: side, height: side)).fill()
-            UIColor.white.withAlphaComponent(0.55).setFill()
-            UIBezierPath(ovalIn: CGRect(x: centre.x - side * 0.28, y: centre.y - side * 0.30,
-                                        width: side * 0.22, height: side * 0.22)).fill()
-        }
-    }
-
     /// A short black wand with a white tip, held out to the side, and a spark
     /// of gold where the magic comes out.
     static func drawWand(layout: PersonArtwork.Layout) {

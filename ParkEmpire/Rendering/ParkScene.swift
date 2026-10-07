@@ -1426,6 +1426,7 @@ final class ParkScene: SKScene {
                     node.texture = staffTexture(for: look, uniform: state.uniformColour, height: height)
                     node.size = size
                     staffLooks[member.id] = lookKey
+                    JugglerRig.configure(node, look: look)
                 }
             } else {
                 node = SKSpriteNode(texture: staffTexture(for: look,
@@ -1436,6 +1437,7 @@ final class ParkScene: SKScene {
                 guestLayer.addChild(node)
                 staffNodes[member.id] = node
                 staffLooks[member.id] = lookKey
+                JugglerRig.configure(node, look: look)
 
                 // Somebody in a costume does not walk like somebody in shorts.
                 if member.role == .mascot {

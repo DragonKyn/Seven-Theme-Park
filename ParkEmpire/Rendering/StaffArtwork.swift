@@ -103,7 +103,9 @@ enum StaffArtwork {
             case .classic: drawBalloons(layout: layout, size: size)
             case .balloonArtist: drawBalloonBunch(layout: layout)
             case .mime: break
-            case .juggler: drawJugglingBalls(layout: layout)
+            // The balls are not painted: they are sprites of their own, so
+            // they can be thrown. See `JugglerRig`.
+            case .juggler: break
             case .magician: drawWand(layout: layout)
             }
         case .security:
