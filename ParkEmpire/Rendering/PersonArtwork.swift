@@ -35,6 +35,12 @@ enum PersonArtwork {
         case hardHat
         /// Cone with a pompom.
         case partyHat
+        /// A soft flat cap pulled to one side.
+        case beret
+        /// Tall crown and a band.
+        case topHat
+        /// Two floppy points, each with a bell.
+        case jesterHat
     }
 
     /// How the face is drawn. Three states, like the mood pad under the
@@ -65,6 +71,12 @@ enum PersonArtwork {
         var prize: GuestPrize? = nil
         /// A bag of popcorn in the hand they are not carrying a prize in.
         var popcorn: Bool = false
+        /// A balloon held on a string, in the colour they were given it.
+        var balloon: ParkColour? = nil
+        /// White face paint, which replaces the skin.
+        var facePaint: UIColor? = nil
+        /// Gloves, which replace the skin on the hands.
+        var handColour: UIColor? = nil
     }
 
     /// Where the parts of a drawn figure ended up, so a caller can hang a
@@ -143,7 +155,7 @@ enum PersonArtwork {
         drawStrap(look, body: body, figureHeight: figureHeight, outline: outline)
 
         let headPath = UIBezierPath(ovalIn: head)
-        skinColour(look.skin).setFill()
+        (look.facePaint ?? skinColour(look.skin)).setFill()
         headPath.fill()
         outline.setStroke()
         headPath.lineWidth = outlineWidth
@@ -165,6 +177,7 @@ enum PersonArtwork {
         drawHeadwear(look, head: head, context: context, size: size)
         drawPrize(look, body: body)
         drawPopcornBag(look, body: body)
+        drawHeldBalloon(look, head: head, body: body)
 
         return Layout(head: head, body: body, bottom: bottom)
     }
@@ -217,7 +230,7 @@ enum PersonArtwork {
             // The forearm shows below a short sleeve.
             let hand = CGRect(x: arm.minX, y: arm.maxY - arm.height * 0.34,
                               width: armWidth, height: arm.height * 0.34)
-            skinColour(look.skin).setFill()
+            (look.handColour ?? skinColour(look.skin)).setFill()
             UIBezierPath(roundedRect: hand, cornerRadius: armWidth / 2).fill()
             outline.setStroke()
             path.lineWidth = max(0.5, figureHeight * 0.022)
@@ -404,6 +417,41 @@ enum PersonArtwork {
         mouth.lineWidth = max(0.5, head.width * 0.075)
         mouth.lineCapStyle = .round
         mouth.stroke()
+    }
+
+    // MARK: - Balloons
+
+    /// A balloon on a string from the hand, bobbing beside the head. Beside
+    /// rather than above it: a figure fills the height of its sprite, and
+    /// there is no room over the top of one.
+    private static func drawHeldBalloon(_ look: Look, head: CGRect, body: CGRect) {
+        guard let colour = look.balloon else { return }
+
+        let radius = head.width * 0.44
+        let centre = CGPoint(x: head.maxX + head.width * 0.14,
+                             y: head.minY + head.height * 0.14)
+        let hand = CGPoint(x: body.maxX, y: body.midY)
+
+        let string = UIBezierPath()
+        string.move(to: CGPoint(x: centre.x, y: centre.y + radius * 1.1))
+        string.addQuadCurve(to: hand,
+                            controlPoint: CGPoint(x: centre.x + radius * 0.5,
+                                                  y: (centre.y + hand.y) / 2))
+        UIColor.white.withAlphaComponent(0.8).setStroke()
+        string.lineWidth = max(0.5, body.width * 0.04)
+        string.stroke()
+
+        let rect = CGRect(x: centre.x - radius, y: centre.y - radius * 1.1,
+                          width: radius * 2, height: radius * 2.2)
+        ParkPalette.colour(colour).setFill()
+        UIBezierPath(ovalIn: rect).fill()
+        UIColor.black.withAlphaComponent(0.25).setStroke()
+        let outline = UIBezierPath(ovalIn: rect)
+        outline.lineWidth = max(0.5, body.width * 0.04)
+        outline.stroke()
+        UIColor.white.withAlphaComponent(0.6).setFill()
+        UIBezierPath(ovalIn: CGRect(x: rect.minX + radius * 0.34, y: rect.minY + radius * 0.30,
+                                    width: radius * 0.32, height: radius * 0.44)).fill()
     }
 
     // MARK: - Popcorn
@@ -707,6 +755,54 @@ enum PersonArtwork {
             UIBezierPath(ovalIn: CGRect(x: head.midX - pompom / 2,
                                         y: head.minY - head.height * 0.66,
                                         width: pompom, height: pompom)).fill()
+
+        case .beret:
+            let crown = CGRect(x: head.minX - head.width * 0.10,
+                               y: head.minY - head.height * 0.12,
+                               width: head.width * 1.16, height: head.height * 0.46)
+            look.headwearColour.setFill()
+            UIBezierPath(ovalIn: crown).fill()
+            let stalk = head.width * 0.12
+            UIBezierPath(ovalIn: CGRect(x: crown.midX + head.width * 0.10,
+                                        y: crown.minY - stalk * 0.5,
+                                        width: stalk, height: stalk)).fill()
+
+        case .topHat:
+            let brim = CGRect(x: head.minX - head.width * 0.22,
+                              y: head.minY + head.height * 0.10,
+                              width: head.width * 1.44, height: head.height * 0.18)
+            look.headwearColour.setFill()
+            UIBezierPath(ovalIn: brim).fill()
+            let crown = CGRect(x: head.minX + head.width * 0.10,
+                               y: head.minY - head.height * 0.52,
+                               width: head.width * 0.80, height: head.height * 0.66)
+            UIBezierPath(roundedRect: crown, cornerRadius: head.width * 0.08).fill()
+            let band = CGRect(x: crown.minX, y: crown.maxY - head.height * 0.18,
+                              width: crown.width, height: head.height * 0.14)
+            ParkPalette.colour(.red).setFill()
+            UIBezierPath(rect: band).fill()
+
+        case .jesterHat:
+            for side in [-1.0, 1.0] as [CGFloat] {
+                let point = UIBezierPath()
+                point.move(to: CGPoint(x: head.midX + side * head.width * 0.04,
+                                       y: head.minY + head.height * 0.20))
+                point.addQuadCurve(to: CGPoint(x: head.midX + side * head.width * 0.66,
+                                               y: head.minY - head.height * 0.42),
+                                   controlPoint: CGPoint(x: head.midX + side * head.width * 0.62,
+                                                         y: head.minY + head.height * 0.0))
+                point.addLine(to: CGPoint(x: head.midX + side * head.width * 0.48,
+                                          y: head.minY + head.height * 0.22))
+                point.close()
+                (side < 0 ? look.headwearColour : ParkPalette.colour(.cream)).setFill()
+                point.fill()
+
+                let bell = head.width * 0.20
+                ParkPalette.colour(.yellow).setFill()
+                UIBezierPath(ovalIn: CGRect(x: head.midX + side * head.width * 0.66 - bell / 2,
+                                            y: head.minY - head.height * 0.42 - bell / 2,
+                                            width: bell, height: bell)).fill()
+            }
         }
     }
 

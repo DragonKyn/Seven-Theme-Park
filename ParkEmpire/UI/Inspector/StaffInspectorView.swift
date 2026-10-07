@@ -30,6 +30,16 @@ struct StaffInspectorView: View {
                 }
             }
 
+            if member.role == .mascot || member.role == .entertainer {
+                SectionCard(title: member.role == .mascot ? "Costume" : "Act") {
+                    StaffStyleEditor(role: member.role,
+                                     style: Binding(
+                                        get: { member.style },
+                                        set: { controller.setStaffStyle(id: member.id, style: $0) }),
+                                     uniform: controller.state.uniformColour)
+                }
+            }
+
             SectionCard(title: "Training") {
                 UpgradeRowView(title: member.trainingTitle,
                                summary: "Walks faster, works faster, and costs more to keep.",

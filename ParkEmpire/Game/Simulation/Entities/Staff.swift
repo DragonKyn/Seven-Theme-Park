@@ -44,6 +44,25 @@ struct Staff: Codable, Identifiable {
     /// tree: the decision is how many people to train, not which skill.
     var trainingLevel: Int = 0
 
+    /// How an entertainer or a mascot looks. All nil for everybody else, and
+    /// for anyone hired before these existed, who are the plain employees they
+    /// always were.
+    var act: EntertainerAct?
+    var costume: MascotCostume?
+    var primaryColour: ParkColour?
+    var secondaryColour: ParkColour?
+    var trimColour: ParkColour?
+
+    var resolvedAct: EntertainerAct { act ?? .classic }
+
+    var style: StaffStyle {
+        StaffStyle(act: act, costume: costume,
+                   primary: primaryColour, secondary: secondaryColour, trim: trimColour)
+    }
+
+    /// What the artwork is drawn from.
+    var look: StaffLook { style.look(for: role) }
+
     var definition: StaffDefinition? { StaffContent.definition(for: role) }
 
     /// Training makes an employee both quicker on their feet and quicker at
@@ -98,5 +117,10 @@ extension Staff {
         nextJobSearchAt = container.value(.nextJobSearchAt, or: 0)
         tasksCompleted = container.value(.tasksCompleted, or: 0)
         trainingLevel = container.value(.trainingLevel, or: 0)
+        act = container.optionalValue(.act)
+        costume = container.optionalValue(.costume)
+        primaryColour = container.optionalValue(.primaryColour)
+        secondaryColour = container.optionalValue(.secondaryColour)
+        trimColour = container.optionalValue(.trimColour)
     }
 }

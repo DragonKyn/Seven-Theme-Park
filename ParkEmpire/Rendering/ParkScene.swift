@@ -61,6 +61,7 @@ final class ParkScene: SKScene {
     /// prize won at a booth has to change the sprite, and nothing else does.
     private var guestPrize: [UUID: GuestPrize] = [:]
     private var guestPopcorn: [UUID: Bool] = [:]
+    private var guestBalloon: [UUID: ParkColour] = [:]
     /// The last thought each guest has already had a bubble for.
     private var shownThought: [UUID: UUID] = [:]
     /// Bubbles currently on screen. Held so the cap can be enforced without a
@@ -73,7 +74,10 @@ final class ParkScene: SKScene {
     /// to give up on a phone that is struggling.
     private static var maxBubbles: Int { GraphicsBudget.bubbles }
     private var staffNodes: [UUID: SKSpriteNode] = [:]
-    private var staffTextures: [StaffRole: SKTexture] = [:]
+    private var staffTextures: [String: SKTexture] = [:]
+    /// What each employee looked like when their sprite was made, so one who
+    /// has since been repainted or re-costumed is redrawn.
+    private var staffLooks: [UUID: String] = [:]
     /// The uniform the cached staff textures were drawn in.
     private var renderedUniform: ParkColour?
     /// The colours the park's furniture is currently painted in.
@@ -1250,6 +1254,7 @@ final class ParkScene: SKScene {
                                                                   mood: mood,
                                                                   prize: guest.prize,
                                                                   popcorn: guest.popcornRemaining > 0,
+                                                                  balloon: guest.balloon,
                                                                   height: height))
                 node.size = guestSize
                 guestLayer.addChild(node)
@@ -1257,6 +1262,7 @@ final class ParkScene: SKScene {
                 guestMood[guest.id] = mood
                 guestPrize[guest.id] = guest.prize
                 guestPopcorn[guest.id] = guest.popcornRemaining > 0
+                guestBalloon[guest.id] = guest.balloon
             }
 
             // Guests inside a ride or a building are not drawn. Furniture is
@@ -1271,15 +1277,17 @@ final class ParkScene: SKScene {
 
             let eating = guest.popcornRemaining > 0
             if guestMood[guest.id] != mood || guestPrize[guest.id] != guest.prize
-                || guestPopcorn[guest.id] != eating {
+                || guestPopcorn[guest.id] != eating || guestBalloon[guest.id] != guest.balloon {
                 guestMood[guest.id] = mood
                 guestPrize[guest.id] = guest.prize
                 guestPopcorn[guest.id] = eating
+                guestBalloon[guest.id] = guest.balloon
                 node.texture = GuestArtwork.texture(for: guest.appearance,
                                                     age: guest.ageCategory,
                                                     mood: mood,
                                                     prize: guest.prize,
                                                     popcorn: eating,
+                                                    balloon: guest.balloon,
                                                     height: height)
             }
 
@@ -1294,6 +1302,7 @@ final class ParkScene: SKScene {
             guestMood.removeValue(forKey: id)
             guestPrize.removeValue(forKey: id)
             guestPopcorn.removeValue(forKey: id)
+            guestBalloon.removeValue(forKey: id)
             shownThought.removeValue(forKey: id)
         }
     }
@@ -1397,6 +1406,7 @@ final class ParkScene: SKScene {
             staffTextures.removeAll()
             for node in staffNodes.values { node.removeFromParent() }
             staffNodes.removeAll()
+            staffLooks.removeAll()
         }
 
         var seen = Set<UUID>()
@@ -1404,17 +1414,38 @@ final class ParkScene: SKScene {
         for member in state.staff {
             seen.insert(member.id)
 
+            let look = member.look
+            let lookKey = StaffArtwork.cacheKey(for: look, uniform: state.uniformColour)
+            let scale = StaffArtwork.sizeScale(for: member.role)
+            let size = CGSize(width: staffSize.width * scale, height: staffSize.height * scale)
+
             let node: SKSpriteNode
             if let existing = staffNodes[member.id] {
                 node = existing
+                if staffLooks[member.id] != lookKey {
+                    node.texture = staffTexture(for: look, uniform: state.uniformColour, height: height)
+                    node.size = size
+                    staffLooks[member.id] = lookKey
+                }
             } else {
-                node = SKSpriteNode(texture: staffTexture(for: member.role,
+                node = SKSpriteNode(texture: staffTexture(for: look,
                                                           uniform: state.uniformColour,
                                                           height: height))
-                node.size = staffSize
+                node.size = size
                 node.zPosition = 2
                 guestLayer.addChild(node)
                 staffNodes[member.id] = node
+                staffLooks[member.id] = lookKey
+
+                // Somebody in a costume does not walk like somebody in shorts.
+                if member.role == .mascot {
+                    let lean: CGFloat = 0.07
+                    let left = SKAction.rotate(toAngle: lean, duration: 0.28)
+                    let right = SKAction.rotate(toAngle: -lean, duration: 0.28)
+                    left.timingMode = .easeInEaseOut
+                    right.timingMode = .easeInEaseOut
+                    node.run(.repeatForever(.sequence([left, right])))
+                }
             }
 
             node.position = CGPoint(x: member.position.x * Self.tileSide,
@@ -1424,15 +1455,17 @@ final class ParkScene: SKScene {
         for (id, node) in staffNodes where !seen.contains(id) {
             node.removeFromParent()
             staffNodes.removeValue(forKey: id)
+            staffLooks.removeValue(forKey: id)
         }
     }
 
-    private func staffTexture(for role: StaffRole,
+    private func staffTexture(for look: StaffLook,
                               uniform: ParkColour,
                               height: CGFloat) -> SKTexture {
-        if let cached = staffTextures[role] { return cached }
-        let texture = StaffArtwork.texture(for: role, uniform: uniform, height: height)
-        staffTextures[role] = texture
+        let key = StaffArtwork.cacheKey(for: look, uniform: uniform)
+        if let cached = staffTextures[key] { return cached }
+        let texture = StaffArtwork.texture(for: look, uniform: uniform, height: height)
+        staffTextures[key] = texture
         return texture
     }
 
@@ -1705,7 +1738,8 @@ final class ParkScene: SKScene {
             if let member = controller.state.staffMember(id: detail.id) {
                 centre = CGPoint(x: member.position.x * Self.tileSide,
                                  y: member.position.y * Self.tileSide)
-                size = markerSize(around: Self.staffHeight, aspect: StaffArtwork.aspect)
+                size = markerSize(around: Self.staffHeight * StaffArtwork.sizeScale(for: member.role),
+                                  aspect: StaffArtwork.aspect)
             }
         case .scenery(let detail):
             if let item = controller.state.scenery.first(where: { $0.id == detail.id }) {

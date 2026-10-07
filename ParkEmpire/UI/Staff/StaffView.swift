@@ -4,6 +4,8 @@ import SwiftUI
 struct StaffView: View {
     @ObservedObject var controller: GameController
     @Environment(\.dismiss) private var dismiss
+    /// The role being hired, while its costume or act is being chosen.
+    @State private var hiring: StaffRole?
 
     var body: some View {
         NavigationContainer {
@@ -41,8 +43,13 @@ struct StaffView: View {
                             VStack(spacing: 4) {
                                 Text("\(controller.state.staffCount(role: definition.role))")
                                     .font(.system(.body, design: .rounded).weight(.bold))
-                                Button("Hire") {
-                                    controller.hireStaff(role: definition.role)
+                                Button(definition.role == .mascot || definition.role == .entertainer
+                                       ? "Choose…" : "Hire") {
+                                    if definition.role == .mascot || definition.role == .entertainer {
+                                        hiring = definition.role
+                                    } else {
+                                        controller.hireStaff(role: definition.role)
+                                    }
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .controlSize(.small)
@@ -96,6 +103,9 @@ struct StaffView: View {
                         }
                     }
                 }
+            }
+            .sheet(item: $hiring) { role in
+                StaffHireSheet(role: role, controller: controller)
             }
             .navigationTitle("Staff")
             .navigationBarTitleDisplayMode(.inline)

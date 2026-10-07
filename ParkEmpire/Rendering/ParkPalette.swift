@@ -93,6 +93,7 @@ enum ParkPalette {
     static let mechanic = UIColor(red: 0.98, green: 0.62, blue: 0.15, alpha: 1)
     static let entertainer = UIColor(red: 0.85, green: 0.36, blue: 0.72, alpha: 1)
     static let security = UIColor(red: 0.24, green: 0.38, blue: 0.72, alpha: 1)
+    static let mascot = UIColor(red: 0.96, green: 0.74, blue: 0.20, alpha: 1)
 
     static func colour(for role: StaffRole) -> UIColor {
         switch role {
@@ -100,6 +101,7 @@ enum ParkPalette {
         case .mechanic: return mechanic
         case .entertainer: return entertainer
         case .security: return security
+        case .mascot: return mascot
         }
     }
 

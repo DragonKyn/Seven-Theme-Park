@@ -364,8 +364,13 @@ struct StaffDetail: Identifiable {
     let trainingTitle: String
     /// Nil once the employee has had all the training there is.
     let trainingCost: Double?
+    let role: StaffRole
+    /// How an entertainer or a mascot is dressed, for the panel that changes it.
+    let style: StaffStyle
 
     init(staff: Staff, state: GameState) {
+        role = staff.role
+        style = staff.style
         trainingLevel = staff.trainingLevel
         maxTrainingLevel = UpgradeContent.staffTraining.maxLevel
         trainingTitle = staff.trainingTitle

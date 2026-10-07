@@ -231,6 +231,23 @@ enum Balance {
     static let staffWalkSpeed: Double = 1.9
     /// Sim-seconds between an idle staff member looking for work.
     static let staffJobSearchInterval: Double = 2.5
+    // MARK: - Performers
+
+    /// A mascot works a wider circle, harder, and is a hit with children.
+    static let mascotRadiusFactor: Double = 1.25
+    static let mascotHappinessFactor: Double = 1.5
+    static let mascotChildFactor: Double = 1.8
+    /// How many places a mascot weighs up when choosing where the crowd is.
+    static let mascotSpotSamples = 8
+    /// Balloons a balloon artist gives out per second of work, and what each
+    /// is worth to the person who gets it.
+    static let balloonHandoutPerSecond: Double = 0.35
+    static let balloonHappiness: Double = 5
+    /// Sim-seconds between a magician's tricks on average, and what one is
+    /// worth to whoever is amazed.
+    static let magicTrickInterval: Double = 7
+    static let magicTrickHappiness: Double = 10
+
     /// Radius in tiles over which an entertainer lifts guest happiness.
     static let entertainerRadius: Double = 4.5
     static let entertainerHappinessPerSecond: Double = 0.55

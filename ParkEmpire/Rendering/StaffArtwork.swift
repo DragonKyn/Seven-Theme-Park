@@ -13,34 +13,107 @@ enum StaffArtwork {
     /// tool has to fit in the sprite alongside them.
     static let aspect: CGFloat = 1.05
 
-    static func texture(for role: StaffRole,
-                        uniform: ParkColour,
-                        height: CGFloat) -> SKTexture {
-        let size = CGSize(width: height * aspect * PersonArtwork.supersample,
-                          height: height * PersonArtwork.supersample)
-        let key = "staff-\(role.rawValue)-\(uniform.rawValue)-\(Int(size.height))"
+    /// A costume is a head taller than a person, and drawn that way.
+    static let mascotScale: CGFloat = 1.45
 
-        return SpriteFactory.texture(key: key, size: size) { context, size in
-            let shirt = ParkPalette.colour(uniform)
-            let layout = PersonArtwork.draw(look(for: role, shirt: shirt),
-                                            tint: ParkPalette.colour(for: role),
-                                            context: context,
-                                            size: size)
+    static func sizeScale(for role: StaffRole) -> CGFloat {
+        role == .mascot ? mascotScale : 1
+    }
 
-            switch role {
-            case .janitor:
-                drawOveralls(layout: layout)
-                drawBroom(layout: layout, size: size)
-            case .mechanic: drawWrench(layout: layout, size: size, context: context)
-            case .entertainer: drawBalloons(layout: layout, size: size)
-            case .security: drawSecurityMarkings(layout: layout)
-            }
+    /// What a drawing is filed under. Only the parts of the look that show are
+    /// in it: a mascot has no use for the park's uniform, and a classic
+    /// entertainer has no colour of its own to choose.
+    static func cacheKey(for look: StaffLook, uniform: ParkColour) -> String {
+        switch look.role {
+        case .mascot:
+            return "mascot-\(look.costume.rawValue)-\(look.primary.rawValue)"
+                + "-\(look.secondary.rawValue)-\(look.trim.rawValue)"
+        case .entertainer where look.act != .classic:
+            return "act-\(look.act.rawValue)-\(look.primary.rawValue)"
+        default:
+            return "staff-\(look.role.rawValue)-\(uniform.rawValue)"
         }
     }
 
-    private static func look(for role: StaffRole, shirt: UIColor) -> PersonArtwork.Look {
+    static func texture(for look: StaffLook,
+                        uniform: ParkColour,
+                        height: CGFloat) -> SKTexture {
+        let scale = sizeScale(for: look.role)
+        let size = CGSize(width: height * scale * aspect * PersonArtwork.supersample,
+                          height: height * scale * PersonArtwork.supersample)
+        let key = cacheKey(for: look, uniform: uniform) + "-\(Int(size.height))"
+
+        return SpriteFactory.texture(key: key, size: size) { context, size in
+            draw(look, uniform: uniform, context: context, size: size)
+        }
+    }
+
+    /// The same drawing as an image, for the hiring screen and the staff panel.
+    static func previewImage(for look: StaffLook, uniform: ParkColour, size: CGSize) -> UIImage {
+        UIGraphicsImageRenderer(size: size).image { renderer in
+            draw(look, uniform: uniform, context: renderer.cgContext, size: size)
+        }
+    }
+
+    private static func draw(_ look: StaffLook,
+                             uniform: ParkColour,
+                             context: CGContext,
+                             size: CGSize) {
+        if look.role == .mascot {
+            drawMascot(look, size: size)
+            return
+        }
+
+        let shirt = shirtColour(for: look, uniform: uniform)
+        if look.role == .entertainer && look.act == .magician {
+            drawCapeBehind(colour: ParkPalette.colour(look.primary), size: size)
+        }
+
+        let layout = PersonArtwork.draw(personLook(for: look, shirt: shirt),
+                                        tint: ParkPalette.colour(for: look.role),
+                                        context: context,
+                                        size: size)
+
+        switch look.role {
+        case .janitor:
+            drawOveralls(layout: layout)
+            drawBroom(layout: layout, size: size)
+        case .mechanic:
+            drawWrench(layout: layout, size: size, context: context)
+        case .entertainer:
+            switch look.act {
+            case .classic: drawBalloons(layout: layout, size: size)
+            case .balloonArtist: drawBalloonBunch(layout: layout)
+            case .mime: break
+            case .juggler: drawJugglingBalls(layout: layout)
+            case .magician: drawWand(layout: layout)
+            }
+        case .security:
+            drawSecurityMarkings(layout: layout)
+        case .mascot:
+            break
+        }
+    }
+
+    /// The uniform for everybody but the entertainers who have an act of their
+    /// own, who wear what the act calls for.
+    private static func shirtColour(for look: StaffLook, uniform: ParkColour) -> UIColor {
+        guard look.role == .entertainer else { return ParkPalette.colour(uniform) }
+        switch look.act {
+        case .classic: return ParkPalette.colour(uniform)
+        case .magician: return ParkPalette.colour(.cream)
+        case .balloonArtist, .mime, .juggler: return ParkPalette.colour(look.primary)
+        }
+    }
+
+    private static func personLook(for look: StaffLook, shirt: UIColor) -> PersonArtwork.Look {
+        let role = look.role
         let headwear: PersonArtwork.Headwear
         let headwearColour: UIColor
+        var pattern = GuestAppearance.ShirtPattern.plain
+        var facePaint: UIColor?
+        var handColour: UIColor?
+
         switch role {
         case .janitor:
             headwear = .cap
@@ -51,13 +124,34 @@ enum StaffArtwork {
             headwear = .hardHat
             headwearColour = ParkPalette.colour(.amber)
         case .entertainer:
-            headwear = .partyHat
-            headwearColour = ParkPalette.colour(.red)
+            switch look.act {
+            case .classic:
+                headwear = .partyHat
+                headwearColour = ParkPalette.colour(.red)
+            case .balloonArtist:
+                headwear = .cap
+                headwearColour = ParkPalette.colour(.white)
+            case .mime:
+                headwear = .beret
+                headwearColour = ParkPalette.colour(.charcoal)
+                pattern = .stripes
+                facePaint = ParkPalette.colour(.white)
+                handColour = ParkPalette.colour(.white)
+            case .juggler:
+                headwear = .jesterHat
+                headwearColour = ParkPalette.colour(look.primary)
+            case .magician:
+                headwear = .topHat
+                headwearColour = ParkPalette.colour(.charcoal)
+            }
         case .security:
             // A dark peaked cap whatever the park's colours are. A guard in a
             // pink cap is not a guard.
             headwear = .cap
             headwearColour = ParkPalette.colour(.charcoal)
+        case .mascot:
+            headwear = .none
+            headwearColour = shirt
         }
 
         return PersonArtwork.Look(
@@ -70,9 +164,11 @@ enum StaffArtwork {
             // Work trousers, the same for everybody: the uniform is the
             // shirt, and that is what the park's colour is for.
             bottoms: ParkPalette.colour(.charcoal),
-            pattern: .plain,
+            pattern: pattern,
             accessory: role == .security ? .sunglasses : GuestAppearance.Accessory.none,
-            expression: role == .entertainer ? .happy : .neutral)
+            expression: role == .entertainer ? .happy : .neutral,
+            facePaint: facePaint,
+            handColour: handColour)
     }
 
     // MARK: - Tools

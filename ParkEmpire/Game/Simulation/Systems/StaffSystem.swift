@@ -191,7 +191,7 @@ final class StaffSystem {
             }
             return bestJob
 
-        case .entertainer:
+        case .entertainer, .mascot:
             // Head for whichever queue is longest; failing that, wander.
             let busiest = state.attractions
                 .filter { !$0.queue.isEmpty }
@@ -201,6 +201,12 @@ final class StaffSystem {
                let spot = map.accessTiles(for: busiest.rect).first(where: { distance(to: $0) != nil }) {
                 let job = StaffJob.entertain(spot)
                 if !claimed.contains(job) { return job }
+            }
+
+            // A mascot goes where the people are, which is what it is for.
+            if member.role == .mascot,
+               let spot = crowdedSpot(map: map, field: field, state: state) {
+                return .entertain(spot)
             }
 
             if let spot = randomReachableTile(map: map, field: field, state: state) {
@@ -465,7 +471,7 @@ final class StaffSystem {
 
         case .entertain:
             state.staff[staffIndex].workTimer -= dt
-            entertainNearbyGuests(staffIndex: staffIndex, state: state, dt: dt)
+            perform(staffIndex: staffIndex, state: state, dt: dt, now: now)
             if state.staff[staffIndex].workTimer <= 0 {
                 finish(staffIndex: staffIndex, state: state, now: now)
             }
@@ -565,16 +571,83 @@ final class StaffSystem {
         }
     }
 
-    private func entertainNearbyGuests(staffIndex: Int, state: GameState, dt: Double) {
-        let centre = state.staff[staffIndex].position
-        let radius = Balance.entertainerRadius
-        let boost = Balance.entertainerHappinessPerSecond * state.staff[staffIndex].workRate * dt
+    private static let balloonColours: [ParkColour] = [
+        .red, .yellow, .green, .blue, .pink, .orange, .violet
+    ]
 
+    /// Everything an entertainer or a mascot does while performing: lift the
+    /// mood of whoever is in range, and whatever else the act adds to that.
+    ///
+    /// Children are worth more to a mascot, a queue is worth more to a mime,
+    /// a balloon artist hands out balloons and a magician now and then leaves
+    /// somebody amazed. All of it is read off the performer's profile, so a
+    /// new act is a new row of numbers rather than a new branch here.
+    private func perform(staffIndex: Int, state: GameState, dt: Double, now: Double) {
+        let member = state.staff[staffIndex]
+        let profile = PerformerProfile.of(member)
+        let base = Balance.entertainerHappinessPerSecond * profile.happinessFactor
+            * member.workRate * dt
+
+        var audience: [Int] = []
         for index in state.guests.indices where state.guests[index].isActive {
-            let distance = SimMath.distance(state.guests[index].position, centre)
-            guard distance <= radius else { continue }
-            state.guests[index].adjustHappiness(boost)
+            let distance = SimMath.distance(state.guests[index].position, member.position)
+            guard distance <= profile.radius else { continue }
+
+            var lift = base
+            if state.guests[index].ageCategory == .child { lift *= profile.childFactor }
+            if case .queueing = state.guests[index].activity { lift *= profile.queueFactor }
+            state.guests[index].adjustHappiness(lift)
+            audience.append(index)
         }
+        guard !audience.isEmpty else { return }
+
+        if profile.handsOutBalloons,
+           state.rng.chance(Balance.balloonHandoutPerSecond * member.workRate * dt) {
+            handOutBalloon(among: audience, state: state, now: now)
+        }
+        if profile.doesTricks, state.rng.chance(dt / Balance.magicTrickInterval) {
+            amaze(among: audience, state: state, now: now)
+        }
+    }
+
+    /// A balloon for somebody who has not got one, a child if there is one.
+    private func handOutBalloon(among audience: [Int], state: GameState, now: Double) {
+        let without = audience.filter { state.guests[$0].balloon == nil }
+        guard !without.isEmpty else { return }
+        let children = without.filter { state.guests[$0].ageCategory == .child }
+        let pool = children.isEmpty ? without : children
+
+        let guest = pool[state.rng.int(0...(pool.count - 1))]
+        let colours = Self.balloonColours
+        state.guests[guest].balloon = colours[state.rng.int(0...(colours.count - 1))]
+        state.guests[guest].adjustHappiness(Balance.balloonHappiness)
+        state.guests[guest].think("A balloon! For me?", mood: .positive, at: now)
+    }
+
+    private func amaze(among audience: [Int], state: GameState, now: Double) {
+        let guest = audience[state.rng.int(0...(audience.count - 1))]
+        state.guests[guest].adjustHappiness(Balance.magicTrickHappiness)
+        state.guests[guest].think("How did they do that?!", mood: .positive, at: now)
+    }
+
+    /// Where the people are: the best of a few places picked at random, so a
+    /// mascot spends its time where there is somebody to wave at.
+    private func crowdedSpot(map: ParkMap, field: [Int], state: GameState) -> GridCoord? {
+        var best: GridCoord?
+        var bestCount = 0
+        for _ in 0..<Balance.mascotSpotSamples {
+            guard let coord = randomReachableTile(map: map, field: field, state: state) else { continue }
+            var nearby = 0
+            for guest in state.guests where guest.isActive
+                && SimMath.distance(guest.position, coord.centre) <= Balance.entertainerRadius {
+                nearby += 1
+            }
+            if nearby > bestCount {
+                bestCount = nearby
+                best = coord
+            }
+        }
+        return best
     }
 
     /// A guard on a post makes the people around them feel looked after. A

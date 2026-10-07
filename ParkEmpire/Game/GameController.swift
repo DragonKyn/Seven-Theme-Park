@@ -812,20 +812,55 @@ final class GameController: ObservableObject {
     }
 
     @discardableResult
-    func hireStaff(role: StaffRole) -> Bool {
+    func hireStaff(role: StaffRole, style: StaffStyle = .standard) -> Bool {
         guard let definition = StaffContent.definition(for: role), canHire(role: role) else { return false }
 
         state.ledger.spend(definition.hiringCost, on: .wages)
 
         let entrance = state.map.entranceCoord
-        let member = Staff(id: UUID(),
+        var member = Staff(id: UUID(),
                            name: GuestNames.random(using: &state.rng),
                            role: role,
                            position: entrance.centre,
                            tile: entrance)
+
+        switch role {
+        case .entertainer:
+            member.act = style.act
+            member.primaryColour = style.primary
+        case .mascot:
+            // A mascot is a character, so it is named like one.
+            let costume = style.costume ?? .bear
+            member.costume = costume
+            member.name = costume.name(using: &state.rng)
+            member.primaryColour = style.primary
+            member.secondaryColour = style.secondary
+            member.trimColour = style.trim
+        case .janitor, .mechanic, .security:
+            break
+        }
+
         state.staff.append(member)
         refreshUI()
         return true
+    }
+
+    /// Changes how an entertainer or a mascot looks.
+    func setStaffStyle(id: UUID, style: StaffStyle) {
+        guard let index = state.staff.firstIndex(where: { $0.id == id }) else { return }
+        switch state.staff[index].role {
+        case .entertainer:
+            state.staff[index].act = style.act
+            state.staff[index].primaryColour = style.primary
+        case .mascot:
+            state.staff[index].costume = style.costume
+            state.staff[index].primaryColour = style.primary
+            state.staff[index].secondaryColour = style.secondary
+            state.staff[index].trimColour = style.trim
+        case .janitor, .mechanic, .security:
+            return
+        }
+        refreshUI()
     }
 
     func fireStaff(id: UUID) {

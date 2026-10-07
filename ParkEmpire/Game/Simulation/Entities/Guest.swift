@@ -160,6 +160,8 @@ struct Guest: Codable, Identifiable {
     /// Sim-seconds of popcorn left in the bag they are carrying, or zero when
     /// they are not eating any.
     var popcornRemaining: Double = 0
+    /// A balloon a balloon artist gave them, carried for the rest of the visit.
+    var balloon: ParkColour?
     var thoughts: [GuestThought] = []
     /// Set when the guest decides to go home; recorded on departure.
     var departureReason: String?
@@ -234,6 +236,7 @@ extension Guest {
         prize = container.optionalValue(.prize)
         prizesWon = container.value(.prizesWon, or: 0)
         popcornRemaining = container.value(.popcornRemaining, or: 0)
+        balloon = container.optionalValue(.balloon)
         thoughts = container.value(.thoughts, or: [])
         departureReason = container.optionalValue(.departureReason)
     }

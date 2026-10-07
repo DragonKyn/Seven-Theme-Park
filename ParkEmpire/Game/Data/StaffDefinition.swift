@@ -5,6 +5,8 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     case mechanic
     case entertainer
     case security
+    /// A person in a big costume. Wanders the park being loved.
+    case mascot
 
     var id: String { rawValue }
 }
@@ -52,10 +54,18 @@ enum StaffContent {
         StaffDefinition(
             role: .entertainer,
             displayName: "Entertainer",
-            summary: "Wanders the park lifting the mood of nearby guests.",
+            summary: "Wanders the park lifting the mood of nearby guests. Choose an act: balloons, mime, juggling or magic.",
             hiringCost: 600,
             dailyWage: 70,
             symbolName: "theatermasks.fill"
+        ),
+        StaffDefinition(
+            role: .mascot,
+            displayName: "Park Mascot",
+            summary: "A big costumed favourite who wanders the crowds, and is a hit with the children. Pick the costume and paint it any colours you like.",
+            hiringCost: 1_100,
+            dailyWage: 110,
+            symbolName: "pawprint.fill"
         )
     ]
 

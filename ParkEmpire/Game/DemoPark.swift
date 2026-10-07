@@ -146,18 +146,32 @@ enum DemoPark {
         }
     }
 
-    /// Three employees, one of each role, so the menu shows what staff look
+    /// One employee of each role, so the menu shows what staff look
     /// like as well as what the park does. Appended directly rather than hired
     /// through the controller: there is nobody to charge.
     private static func hireStaff(_ state: GameState) {
         let entrance = state.map.entranceCoord
         for role in StaffRole.allCases {
-            state.staff.append(Staff(id: UUID(),
-                                     name: GuestNames.random(using: &state.rng),
-                                     role: role,
-                                     position: entrance.centre,
-                                     tile: entrance))
+            var member = Staff(id: UUID(),
+                               name: GuestNames.random(using: &state.rng),
+                               role: role,
+                               position: entrance.centre,
+                               tile: entrance)
+            if role == .mascot {
+                member.costume = .frog
+                member.name = MascotCostume.frog.name(using: &state.rng)
+            }
+            state.staff.append(member)
         }
+
+        // A second performer, so the title screen shows an act as well.
+        var artist = Staff(id: UUID(),
+                           name: GuestNames.random(using: &state.rng),
+                           role: .entertainer,
+                           position: entrance.centre,
+                           tile: entrance)
+        artist.act = .balloonArtist
+        state.staff.append(artist)
     }
 
     /// Places by definition id. The layout is hand-written against a known
