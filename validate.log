@@ -1,0 +1,7 @@
+Running altool at path '/Applications/Xcode_26.3.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-10-07 08:49:41.367  INFO: [ContentDelivery.Uploader.6000002E04C0] 
+==========================================
+VERIFY SUCCEEDED with no errors
+==========================================
+No errors validating archive at '/Users/runner/work/_temp/export/ParkEmpire.ipa'.
