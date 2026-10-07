@@ -154,89 +154,80 @@ extension BuildingArtwork {
         }
     }
 
-    // MARK: - Ducks and swans
+    // MARK: - Water rocks
 
-    static func drawDuckFamily(_ context: CGContext,
-                               _ size: CGSize,
-                               _ primary: UIColor,
-                               _ secondary: UIColor,
-                               _ accent: UIColor,
-                               _ variant: Int) {
+    /// How far each corner of a boulder is pushed in or out, so no two sides
+    /// match. Fixed rather than random: the same rock must draw the same way
+    /// every time its texture is rebuilt.
+    private static let boulderProfile: [CGFloat] = [1.0, 0.86, 0.96, 0.82, 1.0, 0.88, 0.94, 0.84]
+
+    static func drawWaterRock(_ context: CGContext,
+                              _ size: CGSize,
+                              _ primary: UIColor,
+                              _ secondary: UIColor,
+                              _ accent: UIColor,
+                              _ variant: Int) {
         drawWaterPatch(size)
         let reference = min(size.width, size.height)
-        let white = ParkPalette.colour(.white)
-        let downy = ParkPalette.colour(.yellow)
 
-        if variant % 2 == 1 {
-            // Two swans, turned to face one another.
-            let left = CGPoint(x: size.width * 0.32, y: size.height * 0.52)
-            let right = CGPoint(x: size.width * 0.68, y: size.height * 0.46)
-            drawWake(at: left, length: reference * 0.34)
-            drawWake(at: right, length: reference * 0.34)
-            drawWaterBird(centre: left, length: reference * 0.34, facing: 1,
-                          body: white, head: white, beak: accent, wing: primary)
-            drawWaterBird(centre: right, length: reference * 0.34, facing: -1,
-                          body: white, head: white, beak: accent, wing: primary)
-            return
+        // Where each boulder sits, how big it is, and how it is turned.
+        let layouts: [[(x: CGFloat, y: CGFloat, radius: CGFloat, turn: CGFloat)]] = [
+            [(0.50, 0.52, 0.27, 0.3)],
+            [(0.36, 0.56, 0.22, 0.9), (0.66, 0.40, 0.16, 2.4), (0.64, 0.72, 0.11, 4.1)],
+            [(0.26, 0.64, 0.13, 0.5), (0.50, 0.46, 0.14, 1.7), (0.74, 0.60, 0.13, 3.2),
+             (0.60, 0.26, 0.09, 4.4)]
+        ]
+
+        for spot in layouts[variant % layouts.count] {
+            let centre = CGPoint(x: spot.x * size.width, y: spot.y * size.height)
+            let radius = spot.radius * reference
+
+            // Foam first, so the rock stands in it.
+            let wash = CGRect(x: centre.x - radius * 1.35, y: centre.y - radius * 1.05,
+                              width: radius * 2.7, height: radius * 2.1)
+            drawRipple(around: wash, width: max(1.5, radius * 0.16))
+
+            drawBoulder(context, centre: centre, radius: radius, turn: spot.turn,
+                        stone: primary, moss: secondary, foam: accent)
+        }
+    }
+
+    private static func drawBoulder(_ context: CGContext,
+                                    centre: CGPoint,
+                                    radius: CGFloat,
+                                    turn: CGFloat,
+                                    stone: UIColor,
+                                    moss: UIColor,
+                                    foam: UIColor) {
+        func outline(scale: CGFloat, lift: CGFloat) -> UIBezierPath {
+            let path = UIBezierPath()
+            let corners = boulderProfile.count
+            for index in 0..<corners {
+                let angle = turn + CGFloat(index) / CGFloat(corners) * CGFloat.pi * 2
+                let reach = radius * scale * boulderProfile[index]
+                let point = CGPoint(x: centre.x + cos(angle) * reach,
+                                    y: centre.y + sin(angle) * reach * 0.82 - lift)
+                if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+            }
+            path.close()
+            path.lineJoinStyle = .round
+            return path
         }
 
-        // A mallard leading two ducklings across.
-        let parent = CGPoint(x: size.width * 0.64, y: size.height * 0.48)
-        let first = CGPoint(x: size.width * 0.36, y: size.height * 0.42)
-        let second = CGPoint(x: size.width * 0.22, y: size.height * 0.60)
-        drawWake(at: parent, length: reference * 0.36)
-        drawWake(at: first, length: reference * 0.18)
-        drawWake(at: second, length: reference * 0.18)
-        drawWaterBird(centre: parent, length: reference * 0.36, facing: 1,
-                      body: primary, head: secondary, beak: accent, wing: white)
-        drawWaterBird(centre: first, length: reference * 0.18, facing: 1,
-                      body: downy, head: downy, beak: accent, wing: downy)
-        drawWaterBird(centre: second, length: reference * 0.18, facing: 1,
-                      body: downy, head: downy, beak: accent, wing: downy)
-    }
+        let body = outline(scale: 1.0, lift: 0)
+        withShadow(context) { fill(body, stone) }
+        stroke(body, stone, width: max(1.5, radius * 0.18))
 
-    private static func drawWake(at centre: CGPoint, length: CGFloat) {
-        let wake = CGRect(x: centre.x - length * 0.85, y: centre.y - length * 0.52,
-                          width: length * 1.7, height: length * 1.04)
-        drawRipple(around: wake, width: max(1.2, length * 0.07))
-    }
+        // A paler face catching the light, then moss on the top of it.
+        fill(outline(scale: 0.62, lift: radius * 0.18), UIColor.white.withAlphaComponent(0.28))
+        let mossRect = CGRect(x: centre.x - radius * 0.55, y: centre.y - radius * 0.62,
+                              width: radius * 0.80, height: radius * 0.42)
+        fill(UIBezierPath(ovalIn: mossRect), moss.withAlphaComponent(0.85))
 
-    /// A bird seen from above: body, wing, head and beak. `facing` is +1 for
-    /// right and -1 for left.
-    private static func drawWaterBird(centre: CGPoint,
-                                      length: CGFloat,
-                                      facing: CGFloat,
-                                      body: UIColor,
-                                      head: UIColor,
-                                      beak: UIColor,
-                                      wing: UIColor) {
-        let hull = CGRect(x: centre.x - length / 2, y: centre.y - length * 0.31,
-                          width: length, height: length * 0.62)
-        fill(UIBezierPath(ovalIn: hull), body)
-
-        let wingShape = CGRect(x: centre.x - length * 0.25 - facing * length * 0.12,
-                               y: centre.y - length * 0.17,
-                               width: length * 0.5, height: length * 0.34)
-        fill(UIBezierPath(ovalIn: wingShape), wing.withAlphaComponent(0.85))
-
-        let headCentre = CGPoint(x: centre.x + facing * length * 0.40, y: centre.y)
-        let headRadius = length * 0.20
-        fill(UIBezierPath(ovalIn: discRect(centre: headCentre, diameter: headRadius * 2)), head)
-
-        let bill = UIBezierPath()
-        bill.move(to: CGPoint(x: headCentre.x + facing * headRadius * 0.8,
-                              y: headCentre.y - headRadius * 0.38))
-        bill.addLine(to: CGPoint(x: headCentre.x + facing * (headRadius + length * 0.18),
-                                 y: headCentre.y))
-        bill.addLine(to: CGPoint(x: headCentre.x + facing * headRadius * 0.8,
-                                 y: headCentre.y + headRadius * 0.38))
-        bill.close()
-        fill(bill, beak)
-
-        let eye = discRect(centre: CGPoint(x: headCentre.x + facing * headRadius * 0.15,
-                                           y: headCentre.y - headRadius * 0.35),
-                           diameter: max(1.5, headRadius * 0.34))
-        fill(UIBezierPath(ovalIn: eye), ParkPalette.colour(.charcoal))
+        // A fleck of foam where the water breaks on it.
+        let splash = CGRect(x: centre.x + radius * 0.35, y: centre.y + radius * 0.50,
+                            width: radius * 0.50, height: radius * 0.20)
+        fill(UIBezierPath(ovalIn: splash), foam.withAlphaComponent(0.85))
     }
 
     // MARK: - Floating lanterns

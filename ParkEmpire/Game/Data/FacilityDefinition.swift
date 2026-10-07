@@ -91,6 +91,18 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     /// How much harder this pulls a guest in than a plain one of its kind.
     /// Raised by signage; 1 means no help.
     var drawFactor: Double = 1
+    /// How long a janitor needs to turn this round, in park minutes (which are
+    /// sim-seconds), with the facility shut throughout. Zero means it is
+    /// emptied on the spot instead, which is what a bin is.
+    var cleaningMinutes: Double = 0
+    /// How much dirtier one use leaves it.
+    var soilingPerUse: Double = Balance.bathroomSoilPerUse
+    /// How much this counts for when the park is judged on its facilities. A
+    /// grand washroom is worth more than a cubicle.
+    var ratingWeight: Double = 1
+    /// Whether a guest walks away carrying what they bought and eats it as
+    /// they go.
+    var carriesSnack: Bool = false
 
     /// Whether this is something the player can pour money into after it is
     /// built. Restrooms, benches and bins are not: there is nothing to sell
@@ -163,6 +175,10 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
             unlockLevel: unlockLevel,
             appearance: appearance,
             winChance: min(0.85, winChance > 0 ? winChance + quality * 0.06 : 0),
-            drawFactor: drawFactor * (1 + signage * 0.18))
+            drawFactor: drawFactor * (1 + signage * 0.18),
+            cleaningMinutes: cleaningMinutes,
+            soilingPerUse: soilingPerUse,
+            ratingWeight: ratingWeight,
+            carriesSnack: carriesSnack)
     }
 }

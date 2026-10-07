@@ -117,7 +117,7 @@ final class MovementSystem {
         case .facility(let id):
             guard let facilityIndex = state.facilityIndex(id: id),
                   let definition = state.facilities[facilityIndex].definition,
-                  state.facilities[facilityIndex].isOpen,
+                  state.facilities[facilityIndex].isAcceptingGuests,
                   !state.facilities[facilityIndex].isUnusable else {
                 if let facilityIndex = state.facilityIndex(id: id),
                    state.facilities[facilityIndex].isUnusable {

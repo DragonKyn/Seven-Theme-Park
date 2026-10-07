@@ -131,6 +131,23 @@ enum Balance {
     /// moved to find a walkway to stand on.
     static let buildOverEvictionRadius: Int = 8
 
+    /// How much longer a filthy restroom takes to clean than a spotless one,
+    /// as a share of its base time. A restroom at the point of closing takes a
+    /// third as long again, which is how fifteen minutes becomes twenty.
+    static let cleaningDirtExtra: Double = 0.33
+
+    /// Sim-seconds a guest takes to finish a bag of popcorn.
+    static let popcornEatSeconds: Double = 40
+    /// How close a bin has to be, in tiles, for an empty bag to be carried to
+    /// it rather than dropped where the guest stands.
+    static let popcornBinRadius = 5
+    /// Rubbish a dropped bag leaves behind. More than a wrapper: it is a whole
+    /// bag, and it spills.
+    static let popcornLitter: Double = 48
+    /// How strongly a guest in a good mood is drawn to a snack cart, on the
+    /// same scale as every other facility's appeal.
+    static let snackImpulse: Double = 85
+
     /// How strongly a hungry guest is drawn to a picnic table, on the same
     /// scale as every other facility's appeal.
     static let picnicMealDraw: Double = 70

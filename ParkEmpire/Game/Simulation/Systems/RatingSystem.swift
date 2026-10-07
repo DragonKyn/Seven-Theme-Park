@@ -130,7 +130,12 @@ final class RatingSystem {
     }
 
     private func facilityScore(state: GameState, guestCount: Int) -> Double {
-        let bathrooms = state.facilities.filter { $0.definition?.kind == .bathroom }.count
+        let bathrooms = state.facilities.reduce(0.0) { (total, facility) -> Double in
+            guard let definition = facility.definition, definition.kind == .bathroom else {
+                return total
+            }
+            return total + definition.ratingWeight
+        }
         let foodAndDrink = state.facilities.filter {
             guard let kind = $0.definition?.kind else { return false }
             return kind == .food || kind == .drink
@@ -140,7 +145,7 @@ final class RatingSystem {
         // One of each per twenty guests is considered adequate; a park with no
         // guests yet is judged on simply having the basics.
         let expected = max(1.0, Double(guestCount) / 20.0 * Balance.facilitiesPerTwentyGuests)
-        let bathroomScore = min(1.0, Double(bathrooms) / expected)
+        let bathroomScore = min(1.0, bathrooms / expected)
         let shopScore = min(1.0, Double(foodAndDrink) / expected)
         let benchScore = min(1.0, Double(benches) / max(1.0, expected * 1.5))
 

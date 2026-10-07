@@ -10,6 +10,7 @@ enum FacilityAppeal {
 
     enum Verdict {
         case notOpen
+        case beingCleaned
         case unusable
         case noWalkway
         case unreachable
@@ -23,6 +24,7 @@ enum FacilityAppeal {
         var summary: String {
             switch self {
             case .notOpen: return "Closed, so nobody is coming in"
+            case .beingCleaned: return "Shut while a janitor cleans it"
             case .unusable: return "In no state for guests to use"
             case .noWalkway: return "No walkway touches it"
             case .unreachable: return "Guests cannot walk to it"
@@ -48,6 +50,7 @@ enum FacilityAppeal {
                          distance: Int?,
                          spendBoost: Double = 1) -> Verdict {
         guard facility.isOpen else { return .notOpen }
+        guard !facility.isBeingCleaned else { return .beingCleaned }
         guard !facility.isUnusable else { return .unusable }
         guard hasAccess else { return .noWalkway }
         guard let distance else { return .unreachable }
@@ -88,7 +91,15 @@ enum FacilityAppeal {
             return 150 * urgency
 
         case .food:
-            return 260 * pow(guest.hunger / 100, 2.2) * willingness(guest, facility, definition, boost: spendBoost)
+            let hungerDraw = 260 * pow(guest.hunger / 100, 2.2)
+                * willingness(guest, facility, definition, boost: spendBoost)
+            guard definition.carriesSnack else { return hungerDraw }
+            // Somebody already working through a bag does not want another,
+            // but a guest in a good mood who is passing is easily tempted.
+            guard guest.popcornRemaining <= 0 else { return 0 }
+            let impulse = Balance.snackImpulse * (guest.happiness / 100)
+                * willingness(guest, facility, definition, boost: spendBoost)
+            return max(hungerDraw, impulse)
 
         case .drink:
             return 250 * pow(guest.thirst / 100, 2.2) * willingness(guest, facility, definition, boost: spendBoost)

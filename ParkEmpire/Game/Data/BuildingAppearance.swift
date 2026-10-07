@@ -176,8 +176,12 @@ enum BuildingMotif: String, Codable {
     case lilyPads
     /// A stand of tall stems with cattail heads, for a pond.
     case reeds
-    /// A mallard and her ducklings, or a pair of swans, on the water.
-    case duckFamily
+    /// Boulders breaking the surface of a pond, with foam round their feet.
+    case waterRock
+    /// A marble washroom with a gold roof band and a tall arched door.
+    case luxuryRestroom
+    /// A striped awning over a glass case of popcorn, on two wheels.
+    case popcornCart
     /// Paper lanterns afloat, lit from inside.
     case floatingLanterns
     /// A stone ring in the water with a jet at its heart.
@@ -206,7 +210,7 @@ enum BuildingMotif: String, Codable {
         case .fountain: return 2
         case .lilyPads: return 3
         case .reeds: return 3
-        case .duckFamily: return 2
+        case .waterRock: return 3
         case .floatingLanterns: return 2
         case .pondFountain: return 2
         case .hedge: return 3
@@ -269,7 +273,8 @@ enum BuildingMotif: String, Codable {
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .basketballGame, .waterRaceGame, .balloonGame, .targetGame, .ringTossGame,
              .tree, .conifer, .flowerBed, .lamp, .topiary, .statue,
-             .lilyPads, .reeds, .duckFamily, .floatingLanterns:
+             .lilyPads, .reeds, .waterRock, .floatingLanterns,
+             .luxuryRestroom, .popcornCart:
             return .none
         }
     }

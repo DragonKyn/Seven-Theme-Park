@@ -17,6 +17,7 @@ final class StaffSystem {
 
     func update(state: GameState, dt: Double) {
         chargeWages(state: state, dt: dt)
+        releaseAbandonedCleaning(state: state)
         guard !state.staff.isEmpty else { return }
 
         let map = state.map
@@ -40,6 +41,68 @@ final class StaffSystem {
                 work(staffIndex: index, job: job, state: state, dt: dt, now: now)
             }
         }
+    }
+
+    // MARK: - Restrooms being cleaned
+
+    /// A restroom is shut for as long as somebody is cleaning it, which means
+    /// it must reopen if that somebody stops: dismissed, or reassigned. A
+    /// restroom left shut with nobody in it would stay shut for ever.
+    private func releaseAbandonedCleaning(state: GameState) {
+        for index in state.facilities.indices where state.facilities[index].isBeingCleaned {
+            let id = state.facilities[index].id
+            let attended = state.staff.contains { member -> Bool in
+                if case .working(.serviceFacility(let target)) = member.activity {
+                    return target == id
+                }
+                return false
+            }
+            if !attended {
+                state.facilities[index].cleaningRemaining = 0
+                state.facilities[index].cleaningTotal = 0
+            }
+        }
+    }
+
+    /// Shuts a restroom and sends away anybody waiting for it. The janitor
+    /// has arrived and the doors are closed; whoever is already inside is let
+    /// finish.
+    private func beginCleaning(facilityID: UUID, state: GameState) {
+        guard let index = state.facilityIndex(id: facilityID),
+              let definition = state.facilities[index].definition,
+              definition.cleaningMinutes > 0 else { return }
+
+        let dirt = state.facilities[index].soiling / 100
+        let total = definition.cleaningMinutes * (1 + Balance.cleaningDirtExtra * dirt)
+        state.facilities[index].cleaningTotal = total
+        state.facilities[index].cleaningRemaining = total
+
+        let now = state.clock.simTime
+        for guestID in state.facilities[index].queue {
+            guard let guestIndex = state.guestIndex(id: guestID) else { continue }
+            state.guests[guestIndex].activity = .exploring
+            state.guests[guestIndex].queueWaitEstimate = 0
+            state.guests[guestIndex].nextDecisionAt = now
+        }
+        state.facilities[index].queue.removeAll()
+    }
+
+    private func cleanRestroom(staffIndex: Int,
+                               facilityIndex: Int,
+                               state: GameState,
+                               dt: Double,
+                               now: Double) {
+        // Wait for the last user to come out.
+        guard state.facilities[facilityIndex].slots.isEmpty else { return }
+
+        state.facilities[facilityIndex].cleaningRemaining -= state.staff[staffIndex].workRate * dt
+        guard state.facilities[facilityIndex].cleaningRemaining <= 0 else { return }
+
+        state.facilities[facilityIndex].cleaningRemaining = 0
+        state.facilities[facilityIndex].cleaningTotal = 0
+        state.facilities[facilityIndex].soiling = 0
+        state.facilities[facilityIndex].timesServiced += 1
+        finish(staffIndex: staffIndex, state: state, now: now)
     }
 
     // MARK: - Wages
@@ -320,7 +383,10 @@ final class StaffSystem {
             state.staff[staffIndex].workTimer = atGate
                 ? Balance.securityPostDuration
                 : Balance.securityPatrolDuration
-        case .cleanLitter, .serviceFacility, .escort:
+        case .serviceFacility(let id):
+            state.staff[staffIndex].workTimer = 0
+            beginCleaning(facilityID: id, state: state)
+        case .cleanLitter, .escort:
             state.staff[staffIndex].workTimer = 0
         }
 
@@ -363,6 +429,14 @@ final class StaffSystem {
         case .serviceFacility(let id):
             guard let facilityIndex = state.facilityIndex(id: id) else {
                 finish(staffIndex: staffIndex, state: state, now: now)
+                return
+            }
+            if (state.facilities[facilityIndex].definition?.cleaningMinutes ?? 0) > 0 {
+                cleanRestroom(staffIndex: staffIndex,
+                              facilityIndex: facilityIndex,
+                              state: state,
+                              dt: dt,
+                              now: now)
                 return
             }
             state.facilities[facilityIndex].soiling = max(

@@ -157,6 +157,9 @@ struct Guest: Codable, Identifiable {
     /// How many booths they have won at, so a guest who keeps winning stops
     /// being drawn under a pile of bears.
     var prizesWon: Int = 0
+    /// Sim-seconds of popcorn left in the bag they are carrying, or zero when
+    /// they are not eating any.
+    var popcornRemaining: Double = 0
     var thoughts: [GuestThought] = []
     /// Set when the guest decides to go home; recorded on departure.
     var departureReason: String?
@@ -230,6 +233,7 @@ extension Guest {
         trashCarriedFor = container.value(.trashCarriedFor, or: 0)
         prize = container.optionalValue(.prize)
         prizesWon = container.value(.prizesWon, or: 0)
+        popcornRemaining = container.value(.popcornRemaining, or: 0)
         thoughts = container.value(.thoughts, or: [])
         departureReason = container.optionalValue(.departureReason)
     }

@@ -60,6 +60,7 @@ final class ParkScene: SKScene {
     /// What each guest is currently drawn carrying, for the same reason: a
     /// prize won at a booth has to change the sprite, and nothing else does.
     private var guestPrize: [UUID: GuestPrize] = [:]
+    private var guestPopcorn: [UUID: Bool] = [:]
     /// The last thought each guest has already had a bubble for.
     private var shownThought: [UUID: UUID] = [:]
     /// Bubbles currently on screen. Held so the cap can be enforced without a
@@ -1006,12 +1007,14 @@ final class ParkScene: SKScene {
                                         .withVariant(facility.variant)
                                         .applying(state.scheme),
                                     title: facility.name)
-            if facility.isUnusable {
+            if facility.isBeingCleaned {
+                node.setBadge("🧹")
+            } else if facility.isUnusable {
                 node.setBadge("!", colour: ParkPalette.broken)
             } else {
                 node.setBadge(facility.queue.isEmpty ? nil : "\(facility.queue.count)")
             }
-            node.setDimmed(!facility.isOpen || facility.isUnusable)
+            node.setDimmed(!facility.isOpen || facility.isUnusable || facility.isBeingCleaned)
         }
 
         for (id, node) in buildingNodes where !seen.contains(id) {
@@ -1215,12 +1218,14 @@ final class ParkScene: SKScene {
                                                                   age: guest.ageCategory,
                                                                   mood: mood,
                                                                   prize: guest.prize,
+                                                                  popcorn: guest.popcornRemaining > 0,
                                                                   height: height))
                 node.size = guestSize
                 guestLayer.addChild(node)
                 guestNodes[guest.id] = node
                 guestMood[guest.id] = mood
                 guestPrize[guest.id] = guest.prize
+                guestPopcorn[guest.id] = guest.popcornRemaining > 0
             }
 
             // Guests inside a ride or a building are not drawn. Furniture is
@@ -1233,13 +1238,17 @@ final class ParkScene: SKScene {
             }
             node.isHidden = false
 
-            if guestMood[guest.id] != mood || guestPrize[guest.id] != guest.prize {
+            let eating = guest.popcornRemaining > 0
+            if guestMood[guest.id] != mood || guestPrize[guest.id] != guest.prize
+                || guestPopcorn[guest.id] != eating {
                 guestMood[guest.id] = mood
                 guestPrize[guest.id] = guest.prize
+                guestPopcorn[guest.id] = eating
                 node.texture = GuestArtwork.texture(for: guest.appearance,
                                                     age: guest.ageCategory,
                                                     mood: mood,
                                                     prize: guest.prize,
+                                                    popcorn: eating,
                                                     height: height)
             }
 
@@ -1253,6 +1262,7 @@ final class ParkScene: SKScene {
             guestNodes.removeValue(forKey: id)
             guestMood.removeValue(forKey: id)
             guestPrize.removeValue(forKey: id)
+            guestPopcorn.removeValue(forKey: id)
             shownThought.removeValue(forKey: id)
         }
     }

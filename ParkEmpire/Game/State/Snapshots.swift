@@ -248,6 +248,8 @@ struct FacilityDetail: Identifiable {
     /// What the two counts above are counting: customers at a shop, visits
     /// to a restroom, guests sat at a bench.
     let visitorNoun: String
+    /// How far through being cleaned it is, 0 to 1, or nil when it is not.
+    let cleaningProgress: Double?
     /// How dirty or full it is, 0-100, for the kinds a janitor looks after.
     let soiling: Double?
     /// Prizes handed over, which is the only thing a booth's owner watches.
@@ -308,6 +310,7 @@ struct FacilityDetail: Identifiable {
 
         soiling = facility.definition?.kind.needsServicing == true ? facility.soiling : nil
         visitorNoun = facility.definition?.kind.visitorNoun ?? "Customers"
+        cleaningProgress = facility.cleaningProgress
 
         if let definition = facility.definition {
             typeName = definition.displayName

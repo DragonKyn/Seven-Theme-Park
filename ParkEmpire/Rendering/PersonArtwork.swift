@@ -63,6 +63,8 @@ enum PersonArtwork {
         /// Something won at a carnival booth, carried under the arm or hugged
         /// in front. Nil for everybody who has not won anything.
         var prize: GuestPrize? = nil
+        /// A bag of popcorn in the hand they are not carrying a prize in.
+        var popcorn: Bool = false
     }
 
     /// Where the parts of a drawn figure ended up, so a caller can hang a
@@ -162,6 +164,7 @@ enum PersonArtwork {
         drawFace(look, head: head)
         drawHeadwear(look, head: head, context: context, size: size)
         drawPrize(look, body: body)
+        drawPopcornBag(look, body: body)
 
         return Layout(head: head, body: body, bottom: bottom)
     }
@@ -401,6 +404,59 @@ enum PersonArtwork {
         mouth.lineWidth = max(0.5, head.width * 0.075)
         mouth.lineCapStyle = .round
         mouth.stroke()
+    }
+
+    // MARK: - Popcorn
+
+    /// A striped paper bag held out to the right, with the popcorn heaped over
+    /// its top. On the right because a prize goes under the left arm, and a
+    /// guest with both is carrying both.
+    private static func drawPopcornBag(_ look: Look, body: CGRect) {
+        guard look.popcorn else { return }
+
+        let width = body.width * 0.40
+        let height = body.width * 0.46
+        let left = body.maxX - width * 0.70
+        let top = body.midY - height * 0.05
+
+        let bag = UIBezierPath()
+        bag.move(to: CGPoint(x: left, y: top))
+        bag.addLine(to: CGPoint(x: left + width, y: top))
+        bag.addLine(to: CGPoint(x: left + width * 0.86, y: top + height))
+        bag.addLine(to: CGPoint(x: left + width * 0.14, y: top + height))
+        bag.close()
+
+        // The popcorn first, so the rim of the bag sits in front of it.
+        let kernel = width * 0.40
+        let cream = ParkPalette.colour(.cream)
+        let gold = ParkPalette.colour(.yellow)
+        for index in 0..<3 {
+            let spot = CGRect(x: left + width * (0.04 + 0.28 * CGFloat(index)),
+                              y: top - kernel * (index == 1 ? 0.78 : 0.48),
+                              width: kernel, height: kernel)
+            (index == 1 ? gold : cream).setFill()
+            UIBezierPath(ovalIn: spot).fill()
+        }
+
+        UIColor.white.setFill()
+        bag.fill()
+
+        let red = ParkPalette.colour(.red)
+        let stripeWidth = width * 0.22
+        let context = UIGraphicsGetCurrentContext()
+        for fraction in [0.24, 0.56] as [CGFloat] {
+            let stripe = UIBezierPath(rect: CGRect(x: left + width * fraction,
+                                                   y: top, width: stripeWidth, height: height))
+            context?.saveGState()
+            bag.addClip()
+            red.setFill()
+            stripe.fill()
+            context?.restoreGState()
+        }
+
+        UIColor.black.withAlphaComponent(0.32).setStroke()
+        bag.lineWidth = max(0.5, body.width * 0.05)
+        bag.stroke()
     }
 
     // MARK: - Prizes

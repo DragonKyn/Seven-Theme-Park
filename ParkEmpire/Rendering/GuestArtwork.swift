@@ -32,6 +32,7 @@ enum GuestArtwork {
                         age: AgeCategory,
                         mood: GuestMood,
                         prize: GuestPrize? = nil,
+                        popcorn: Bool = false,
                         height: CGFloat) -> SKTexture {
         let size = CGSize(width: height * aspect * PersonArtwork.supersample,
                           height: height * PersonArtwork.supersample)
@@ -41,11 +42,12 @@ enum GuestArtwork {
             + "-\(appearance.accessory.rawValue)"
             + "-\(age.rawValue)-\(mood.rawValue)-\(Int(size.height))"
             + "-\(prize.map { "\($0.kind.rawValue)\($0.colour.rawValue)\($0.size.rawValue)" } ?? "none")"
+            + (popcorn ? "-corn" : "")
 
         if let cached = cache[key] { return cached }
 
         let texture = SpriteFactory.render(size: size) { context, size in
-            PersonArtwork.draw(look(for: appearance, age: age, mood: mood, prize: prize),
+            PersonArtwork.draw(look(for: appearance, age: age, mood: mood, prize: prize, popcorn: popcorn),
                                tint: moodColour(mood),
                                context: context,
                                size: size)
@@ -63,7 +65,8 @@ enum GuestArtwork {
     private static func look(for appearance: GuestAppearance,
                              age: AgeCategory,
                              mood: GuestMood,
-                             prize: GuestPrize?) -> PersonArtwork.Look {
+                             prize: GuestPrize?,
+                             popcorn: Bool) -> PersonArtwork.Look {
         // Children are shorter and seniors slightly stooped, drawn as a scale
         // rather than as separate artwork.
         let heightScale: CGFloat
@@ -111,7 +114,8 @@ enum GuestArtwork {
             pattern: appearance.pattern,
             accessory: appearance.accessory,
             expression: expression,
-            prize: prize)
+            prize: prize,
+            popcorn: popcorn)
     }
 
     private static func moodColour(_ mood: GuestMood) -> UIColor {

@@ -663,6 +663,25 @@ enum GameContent {
             appearance: BuildingAppearance(.burgerStall, .red, .amber, .brown)
         ),
         FacilityDefinition(
+            id: "shop.popcorn",
+            displayName: "Popcorn Cart",
+            summary: "Bags of popcorn that guests carry round while they eat. Keep a bin close by: with none near, the empty bag goes on the ground, and the janitors pay for it.",
+            kind: .food,
+            purchasePrice: 800,
+            defaultPrice: 4,
+            unitCost: 0.8,
+            referencePrice: 5,
+            serviceDuration: 4,
+            simultaneousCapacity: 1,
+            queueCapacity: 8,
+            relief: NeedRelief(hunger: 14, thirst: -16, happiness: 6),
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.popcornCart, .red, .cream, .amber),
+            drawFactor: 1.15,
+            carriesSnack: true
+        ),
+        FacilityDefinition(
             id: "shop.drinks",
             displayName: "Drink Kiosk",
             summary: "Cold drinks. Guests get thirsty faster than they get hungry.",
@@ -876,7 +895,29 @@ enum GameContent {
             relief: NeedRelief(bathroom: 100, happiness: 3),
             footprint: GridSize(2, 2),
             unlockLevel: 1,
-            appearance: BuildingAppearance(.restroom, .cream, .teal, .slate)
+            appearance: BuildingAppearance(.restroom, .cream, .teal, .slate),
+            cleaningMinutes: 15
+        ),
+        FacilityDefinition(
+            id: "facility.luxurybathroom",
+            displayName: "Luxury Washroom",
+            summary: "Marble, attendants and room for a crowd. Guests come out happier, it counts for far more towards the park rating, and it stays cleaner for longer. It also takes a janitor nearly twice as long to turn round, and is shut the whole time.",
+            kind: .bathroom,
+            purchasePrice: 7_500,
+            defaultPrice: 0,
+            unitCost: 0,
+            referencePrice: 0,
+            serviceDuration: 24,
+            simultaneousCapacity: 6,
+            queueCapacity: 20,
+            relief: NeedRelief(bathroom: 100, happiness: 14, nausea: 20),
+            footprint: GridSize(3, 2),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.luxuryRestroom, .cream, .amber, .teal),
+            drawFactor: 1.6,
+            cleaningMinutes: 27,
+            soilingPerUse: 3.2,
+            ratingWeight: 2.5
         ),
         FacilityDefinition(
             id: "facility.bench",
@@ -993,15 +1034,15 @@ enum GameContent {
             onWater: true
         ),
         SceneryDefinition(
-            id: "scenery.ducks",
-            displayName: "Duck Family",
-            summary: "A mallard and her ducklings, or a pair of swans. Guests stop to watch them.",
+            id: "scenery.waterrock",
+            displayName: "Water Rock",
+            summary: "Mossy boulders breaking the surface, with foam at their feet. Makes a pond look as if it has always been there.",
             purchasePrice: 420,
             beauty: 44,
             beautyRadius: 3,
             footprint: GridSize(2, 2),
             unlockLevel: 2,
-            appearance: BuildingAppearance(.duckFamily, .brown, .green, .orange),
+            appearance: BuildingAppearance(.waterRock, .slate, .green, .white),
             onWater: true
         ),
         SceneryDefinition(

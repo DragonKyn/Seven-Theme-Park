@@ -46,6 +46,11 @@ struct FacilityInspectorView: View {
                     StatRow(label: "Queue", value: "\(facility.queueLength) waiting")
                     StatRow(label: "\(facility.visitorNoun) today", value: "\(facility.customersToday)")
                     StatRow(label: "\(facility.visitorNoun) all time", value: "\(facility.totalCustomers)")
+                    if let progress = facility.cleaningProgress {
+                        StatRow(label: "Janitor at work",
+                                value: "\(Int(progress * 100))% cleaned, shut meanwhile",
+                                tint: Theme.accentWarm)
+                    }
                     if let soiling = facility.soiling {
                         StatRow(label: "Condition",
                                 value: soiling > Balance.dirtyFacilityThreshold ? "Needs servicing" : "Fine",

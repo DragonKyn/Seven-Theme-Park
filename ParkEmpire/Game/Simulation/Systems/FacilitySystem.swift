@@ -37,7 +37,7 @@ final class FacilitySystem {
         for guestID in completed {
             guard let guestIndex = state.guestIndex(id: guestID) else { continue }
             applyRelief(definition.relief, guestIndex: guestIndex, state: state)
-            applyAftereffects(kind: definition.kind,
+            applyAftereffects(definition: definition,
                               facilityIndex: facilityIndex,
                               guestIndex: guestIndex,
                               state: state,
@@ -50,12 +50,12 @@ final class FacilitySystem {
 
     /// What using the facility leaves behind: rubbish in the guest's hand, a
     /// dirtier restroom, or a fuller bin.
-    private func applyAftereffects(kind: FacilityKind,
+    private func applyAftereffects(definition: FacilityDefinition,
                                    facilityIndex: Int,
                                    guestIndex: Int,
                                    state: GameState,
                                    now: Double) {
-        switch kind {
+        switch definition.kind {
         case .game:
             playGame(facilityIndex: facilityIndex, guestIndex: guestIndex, state: state, now: now)
 
@@ -67,9 +67,16 @@ final class FacilitySystem {
                                                mood: .negative, at: now)
             }
             state.facilities[facilityIndex].soiling = SimMath.clamp(
-                state.facilities[facilityIndex].soiling + Balance.bathroomSoilPerUse)
+                state.facilities[facilityIndex].soiling + definition.soilingPerUse)
 
         case .food, .drink:
+            // A bag of popcorn is carried and eaten as the guest walks, and
+            // only becomes rubbish once it is empty. That is
+            // `CleanlinessSystem`'s business, so nothing is dropped here.
+            if definition.carriesSnack {
+                state.guests[guestIndex].popcornRemaining = Balance.popcornEatSeconds
+                return
+            }
             guard state.rng.chance(Balance.trashChancePerPurchase) else { return }
             state.guests[guestIndex].carryingTrash = min(3, state.guests[guestIndex].carryingTrash + 1)
             state.guests[guestIndex].trashCarriedFor = 0
@@ -131,7 +138,7 @@ final class FacilitySystem {
                            definition: FacilityDefinition,
                            state: GameState,
                            now: Double) {
-        guard state.facilities[facilityIndex].isOpen,
+        guard state.facilities[facilityIndex].isAcceptingGuests,
               !state.facilities[facilityIndex].isUnusable else { return }
         let facilityID = state.facilities[facilityIndex].id
 

@@ -30,6 +30,10 @@ struct Facility: Codable, Identifiable {
     /// Janitors bring it back down; nothing else does.
     var soiling: Double = 0
     var timesServiced: Int = 0
+    /// Park minutes of cleaning still to do, and how many there were when it
+    /// began. While a janitor is at it the facility is shut.
+    var cleaningRemaining: Double = 0
+    var cleaningTotal: Double = 0
 
     /// Purchased upgrade levels, keyed by `ShopUpgradeKind.rawValue`. Stored
     /// by raw string so a build that drops an upgrade kind still decodes.
@@ -47,6 +51,18 @@ struct Facility: Codable, Identifiable {
     var sentimentCount: Int = 0
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
+
+    /// Shut while a janitor works through it.
+    var isBeingCleaned: Bool { cleaningTotal > 0 }
+
+    /// Open, and not in the middle of being cleaned.
+    var isAcceptingGuests: Bool { isOpen && !isBeingCleaned }
+
+    /// How far through the cleaning it is, 0 to 1.
+    var cleaningProgress: Double? {
+        guard cleaningTotal > 0 else { return nil }
+        return SimMath.clamp(1 - cleaningRemaining / cleaningTotal, 0, 1)
+    }
 
     /// Straight out of the catalogue, without anything the player has bought.
     var baseDefinition: FacilityDefinition? { GameContent.facility(definitionID) }
@@ -117,6 +133,8 @@ extension Facility {
         slots = container.value(.slots, or: [])
         soiling = container.value(.soiling, or: 0)
         timesServiced = container.value(.timesServiced, or: 0)
+        cleaningRemaining = container.value(.cleaningRemaining, or: 0)
+        cleaningTotal = container.value(.cleaningTotal, or: 0)
         upgrades = container.value(.upgrades, or: [:])
         prizesGiven = container.value(.prizesGiven, or: 0)
         customersToday = container.value(.customersToday, or: 0)

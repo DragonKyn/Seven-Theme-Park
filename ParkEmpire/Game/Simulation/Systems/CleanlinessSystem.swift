@@ -22,6 +22,7 @@ final class CleanlinessSystem {
         for index in state.guests.indices {
             guard state.guests[index].isActive else { continue }
             applyLitterDisgust(index: index, state: state, dt: dt)
+            eatPopcorn(index: index, state: state, dt: dt, now: now)
             guard state.guests[index].carryingTrash > 0 else { continue }
             state.guests[index].trashCarriedFor += dt
             let watched = guards.contains {
@@ -33,6 +34,37 @@ final class CleanlinessSystem {
                             hasUsableBin: hasUsableBin,
                             watched: watched,
                             now: now)
+        }
+    }
+
+    /// Working through a bag of popcorn, and what to do with the empty bag.
+    ///
+    /// Somewhere to put it nearby and the guest carries it there like any
+    /// other rubbish. Nowhere near, and it goes on the ground where they are
+    /// standing: that is the whole reason to keep a bin by the cart, and the
+    /// reason a park that sells popcorn needs more janitors.
+    private func eatPopcorn(index: Int, state: GameState, dt: Double, now: Double) {
+        guard state.guests[index].popcornRemaining > 0 else { return }
+        state.guests[index].popcornRemaining -= dt
+        guard state.guests[index].popcornRemaining <= 0 else { return }
+        state.guests[index].popcornRemaining = 0
+
+        let tile = state.guests[index].tile
+        let binNearby = state.facilities.contains { facility -> Bool in
+            guard facility.definition?.kind == .bin, facility.isOpen, !facility.isFull else {
+                return false
+            }
+            let distance = abs(facility.origin.x - tile.x) + abs(facility.origin.y - tile.y)
+            return distance <= Balance.popcornBinRadius
+        }
+
+        if binNearby {
+            state.guests[index].carryingTrash = min(3, state.guests[index].carryingTrash + 1)
+            state.guests[index].trashCarriedFor = 0
+        } else {
+            state.map.addLitter(Balance.popcornLitter, at: tile)
+            state.guests[index].think("No bin near, so the empty bag goes on the ground.",
+                                      mood: .negative, at: now, icon: .dirty)
         }
     }
 
