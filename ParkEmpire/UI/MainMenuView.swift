@@ -232,11 +232,15 @@ struct MainMenuView: View {
         }
     }
 
-    private func firstEmptySlot() -> Int {
+    /// The first slot with nothing in it, or nil when every slot holds a park.
+    ///
+    /// Nil, not slot zero: falling back to a slot that is in use is how a
+    /// player's park gets overwritten by a button they thought was safe.
+    private func firstEmptySlot() -> Int? {
         for slot in 0..<SaveGameService.slotCount where router.slotSummaries[slot] == nil {
             return slot
         }
-        return 0
+        return nil
     }
 }
 
@@ -429,12 +433,17 @@ private struct SaveSlotRow: View {
 private struct NewParkSheet: View {
     @EnvironmentObject private var router: AppRouter
     let summaries: [Int: SaveSlotSummary]
-    let suggestedSlot: Int
+    let suggestedSlot: Int?
     let onStart: (String, GameMode, MapBlueprint, Int) -> Void
 
     @State private var parkName = ""
     @State private var mode: GameMode = .normal
-    @State private var slot = 0
+    /// Nil until a slot is chosen. With every slot full there is nothing to
+    /// suggest, and the player has to say which park to give up.
+    @State private var slot: Int?
+    /// Set when Start was pressed on a slot that holds a park, until the
+    /// player confirms they mean to replace it.
+    @State private var confirmingReplace = false
     @State private var mapID = MapCatalogue.openMeadowID
     /// The map being drawn or edited, if the editor is open. A new map is a
     /// fresh value rather than nil, so one presentation covers both.
@@ -501,14 +510,20 @@ private struct NewParkSheet: View {
                     }
                 }
 
-                Section("Save slot") {
+                Section {
                     Picker("Slot", selection: $slot) {
                         ForEach(0..<SaveGameService.slotCount, id: \.self) { index in
-                            Text(slotLabel(index)).tag(index)
+                            Text(slotLabel(index)).tag(Optional(index))
                         }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
+                } header: {
+                    Text("Save slot")
+                } footer: {
+                    if suggestedSlot == nil {
+                        Text("All three slots are full. Pick the park to replace; you will be asked to confirm before anything is deleted.")
+                    }
                 }
 
                 Section {
@@ -524,11 +539,23 @@ private struct NewParkSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { onStart(parkName, mode, selectedMap, slot) }
+                    Button("Start") { start() }
                         .font(.body.weight(.semibold))
+                        .disabled(slot == nil)
                 }
             }
             .onAppear { slot = suggestedSlot }
+            .alert("Replace this park?",
+                   isPresented: $confirmingReplace) {
+                Button("Replace it", role: .destructive) {
+                    if let slot { onStart(parkName, mode, selectedMap, slot) }
+                }
+                Button("Keep it", role: .cancel) {}
+            } message: {
+                if let slot, let existing = summaries[slot] {
+                    Text("\(existing.parkName) in slot \(slot + 1) will be deleted for good to make room. This cannot be undone.")
+                }
+            }
             .fullScreenCover(item: $editing) { request in
                 MapEditorView(editing: request.map) { saved in
                     router.saveCustomMap(saved)
@@ -562,6 +589,15 @@ private struct NewParkSheet: View {
             return "Trials are started from the Park Trials ladder."
         case .freeBuild:
             return "Build without paying for any of it. The books still record what everything would have cost, so the finance screen still tells you whether the park could support itself."
+        }
+    }
+
+    private func start() {
+        guard let slot else { return }
+        if summaries[slot] != nil {
+            confirmingReplace = true
+        } else {
+            onStart(parkName, mode, selectedMap, slot)
         }
     }
 
