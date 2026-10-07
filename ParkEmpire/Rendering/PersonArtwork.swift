@@ -41,6 +41,8 @@ enum PersonArtwork {
         case topHat
         /// Two floppy points, each with a bell.
         case jesterHat
+        /// A tuft of bright hair standing out each side of the head.
+        case clownWig
     }
 
     /// How the face is drawn. Three states, like the mood pad under the
@@ -77,6 +79,8 @@ enum PersonArtwork {
         var facePaint: UIColor? = nil
         /// Gloves, which replace the skin on the hands.
         var handColour: UIColor? = nil
+        /// A red nose and a painted smile.
+        var clownFace: Bool = false
     }
 
     /// Where the parts of a drawn figure ended up, so a caller can hang a
@@ -178,6 +182,7 @@ enum PersonArtwork {
         hair.fill()
 
         drawFace(look, head: head)
+        drawClownFace(look, head: head)
         drawHeadwear(look, head: head, context: context, size: size)
         drawPrize(look, body: body)
         drawPopcornBag(look, body: body)
@@ -421,6 +426,34 @@ enum PersonArtwork {
         mouth.lineWidth = max(0.5, head.width * 0.075)
         mouth.lineCapStyle = .round
         mouth.stroke()
+    }
+
+    // MARK: - Clowns
+
+    /// A round red nose and a wide painted smile, over whatever the face
+    /// already had.
+    private static func drawClownFace(_ look: Look, head: CGRect) {
+        guard look.clownFace else { return }
+        let red = ParkPalette.colour(.red)
+
+        let smile = UIBezierPath()
+        smile.move(to: CGPoint(x: head.midX - head.width * 0.30, y: head.minY + head.height * 0.68))
+        smile.addQuadCurve(to: CGPoint(x: head.midX + head.width * 0.30,
+                                       y: head.minY + head.height * 0.68),
+                           controlPoint: CGPoint(x: head.midX, y: head.minY + head.height * 1.02))
+        smile.lineCapStyle = .round
+        red.setStroke()
+        smile.lineWidth = max(0.8, head.width * 0.10)
+        smile.stroke()
+
+        let nose = head.width * 0.26
+        let spot = CGRect(x: head.midX - nose / 2, y: head.minY + head.height * 0.46,
+                          width: nose, height: nose)
+        red.setFill()
+        UIBezierPath(ovalIn: spot).fill()
+        UIColor.white.withAlphaComponent(0.65).setFill()
+        UIBezierPath(ovalIn: CGRect(x: spot.minX + nose * 0.18, y: spot.minY + nose * 0.14,
+                                    width: nose * 0.26, height: nose * 0.26)).fill()
     }
 
     // MARK: - Balloons
@@ -788,6 +821,19 @@ enum PersonArtwork {
                               width: crown.width, height: head.height * 0.14)
             ParkPalette.colour(.red).setFill()
             UIBezierPath(rect: band).fill()
+
+        case .clownWig:
+            let colour = look.headwearColour
+            colour.setFill()
+            let tuft = head.width * 0.34
+            let spots: [(CGFloat, CGFloat)] = [(0.58, 0.20), (0.66, 0.46), (0.52, -0.02)]
+            for side in [-1.0, 1.0] as [CGFloat] {
+                for spot in spots {
+                    UIBezierPath(ovalIn: CGRect(x: head.midX + side * head.width * spot.0 - tuft / 2,
+                                                y: head.minY + head.height * spot.1 - tuft / 2,
+                                                width: tuft, height: tuft)).fill()
+                }
+            }
 
         case .jesterHat:
             for side in [-1.0, 1.0] as [CGFloat] {

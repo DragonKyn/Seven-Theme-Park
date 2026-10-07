@@ -100,7 +100,10 @@ enum StaffArtwork {
             drawWrench(layout: layout, size: size, context: context)
         case .entertainer:
             switch look.act {
-            case .classic: drawBalloons(layout: layout, size: size)
+            case .classic: drawMegaphone(layout: layout)
+            case .clown:
+                drawClownCollar(layout: layout)
+                drawHorn(layout: layout)
             case .balloonArtist: drawBalloonBunch(layout: layout)
             case .mime: break
             // The balls are not painted: they are sprites of their own, so
@@ -122,7 +125,7 @@ enum StaffArtwork {
         switch look.act {
         case .classic: return ParkPalette.colour(uniform)
         case .magician: return ParkPalette.colour(.cream)
-        case .balloonArtist, .mime, .juggler: return ParkPalette.colour(look.primary)
+        case .clown, .balloonArtist, .mime, .juggler: return ParkPalette.colour(look.primary)
         }
     }
 
@@ -133,6 +136,8 @@ enum StaffArtwork {
         var pattern = GuestAppearance.ShirtPattern.plain
         var facePaint: UIColor?
         var handColour: UIColor?
+        var clownFace = false
+        var bottoms = ParkPalette.colour(.charcoal)
 
         switch role {
         case .janitor:
@@ -148,6 +153,14 @@ enum StaffArtwork {
             case .classic:
                 headwear = .partyHat
                 headwearColour = ParkPalette.colour(.red)
+            case .clown:
+                headwear = .clownWig
+                headwearColour = ParkPalette.colour(.orange)
+                pattern = .vest
+                facePaint = ParkPalette.colour(.white)
+                handColour = ParkPalette.colour(.white)
+                clownFace = true
+                bottoms = ParkPalette.colour(.yellow)
             case .balloonArtist:
                 headwear = .cap
                 headwearColour = ParkPalette.colour(.white)
@@ -183,12 +196,13 @@ enum StaffArtwork {
             heightScale: figureScale(for: look),
             // Work trousers, the same for everybody: the uniform is the
             // shirt, and that is what the park's colour is for.
-            bottoms: ParkPalette.colour(.charcoal),
+            bottoms: bottoms,
             pattern: pattern,
             accessory: role == .security ? .sunglasses : GuestAppearance.Accessory.none,
             expression: role == .entertainer ? .happy : .neutral,
             facePaint: facePaint,
-            handColour: handColour)
+            handColour: handColour,
+            clownFace: clownFace)
     }
 
     // MARK: - Tools
@@ -360,34 +374,5 @@ enum StaffArtwork {
         UIColor.black.setFill()
         UIBezierPath(ovalIn: jaw.insetBy(dx: jaw.width * 0.30, dy: jaw.height * 0.26)).fill()
         context.restoreGState()
-    }
-
-    /// Two balloons on strings, drifting off the shoulder.
-    private static func drawBalloons(layout: PersonArtwork.Layout, size: CGSize) {
-        let unit = layout.body.width
-        let anchor = CGPoint(x: layout.body.maxX + unit * 0.08, y: layout.body.midY)
-        let balloons: [(CGFloat, CGFloat, ParkColour)] = [
-            (0.34, 0.62, .red),
-            (0.62, 0.30, .yellow)
-        ]
-
-        for (dx, dy, colour) in balloons {
-            let centre = CGPoint(x: anchor.x + unit * dx,
-                                 y: layout.head.minY - unit * dy)
-
-            let string = UIBezierPath()
-            string.move(to: anchor)
-            string.addQuadCurve(to: centre,
-                                controlPoint: CGPoint(x: anchor.x, y: centre.y))
-            UIColor.white.withAlphaComponent(0.75).setStroke()
-            string.lineWidth = max(0.5, unit * 0.05)
-            string.stroke()
-
-            let side = unit * 0.52
-            ParkPalette.colour(colour).setFill()
-            UIBezierPath(ovalIn: CGRect(x: centre.x - side / 2,
-                                        y: centre.y - side / 2,
-                                        width: side, height: side * 1.15)).fill()
-        }
     }
 }

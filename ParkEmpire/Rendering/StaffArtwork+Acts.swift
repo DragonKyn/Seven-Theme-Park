@@ -10,6 +10,113 @@ import UIKit
 /// hat, a cape and a wand.
 extension StaffArtwork {
 
+    /// A red megaphone held up and out to one side, with the sound coming out of
+    /// it. Something that reads at a glance at this size: a cone, a bright
+    /// colour, and a few arcs in front of it.
+    static func drawMegaphone(layout: PersonArtwork.Layout) {
+        let unit = layout.body.width
+        let grip = CGPoint(x: layout.body.maxX + unit * 0.10,
+                           y: layout.body.minY + layout.body.height * 0.48)
+        let run = unit * 0.62
+        let rise = -unit * 0.50
+        let length = (run * run + rise * rise).squareRoot()
+        let direction = CGPoint(x: run / length, y: rise / length)
+        let across = CGPoint(x: -direction.y, y: direction.x)
+        let mouth = CGPoint(x: grip.x + run, y: grip.y + rise)
+
+        let narrow = unit * 0.07
+        let wide = unit * 0.25
+        let cone = UIBezierPath()
+        cone.move(to: CGPoint(x: grip.x + across.x * narrow, y: grip.y + across.y * narrow))
+        cone.addLine(to: CGPoint(x: mouth.x + across.x * wide, y: mouth.y + across.y * wide))
+        cone.addLine(to: CGPoint(x: mouth.x - across.x * wide, y: mouth.y - across.y * wide))
+        cone.addLine(to: CGPoint(x: grip.x - across.x * narrow, y: grip.y - across.y * narrow))
+        cone.close()
+        ParkPalette.colour(.red).setFill()
+        cone.fill()
+        UIColor.black.withAlphaComponent(0.32).setStroke()
+        cone.lineWidth = max(0.6, unit * 0.05)
+        cone.stroke()
+
+        // A white band near the wide end.
+        let bandAt = CGPoint(x: mouth.x - direction.x * unit * 0.16, y: mouth.y - direction.y * unit * 0.16)
+        let band = UIBezierPath()
+        band.move(to: CGPoint(x: bandAt.x + across.x * wide * 0.80, y: bandAt.y + across.y * wide * 0.80))
+        band.addLine(to: CGPoint(x: bandAt.x - across.x * wide * 0.80, y: bandAt.y - across.y * wide * 0.80))
+        UIColor.white.setStroke()
+        band.lineWidth = max(1, unit * 0.10)
+        band.stroke()
+
+        // The opening, seen end on.
+        let opening = UIBezierPath(ovalIn: CGRect(x: -wide, y: -unit * 0.07,
+                                                  width: wide * 2, height: unit * 0.14))
+        opening.apply(CGAffineTransform(rotationAngle: atan2(across.y, across.x)))
+        opening.apply(CGAffineTransform(translationX: mouth.x, y: mouth.y))
+        ParkPalette.colour(.charcoal).setFill()
+        opening.fill()
+
+        // The handle in the hand.
+        let handle = UIBezierPath(ovalIn: CGRect(x: grip.x - unit * 0.08, y: grip.y - unit * 0.08,
+                                                 width: unit * 0.16, height: unit * 0.16))
+        ParkPalette.colour(.charcoal).setFill()
+        handle.fill()
+
+        // Sound, as two arcs coming off the mouth.
+        let heading = atan2(direction.y, direction.x)
+        let centre = CGPoint(x: mouth.x + direction.x * unit * 0.06, y: mouth.y + direction.y * unit * 0.06)
+        UIColor.white.withAlphaComponent(0.9).setStroke()
+        for radius in [unit * 0.26, unit * 0.42] {
+            let arc = UIBezierPath(arcCenter: centre, radius: radius,
+                                   startAngle: heading - 0.55, endAngle: heading + 0.55,
+                                   clockwise: true)
+            arc.lineCapStyle = .round
+            arc.lineWidth = max(0.8, unit * 0.06)
+            arc.stroke()
+        }
+    }
+
+    /// A ruff of white scallops round the neck, which is most of what makes a
+    /// clown a clown from a distance.
+    static func drawClownCollar(layout: PersonArtwork.Layout) {
+        let unit = layout.body.width
+        let diameter = unit * 0.26
+        for step in -2...2 {
+            let x = layout.body.midX + CGFloat(step) * unit * 0.17
+            let y = layout.body.minY + unit * 0.02 + CGFloat(abs(step)) * unit * 0.025
+            let rect = CGRect(x: x - diameter / 2, y: y - diameter / 2, width: diameter, height: diameter)
+            UIColor.white.setFill()
+            UIBezierPath(ovalIn: rect).fill()
+            UIColor.black.withAlphaComponent(0.25).setStroke()
+            let outline = UIBezierPath(ovalIn: rect)
+            outline.lineWidth = max(0.5, unit * 0.04)
+            outline.stroke()
+        }
+    }
+
+    /// A squeaky horn: a black rubber bulb and a gold bell.
+    static func drawHorn(layout: PersonArtwork.Layout) {
+        let unit = layout.body.width
+        let grip = CGPoint(x: layout.body.maxX + unit * 0.08, y: layout.body.midY + unit * 0.12)
+        let tip = CGPoint(x: grip.x + unit * 0.52, y: grip.y - unit * 0.20)
+
+        let bell = UIBezierPath()
+        bell.move(to: CGPoint(x: grip.x, y: grip.y - unit * 0.06))
+        bell.addLine(to: CGPoint(x: tip.x, y: tip.y - unit * 0.22))
+        bell.addLine(to: CGPoint(x: tip.x, y: tip.y + unit * 0.22))
+        bell.addLine(to: CGPoint(x: grip.x, y: grip.y + unit * 0.06))
+        bell.close()
+        ParkPalette.colour(.amber).setFill()
+        bell.fill()
+        UIColor.black.withAlphaComponent(0.32).setStroke()
+        bell.lineWidth = max(0.6, unit * 0.05)
+        bell.stroke()
+
+        let bulb = CGRect(x: grip.x - unit * 0.17, y: grip.y - unit * 0.12,
+                          width: unit * 0.26, height: unit * 0.24)
+        ParkPalette.colour(.charcoal).setFill()
+        UIBezierPath(ovalIn: bulb).fill()
+    }
+
     /// A bunch of balloons in four colours on strings, held up off the shoulder.
     static func drawBalloonBunch(layout: PersonArtwork.Layout) {
         let unit = layout.body.width

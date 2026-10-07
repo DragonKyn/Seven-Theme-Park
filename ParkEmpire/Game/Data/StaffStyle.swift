@@ -8,6 +8,7 @@ import Foundation
 /// uniform is not a mime.
 enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     case classic
+    case clown
     case balloonArtist
     case mime
     case juggler
@@ -18,6 +19,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .classic: return "Entertainer"
+        case .clown: return "Clown"
         case .balloonArtist: return "Balloon Artist"
         case .mime: return "Mime"
         case .juggler: return "Juggler"
@@ -28,7 +30,9 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var summary: String {
         switch self {
         case .classic:
-            return "The all-rounder. Lifts the mood of everyone nearby."
+            return "The all-rounder, with a megaphone and a party hat. Lifts the mood of everyone nearby."
+        case .clown:
+            return "Honks, pratfalls and a very red nose. Children cannot resist, and the lift for them is the biggest of any act."
         case .balloonArtist:
             return "Hands out balloons, children first. Guests carry them round for the rest of the visit."
         case .mime:
@@ -48,6 +52,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var colourLabel: String {
         switch self {
         case .classic: return ""
+        case .clown: return "Suit"
         case .balloonArtist: return "Vest"
         case .mime: return "Stripes"
         case .juggler: return "Costume"
@@ -58,6 +63,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var defaultColour: ParkColour {
         switch self {
         case .classic: return .red
+        case .clown: return .blue
         case .balloonArtist: return .yellow
         case .mime: return .charcoal
         case .juggler: return .green
@@ -71,6 +77,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var radiusFactor: Double {
         switch self {
         case .classic: return 1.0
+        case .clown: return 0.95
         case .balloonArtist: return 0.9
         case .mime: return 0.8
         case .juggler: return 1.15
@@ -82,11 +89,17 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var happinessFactor: Double {
         switch self {
         case .classic: return 1.0
+        case .clown: return 0.8
         case .balloonArtist: return 0.6
         case .mime: return 0.9
         case .juggler: return 1.2
         case .magician: return 0.7
         }
+    }
+
+    /// Multiplies the lift for a child. A clown is for them.
+    var childFactor: Double {
+        self == .clown ? 2.0 : 1.0
     }
 
     /// Multiplies the lift for somebody standing in a queue.
@@ -280,7 +293,7 @@ struct PerformerProfile {
         return PerformerProfile(radius: Balance.entertainerRadius * act.radiusFactor,
                                 happinessFactor: act.happinessFactor,
                                 queueFactor: act.queueFactor,
-                                childFactor: 1,
+                                childFactor: act.childFactor,
                                 handsOutBalloons: act.handsOutBalloons,
                                 doesTricks: act.doesTricks)
     }
