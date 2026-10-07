@@ -54,6 +54,7 @@ extension GameState {
             map.setBuilding(attraction.id, on: attraction.rect.coords)
 
         case let facilityDefinition as FacilityDefinition:
+            let styles = facilityDefinition.appearance.motif.variantCount
             let facility = Facility(
                 id: UUID(),
                 definitionID: facilityDefinition.id,
@@ -61,6 +62,7 @@ extension GameState {
                 origin: origin,
                 size: facilityDefinition.footprint(rotatedBy: rotation),
                 rotation: rotation,
+                variant: variant ?? (styles > 1 ? rng.int(0...(styles - 1)) : 0),
                 price: facilityDefinition.defaultPrice
             )
             facilities.append(facility)

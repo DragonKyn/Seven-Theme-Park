@@ -15,6 +15,9 @@ struct Facility: Codable, Identifiable {
     var size: GridSize
     /// Quarter turns clockwise, 0 to 3.
     var rotation: Int = 0
+    /// Which cut of the shape was built: a picnic table with or without its
+    /// parasol. Picked when it is placed and kept, exactly as scenery does.
+    var variant: Int = 0
 
     var isOpen: Bool = true
     /// Selling price. Zero for facilities that do not sell anything.
@@ -107,6 +110,7 @@ extension Facility {
         origin = container.value(.origin, or: GridCoord.zero)
         size = container.value(.size, or: GridSize.single)
         rotation = container.value(.rotation, or: 0)
+        variant = container.value(.variant, or: 0)
         isOpen = container.value(.isOpen, or: true)
         price = container.value(.price, or: 0)
         queue = container.value(.queue, or: [])

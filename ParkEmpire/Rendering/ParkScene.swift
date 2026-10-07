@@ -988,6 +988,7 @@ final class ParkScene: SKScene {
                                     origin: facility.origin,
                                     rotation: facility.rotation,
                                     appearance: (facility.definition?.appearance ?? .unknown)
+                                        .withVariant(facility.variant)
                                         .applying(state.scheme),
                                     title: facility.name)
             if facility.isUnusable {
@@ -1080,7 +1081,10 @@ final class ParkScene: SKScene {
     /// of their tile: guests in a queue are fanned out into slots so a line
     /// of them is countable. The selection marker reads this too, so the box
     /// lands on the figure rather than beside it.
-    private func drawPosition(of guest: Guest) -> CGPoint {
+    private func drawPosition(of guest: Guest, state: GameState? = nil) -> CGPoint {
+        if let state, let seat = seatPosition(of: guest, state: state) {
+            return seat
+        }
         var offset = CGPoint.zero
         if case .queueing = guest.activity {
             let slot = guest.queueSlot
@@ -1089,6 +1093,49 @@ final class ParkScene: SKScene {
         }
         return CGPoint(x: (guest.position.x + offset.x) * Self.tileSide,
                        y: (guest.position.y + offset.y) * Self.tileSide)
+    }
+
+    /// Where a guest sitting at a bench or a picnic table is drawn: on the
+    /// seat, not on the path beside it.
+    ///
+    /// The guest's own position is wherever they stopped walking, which is the
+    /// tile next to the furniture. Left there, a table full of people looked
+    /// like a table with a queue standing next to it. Each slot has a seat of
+    /// its own, laid out in the furniture's own orientation and then turned
+    /// with it, so a table turned a quarter has its diners on the right sides.
+    private func seatPosition(of guest: Guest, state: GameState) -> CGPoint? {
+        guard case .engaged(.facility(let id)) = guest.activity,
+              let facility = state.facility(id: id),
+              facility.definition?.kind == .bench,
+              let seat = facility.slots.firstIndex(where: { $0.guestID == guest.id })
+        else { return nil }
+
+        let offsets = Self.seatOffsets(forSeatCount: facility.definition?.simultaneousCapacity ?? 1)
+        var offset = offsets[seat % offsets.count]
+
+        // Quarter turns clockwise, in a map whose y runs up the screen.
+        for _ in 0..<((facility.rotation % 4) + 4) % 4 {
+            offset = CGPoint(x: offset.y, y: -offset.x)
+        }
+
+        let centre = rectCentre(origin: facility.origin, size: facility.size)
+        return CGPoint(x: centre.x + offset.x * Self.tileSide,
+                       y: centre.y + offset.y * Self.tileSide)
+    }
+
+    /// Seat positions in tiles from the middle of the furniture, as it is
+    /// drawn before it is turned. A bench seats its guests side by side; a
+    /// table puts two a side along its benches, which run across the top and
+    /// the bottom of the drawing.
+    private static func seatOffsets(forSeatCount count: Int) -> [CGPoint] {
+        if count >= 4 {
+            return [CGPoint(x: -0.20, y: 0.30), CGPoint(x: 0.20, y: 0.30),
+                    CGPoint(x: -0.20, y: -0.30), CGPoint(x: 0.20, y: -0.30)]
+        }
+        if count >= 2 {
+            return [CGPoint(x: -0.18, y: 0.02), CGPoint(x: 0.18, y: 0.02)]
+        }
+        return [CGPoint(x: 0, y: 0.02)]
     }
 
     /// The part of the park the camera can actually see, with a tile of slack
@@ -1121,7 +1168,7 @@ final class ParkScene: SKScene {
         var seen = Set<UUID>()
 
         for guest in state.guests where guest.isActive {
-            let place = drawPosition(of: guest)
+            let place = drawPosition(of: guest, state: state)
             if culls {
                 guard window.contains(place), drawn < budget else { continue }
             }
@@ -1568,7 +1615,7 @@ final class ParkScene: SKScene {
             // rather than hanging over the spot they left. The selection
             // itself is untouched: their panel stays open throughout.
             if let guest = controller.state.guest(id: detail.id), !isInside(guest) {
-                centre = drawPosition(of: guest)
+                centre = drawPosition(of: guest, state: controller.state)
                 size = markerSize(around: Self.guestHeight, aspect: GuestArtwork.aspect)
             }
         case .attraction(let detail):

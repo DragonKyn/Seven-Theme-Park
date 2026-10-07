@@ -22,6 +22,22 @@ enum FacilityKind: String, Codable {
         self == .bench || self == .bin
     }
 
+    /// Kinds whose visits are counted as they begin, because nothing is sold
+    /// to count them by. A bin is left out: a guest dropping a wrapper in one
+    /// is not a visit anybody is trying to measure.
+    var countsVisits: Bool {
+        self == .bathroom || self == .bench
+    }
+
+    /// What a guest using this is called on the inspector.
+    var visitorNoun: String {
+        switch self {
+        case .bathroom: return "Visits"
+        case .bench: return "Guests seated"
+        default: return "Customers"
+        }
+    }
+
     /// Kinds that get dirty or fill up and need a janitor's attention.
     var needsServicing: Bool {
         self == .bathroom || self == .bin

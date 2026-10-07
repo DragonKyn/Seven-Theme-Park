@@ -126,6 +126,10 @@ enum Balance {
     static let facilityCleanRate: Double = 14
     /// Restrooms above this are unpleasant; above 92 guests refuse to use them.
     static let dirtyFacilityThreshold: Double = 62
+
+    /// How strongly a hungry guest is drawn to a picnic table, on the same
+    /// scale as every other facility's appeal.
+    static let picnicMealDraw: Double = 70
     /// Happiness lost per sim-second standing on completely littered ground,
     /// for a maximally fussy guest.
     static let happinessLitterPenalty: Double = 0.11

@@ -159,6 +159,15 @@ final class FacilitySystem {
                 }
             }
 
+            // A shop counts its customers when it sells to them. Somewhere
+            // that sells nothing never reaches that point, so a restroom
+            // would report nobody had ever used it. Counted as they go in,
+            // so the figure moves while the guest is still there to see.
+            if definition.kind.countsVisits {
+                state.facilities[facilityIndex].customersToday += 1
+                state.facilities[facilityIndex].totalCustomers += 1
+            }
+
             state.facilities[facilityIndex].slots.append(
                 ServiceSlot(guestID: guestID, remaining: definition.serviceDuration))
             state.guests[guestIndex].activity = .engaged(.facility(facilityID))

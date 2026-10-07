@@ -37,15 +37,20 @@ struct FacilityInspectorView: View {
                 }
             }
 
-            SectionCard(title: "Trade") {
+            SectionCard(title: facility.sellsGoods ? "Trade" : "Use") {
                 VStack(spacing: 5) {
                     StatRow(label: "Type", value: facility.typeName)
                     if let interest = controller.guestInterest(in: facility.id) {
                         StatRow(label: "Guests", value: interest)
                     }
                     StatRow(label: "Queue", value: "\(facility.queueLength) waiting")
-                    StatRow(label: "Customers today", value: "\(facility.customersToday)")
-                    StatRow(label: "Customers all time", value: "\(facility.totalCustomers)")
+                    StatRow(label: "\(facility.visitorNoun) today", value: "\(facility.customersToday)")
+                    StatRow(label: "\(facility.visitorNoun) all time", value: "\(facility.totalCustomers)")
+                    if let soiling = facility.soiling {
+                        StatRow(label: "Condition",
+                                value: soiling > Balance.dirtyFacilityThreshold ? "Needs servicing" : "Fine",
+                                tint: soiling > Balance.dirtyFacilityThreshold ? Theme.danger : Theme.accent)
+                    }
                     if facility.isGame {
                         StatRow(label: "Prizes given", value: "\(facility.prizesGiven)")
                     }

@@ -114,7 +114,15 @@ enum FacilityAppeal {
 
         case .bench:
             let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)
-            return 220 * pow(tiredness, 2) + guest.nausea * 0.9
+            var score = 220 * pow(tiredness, 2) + guest.nausea * 0.9
+            // A table that feeds people is somewhere to eat as well as to
+            // rest, so a guest who is peckish sits down at one without having
+            // to be worn out first. A plain bench offers no meal and gets no
+            // such pull.
+            if definition.relief.hunger > 0 {
+                score += Balance.picnicMealDraw * pow(guest.hunger / 100, 1.5)
+            }
+            return score
         }
     }
 
