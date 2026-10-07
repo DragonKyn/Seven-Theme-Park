@@ -24,7 +24,11 @@ enum Balance {
 
     // MARK: - Guests
 
-    static let maxGuests = 420
+    /// The most guests the park will hold at once. The crowd a park actually
+    /// reaches is arrivals times how long they stay, so this is the ceiling
+    /// and `maxArrivalsPerMinute` is what sets the usual size: at 24 a minute
+    /// and a ten minute visit, a park at its best sits near this number.
+    static let maxGuests = 250
     /// Tiles per sim-second.
     static let guestWalkSpeed: Double = 1.6
     static let guestWalkSpeedVariance: Double = 0.25
@@ -86,7 +90,10 @@ enum Balance {
     // MARK: - Demand
 
     /// Upper bound on arrivals per sim-minute at a perfect park.
-    static let maxArrivalsPerMinute: Double = 11
+    static let maxArrivalsPerMinute: Double = 24
+    /// How many rides' worth of appeal count towards demand. Parks are large,
+    /// and a park with a dozen rides should draw more than one with seven.
+    static let maxAttractionAppeal: Double = 10
     /// Arrivals a brand-new park with one gentle ride can expect.
     static let baseArrivalsPerMinute: Double = 1.6
     /// How much admission guests tolerate before demand collapses, per ride.

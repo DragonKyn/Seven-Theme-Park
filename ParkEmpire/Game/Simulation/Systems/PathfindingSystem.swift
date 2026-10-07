@@ -17,7 +17,11 @@ final class PathfindingSystem {
 
     private var cache: [[GridCoord]: [Int]] = [:]
     private var cachedGeneration: Int = -1
-    private let maxCachedFields = 64
+    /// Every ride, shop and wander spot a guest weighs up is a field of its
+    /// own. With a crowd this size there are more of them in play than a small
+    /// cache holds, and a cache that empties itself every few decisions is a
+    /// cache that does the work again.
+    private let maxCachedFields = 160
 
     /// Drops cached fields when the walkable layout has changed.
     private func invalidateIfNeeded(_ map: ParkMap) {

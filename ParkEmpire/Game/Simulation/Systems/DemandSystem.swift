@@ -41,7 +41,7 @@ final class DemandSystem {
             guard let definition = attraction.definition else { continue }
             attractionScore += 0.35 + definition.excitement / 100
         }
-        attractionScore = min(attractionScore, 6)
+        attractionScore = min(attractionScore, Balance.maxAttractionAppeal)
 
         let facilityBonus = min(1.0, Double(state.facilities.count) * 0.12)
         let appeal = Balance.baseArrivalsPerMinute + attractionScore * 1.6 + facilityBonus
