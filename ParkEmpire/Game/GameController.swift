@@ -18,6 +18,9 @@ final class GameController: ObservableObject {
     /// Where the current drag last laid a tile, so the next one can be joined
     /// to it.
     private var lastPaintedTile: GridCoord?
+    /// The last place the player asked the map to show them. Read by the scene
+    /// every frame and never published: nothing in the interface depends on it.
+    private(set) var cameraRequest: CameraRequest?
     @Published private(set) var alerts: [ParkAlert] = []
     @Published var build = BuildState()
     @Published var pendingDemolition: PendingDemolition?
@@ -559,9 +562,86 @@ final class GameController: ObservableObject {
 
     func focus(on target: ParkTarget) {
         switch target {
-        case .attraction(let id): selection = makeSelection(.attraction(id))
-        case .facility(let id): selection = makeSelection(.facility(id))
+        case .attraction(let id):
+            selection = makeSelection(.attraction(id))
+            if let attraction = state.attraction(id: id) {
+                lookAt(tile: centre(of: attraction.rect))
+            }
+        case .facility(let id):
+            selection = makeSelection(.facility(id))
+            if let facility = state.facility(id: id) {
+                lookAt(tile: centre(of: facility.rect))
+            }
         default: break
+        }
+    }
+
+    /// Takes the player to an employee in the park and selects them, so they
+    /// can be looked at and improved without being hunted for on the map.
+    func focusStaff(id: UUID) {
+        guard let member = state.staffMember(id: id) else { return }
+        selection = makeSelection(.staff(id))
+        lookAt(tile: member.position)
+    }
+
+    /// Asks the map to bring a place into view. The scene picks the request up
+    /// on its next frame; a request is a new value each time, so asking for
+    /// the same place twice still moves the camera back to it.
+    private func centre(of rect: GridRect) -> CGPoint {
+        CGPoint(x: CGFloat(rect.origin.x) + CGFloat(rect.size.width) / 2,
+                y: CGFloat(rect.origin.y) + CGFloat(rect.size.height) / 2)
+    }
+
+    private func lookAt(tile: CGPoint) {
+        cameraRequest = CameraRequest(point: tile)
+    }
+
+    /// Removes whatever is selected, if it is something that can be removed.
+    ///
+    /// Always asks first for a ride or a facility: the button sits in the panel
+    /// the player is reading, a long way from the remove tool they chose on
+    /// purpose, and a ride is not something to lose to a stray tap.
+    func removeSelected() {
+        guard let identity = selection?.identity else { return }
+
+        let coord: GridCoord
+        let name: String
+        let alwaysAsk: Bool
+        switch identity {
+        case .attraction(let id):
+            guard let attraction = state.attraction(id: id) else { return }
+            coord = attraction.origin
+            name = attraction.name
+            alwaysAsk = true
+        case .facility(let id):
+            guard let facility = state.facility(id: id) else { return }
+            coord = facility.origin
+            name = facility.name
+            alwaysAsk = true
+        case .scenery(let id):
+            guard let item = state.scenery.first(where: { $0.id == id }) else { return }
+            coord = item.origin
+            name = item.definition?.displayName ?? "this decoration"
+            alwaysAsk = false
+        case .guest, .staff:
+            return
+        }
+
+        let refund = state.demolitionRefund(at: coord)
+        if alwaysAsk || refund >= 500 {
+            pendingDemolition = PendingDemolition(coord: coord, name: name, refund: refund)
+        } else {
+            _ = state.demolish(at: coord)
+            selection = nil
+            refreshUI()
+        }
+    }
+
+    /// Whether the selection is something the Remove button applies to.
+    var canRemoveSelected: Bool {
+        switch selection?.identity {
+        case .attraction, .facility, .scenery: return true
+        default: return false
         }
     }
 
@@ -1128,6 +1208,12 @@ struct PendingPlacement: Equatable {
     let definitionID: String
     var origin: GridCoord
     var rotation: Int
+}
+
+/// Somewhere the camera has been asked to go, in tile coordinates.
+struct CameraRequest: Equatable {
+    let id = UUID()
+    let point: CGPoint
 }
 
 struct PendingDemolition: Identifiable {

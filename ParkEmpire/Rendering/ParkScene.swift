@@ -130,6 +130,12 @@ final class ParkScene: SKScene {
     private var dragAnchor: GridCoord?
     private var dragOrigin: GridCoord?
 
+    /// How close the camera comes when taken to somebody or something, and how
+    /// long the glide takes.
+    private static let focusCameraScale: CGFloat = 0.8
+    private static let focusDuration: TimeInterval = 0.45
+    private static let focusActionKey = "focus"
+    private var handledCameraRequest: UUID?
     private static let minCameraScale: CGFloat = 0.4
     private static let maxCameraScale: CGFloat = 2.6
 
@@ -253,6 +259,8 @@ final class ParkScene: SKScene {
         guard let view else { return }
         switch recognizer.state {
         case .began:
+            // A finger on the map ends any glide still under way.
+            cameraNode.removeAction(forKey: Self.focusActionKey)
             cameraPanStart = cameraNode.position
         case .changed:
             let translation = recognizer.translation(in: view)
@@ -422,7 +430,28 @@ final class ParkScene: SKScene {
         if isInteractive {
             syncGhost(controller: controller)
             syncSelection(controller: controller)
+            applyCameraRequest(controller: controller)
         }
+    }
+
+    /// Glides the camera to somewhere the player asked to be taken, and in
+    /// close enough to see who or what is there. Never pulls back out: a
+    /// player already zoomed in on a detail meant to be.
+    private func applyCameraRequest(controller: GameController) {
+        guard let request = controller.cameraRequest, request.id != handledCameraRequest else {
+            return
+        }
+        handledCameraRequest = request.id
+
+        let target = CGPoint(x: request.point.x * Self.tileSide,
+                             y: request.point.y * Self.tileSide)
+        let scale = min(cameraNode.xScale, Self.focusCameraScale)
+
+        let move = SKAction.move(to: target, duration: Self.focusDuration)
+        let zoom = SKAction.scale(to: max(scale, Self.minCameraScale), duration: Self.focusDuration)
+        move.timingMode = .easeInEaseOut
+        zoom.timingMode = .easeInEaseOut
+        cameraNode.run(.group([move, zoom]), withKey: Self.focusActionKey)
     }
 
     /// Drops every building and every piece of scenery when the park's

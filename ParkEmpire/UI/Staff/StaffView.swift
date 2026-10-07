@@ -53,7 +53,8 @@ struct StaffView: View {
                     }
                 }
 
-                Section("On the payroll") {
+                Section(header: Text("On the payroll"),
+                        footer: Text("Tap an employee to go to them in the park.")) {
                     if controller.state.staff.isEmpty {
                         Text("Nobody hired yet.")
                             .font(.footnote)
@@ -61,19 +62,30 @@ struct StaffView: View {
                     } else {
                         ForEach(controller.state.staff) { member in
                             HStack {
-                                Image(systemName: member.definition?.symbolName ?? "person.fill")
-                                    .foregroundStyle(.tint)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(member.name)
-                                        .font(.subheadline)
-                                    Text(StaffDetail.describe(member.activity, state: controller.state))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                                // Everything but the fire button takes you to them.
+                                Button {
+                                    controller.focusStaff(id: member.id)
+                                    dismiss()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: member.definition?.symbolName ?? "person.fill")
+                                            .foregroundStyle(.tint)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(member.name)
+                                                .font(.subheadline)
+                                            Text(StaffDetail.describe(member.activity, state: controller.state))
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Text("\(member.tasksCompleted) done")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .contentShape(Rectangle())
                                 }
-                                Spacer()
-                                Text("\(member.tasksCompleted) done")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                .buttonStyle(.plain)
+
                                 Button(role: .destructive) {
                                     controller.fireStaff(id: member.id)
                                 } label: {

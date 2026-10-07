@@ -12,6 +12,16 @@ struct InspectorHostView: View {
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
+                if controller.canRemoveSelected {
+                    Button {
+                        controller.removeSelected()
+                    } label: {
+                        Label("Remove", systemImage: "trash")
+                            .font(.system(.caption, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.danger)
+                    }
+                    .padding(.trailing, 8)
+                }
                 Button {
                     controller.clearSelection()
                 } label: {
