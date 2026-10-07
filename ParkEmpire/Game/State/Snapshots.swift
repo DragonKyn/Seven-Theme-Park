@@ -398,7 +398,7 @@ struct StaffDetail: Identifiable {
             let job = member.currentJob.map { describe(job: $0, state: state) } ?? "their job"
             return transfer.boarded ? "Riding the train to \(job)" : "Waiting for the train to \(job)"
         }
-        if case .working(.goTo) = member.activity { return "Holding the spot you sent them to" }
+        if case .working(.goTo) = member.activity { return "Holding the spot you moved them to" }
         return describe(member.activity, state: state)
     }
 
@@ -427,7 +427,7 @@ struct StaffDetail: Identifiable {
         case .inspectRide(let id):
             return "inspecting \(state.attraction(id: id)?.name ?? "a ride")"
         case .goTo:
-            return "the spot you sent them to"
+            return "the spot you moved them to"
         case .entertain:
             return "entertaining the crowd"
         case .patrol:

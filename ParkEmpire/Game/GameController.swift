@@ -856,9 +856,9 @@ final class GameController: ObservableObject {
         return true
     }
 
-    // MARK: - Sending staff somewhere
+    // MARK: - Moving staff
 
-    /// Starts choosing a destination for the selected employee.
+    /// Starts choosing where to move the selected employee to.
     func beginMovingStaff() {
         guard case .staff(let id) = selection?.identity else { return }
         build = BuildState()

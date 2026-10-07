@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shown while the player is choosing where to send an employee. One line:
+/// Shown while the player is choosing where to move an employee to. One line:
 /// what to do, and the two ways out of it.
 struct StaffMoveBar: View {
     @ObservedObject var controller: GameController
@@ -13,8 +13,8 @@ struct StaffMoveBar: View {
                 .foregroundStyle(Theme.accent)
 
             Text(controller.pendingStaffMove == nil
-                 ? "Tap a walkway to send \(name)"
-                 : "Send \(name) to the marked spot?")
+                 ? "Tap a walkway to move \(name)"
+                 : "Move \(name) to the marked spot?")
                 .font(.system(.footnote, design: .rounded).weight(.semibold))
                 .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1)
@@ -31,7 +31,7 @@ struct StaffMoveBar: View {
             Button {
                 controller.confirmStaffMove()
             } label: {
-                Text("Send")
+                Text("Move")
                     .font(.system(.footnote, design: .rounded).weight(.bold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)

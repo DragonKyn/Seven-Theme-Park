@@ -16,7 +16,7 @@ struct InspectorHostView: View {
                     Button {
                         controller.beginMovingStaff()
                     } label: {
-                        Label("Send", systemImage: "location.fill")
+                        Label("Move", systemImage: "location.fill")
                             .font(.system(.caption, design: .rounded).weight(.bold))
                             .foregroundStyle(Theme.accent)
                     }
