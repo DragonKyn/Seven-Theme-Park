@@ -235,6 +235,26 @@ final class GameController: ObservableObject {
         return pendingDefinition?.canRotate ?? false
     }
 
+    /// Whether the thing chosen in the menu can be turned before it is put
+    /// down. Separate from `canRotate`, which is about a placement that is
+    /// already waiting: a one-tile piece goes down on a tap and never waits,
+    /// so its direction has to be chosen beforehand.
+    var canTurnSelection: Bool {
+        guard build.isActive, !build.isDemolishing, build.pending == nil else { return false }
+        return selectedDefinition?.canRotate ?? false
+    }
+
+    /// What the next thing placed will face, for the label on the turn button.
+    var facingName: String {
+        ["Up", "Right", "Down", "Left"][((build.rotation % 4) + 4) % 4]
+    }
+
+    func turnSelection() {
+        guard canTurnSelection else { return }
+        build.rotation = (build.rotation + 1) % 4
+        updateGhost(at: build.ghost)
+    }
+
     /// The ground the current selection would take up, turned. The preview and
     /// the placement rules both read this so they can never disagree.
     var ghostFootprint: GridSize {
@@ -307,7 +327,7 @@ final class GameController: ObservableObject {
     /// meant to make.
     private func needsConfirmation(_ definition: BuildableDefinition) -> Bool {
         guard !(definition is TerrainDefinition) else { return false }
-        return definition.canRotate || definition.footprint.tileCount > 1
+        return definition.footprint.tileCount > 1
     }
 
     var pendingDefinition: BuildableDefinition? {

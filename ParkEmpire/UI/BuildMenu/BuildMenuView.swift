@@ -42,7 +42,8 @@ struct BuildMenuView: View {
                 itemStrip
             }
 
-            if !controller.build.isDemolishing && controller.styleCount > 1 {
+            if !controller.build.isDemolishing
+                && (controller.styleCount > 1 || controller.canTurnSelection) {
                 styleChips
             }
 
@@ -199,13 +200,34 @@ struct BuildMenuView: View {
     private var styleChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                styleChip(nil, title: "Mixed")
-                ForEach(Array(0..<controller.styleCount), id: \.self) { index in
-                    styleChip(index, title: "Style \(index + 1)")
+                if controller.canTurnSelection {
+                    turnChip
+                }
+                if controller.styleCount > 1 {
+                    styleChip(nil, title: "Mixed")
+                    ForEach(Array(0..<controller.styleCount), id: \.self) { index in
+                        styleChip(index, title: "Style \(index + 1)")
+                    }
                 }
             }
             .padding(.vertical, 1)
         }
+    }
+
+    /// Turns what is about to be placed a quarter, and says which way it now
+    /// faces, because a one-tile piece shows no preview to read that from.
+    private var turnChip: some View {
+        Button {
+            controller.turnSelection()
+        } label: {
+            Label("Turn · \(controller.facingName)", systemImage: "rotate.right")
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .padding(.horizontal, 9)
+                .frame(height: 26)
+                .foregroundStyle(Color.black)
+                .background(Capsule().fill(Theme.accentWarm))
+        }
+        .buttonStyle(.plain)
     }
 
     private func styleChip(_ variant: Int?, title: String) -> some View {

@@ -52,6 +52,7 @@ extension GameState {
             )
             attractions.append(attraction)
             map.setBuilding(attraction.id, on: attraction.rect.coords)
+            clearGround(of: attraction.rect)
 
         case let facilityDefinition as FacilityDefinition:
             let styles = facilityDefinition.appearance.motif.variantCount
@@ -69,6 +70,7 @@ extension GameState {
             map.setBuilding(facility.id,
                             on: facility.rect.coords,
                             blocking: !facilityDefinition.kind.isFurniture)
+            if !facilityDefinition.kind.isFurniture { clearGround(of: facility.rect) }
 
         case let elementDefinition as CoasterElementDefinition:
             let element = TrackElement(
@@ -102,7 +104,7 @@ extension GameState {
             scenery.append(item)
             map.setBuilding(item.id,
                             on: item.rect.coords,
-                            blocking: !sceneryDefinition.mayStandOnWalkway)
+                            blocking: !sceneryDefinition.leavesWalkwayOpen)
             refreshBeauty()
 
         default:
@@ -111,6 +113,47 @@ extension GameState {
 
         ledger.spend(price(of: definition), on: .construction)
         return true
+    }
+
+    /// Deals with whatever was on the ground a building has just been put on.
+    ///
+    /// A building can be built over a walkway, which means there may be people
+    /// standing on it and rubbish lying on it. Neither can stay: a guest
+    /// inside a wall is stuck, and rubbish nobody can reach is rubbish no
+    /// janitor will ever clear.
+    private func clearGround(of rect: GridRect) {
+        for coord in rect.coords where map.tile(at: coord)?.isWalkable == false {
+            map.clearLitter(at: coord)
+        }
+
+        func nearestWalkway(to coord: GridCoord) -> GridCoord? {
+            for radius in 1...Balance.buildOverEvictionRadius {
+                for dy in -radius...radius {
+                    for dx in -radius...radius where max(abs(dx), abs(dy)) == radius {
+                        let candidate = GridCoord(coord.x + dx, coord.y + dy)
+                        if map.isWalkable(candidate) && !rect.contains(candidate) { return candidate }
+                    }
+                }
+            }
+            return nil
+        }
+
+        for index in guests.indices where rect.contains(guests[index].tile) {
+            guard let tile = nearestWalkway(to: guests[index].tile) else { continue }
+            guests[index].tile = tile
+            guests[index].position = tile.centre
+            guests[index].route = []
+            guests[index].activity = .exploring
+            guests[index].nextDecisionAt = clock.simTime
+        }
+
+        for index in staff.indices where rect.contains(staff[index].tile) {
+            guard let tile = nearestWalkway(to: staff[index].tile) else { continue }
+            staff[index].tile = tile
+            staff[index].position = tile.centre
+            staff[index].route = []
+            staff[index].activity = .idle
+        }
     }
 
     /// Rebuilds the tile beauty field from everything currently placed.

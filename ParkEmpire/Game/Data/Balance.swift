@@ -127,6 +127,10 @@ enum Balance {
     /// Restrooms above this are unpleasant; above 92 guests refuse to use them.
     static let dirtyFacilityThreshold: Double = 62
 
+    /// How far from a new building, in tiles, anybody it was put on top of is
+    /// moved to find a walkway to stand on.
+    static let buildOverEvictionRadius: Int = 8
+
     /// How strongly a hungry guest is drawn to a picnic table, on the same
     /// scale as every other facility's appeal.
     static let picnicMealDraw: Double = 70

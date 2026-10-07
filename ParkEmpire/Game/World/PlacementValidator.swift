@@ -101,8 +101,12 @@ enum PlacementValidator {
                 }
             }
         } else {
-            guard map.isAreaBuildable(rect) else {
+            // Bare grass, or pavement to be built over.
+            guard map.isAreaClearGround(rect) else {
                 return .invalid("Something is in the way")
+            }
+            if !definition.leavesWalkwayOpen && map.wouldStrandWalkways(by: rect) {
+                return .invalid("That would cut the walkway in two")
             }
             if definition.requiresPathAccess && map.accessTiles(for: rect).isEmpty {
                 return .invalid("Needs to touch a walkway")

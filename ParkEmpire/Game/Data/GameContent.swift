@@ -969,6 +969,66 @@ enum GameContent {
             appearance: BuildingAppearance(.flowerBed, .pink, .yellow, .brown)
         ),
         SceneryDefinition(
+            id: "scenery.lilypads",
+            displayName: "Lily Pads",
+            summary: "Floats on the water. A pond with nothing on it looks empty; this fixes that cheaply.",
+            purchasePrice: 260,
+            beauty: 28,
+            beautyRadius: 2,
+            footprint: GridSize(2, 2),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.lilyPads, .green, .pink, .lime),
+            onWater: true
+        ),
+        SceneryDefinition(
+            id: "scenery.reeds",
+            displayName: "Reeds",
+            summary: "A stand of cattails for the water. Small, cheap, and a pond looks wrong without them.",
+            purchasePrice: 140,
+            beauty: 22,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.reeds, .green, .brown, .lime),
+            onWater: true
+        ),
+        SceneryDefinition(
+            id: "scenery.ducks",
+            displayName: "Duck Family",
+            summary: "A mallard and her ducklings, or a pair of swans. Guests stop to watch them.",
+            purchasePrice: 420,
+            beauty: 44,
+            beautyRadius: 3,
+            footprint: GridSize(2, 2),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.duckFamily, .brown, .green, .orange),
+            onWater: true
+        ),
+        SceneryDefinition(
+            id: "scenery.waterlanterns",
+            displayName: "Floating Lanterns",
+            summary: "Paper lanterns drifting on the pond. Best seen at the end of the day.",
+            purchasePrice: 380,
+            beauty: 40,
+            beautyRadius: 2,
+            footprint: GridSize(2, 1),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.floatingLanterns, .red, .amber, .cream),
+            onWater: true
+        ),
+        SceneryDefinition(
+            id: "scenery.pondfountain",
+            displayName: "Pond Fountain",
+            summary: "A stone ring and a jet, set in the water itself. The showpiece of a pond.",
+            purchasePrice: 1_600,
+            beauty: 66,
+            beautyRadius: 3,
+            footprint: GridSize(2, 2),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.pondFountain, .slate, .cream, .sand),
+            onWater: true
+        ),
+        SceneryDefinition(
             id: "scenery.lamp",
             displayName: "Park Lamp",
             summary: "Modest on its own, but it tidies up a long stretch of walkway.",

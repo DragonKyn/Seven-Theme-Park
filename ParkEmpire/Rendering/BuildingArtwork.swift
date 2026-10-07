@@ -103,6 +103,11 @@ enum BuildingArtwork {
         case .lamp:      drawLamp(context, size, primary, secondary, accent, variant)
         case .topiary:   drawTopiary(context, size, primary, secondary, accent, variant)
         case .statue:    drawStatue(context, size, primary, secondary, accent, variant)
+        case .lilyPads:  drawLilyPads(context, size, primary, secondary, accent, variant)
+        case .reeds:     drawReeds(context, size, primary, secondary, accent, variant)
+        case .duckFamily: drawDuckFamily(context, size, primary, secondary, accent, variant)
+        case .floatingLanterns: drawFloatingLanterns(context, size, primary, secondary, accent, variant)
+        case .pondFountain: drawPondFountainBasin(context, size, primary, secondary, accent, variant)
         case .hedge:     drawHedge(context, size, primary, secondary, accent, variant)
         case .picnicTable: drawPicnicTable(context, size, primary, secondary, accent, variant)
         case .flagPole:  drawFlagPole(context, size, primary, secondary, accent, variant)
@@ -186,7 +191,7 @@ enum BuildingArtwork {
             case .slingshot: drawCapsule(context, size, primary, secondary, accent)
             case .carpetSlide: drawMat(context, size, primary, secondary, accent)
             case .hauntedHouse: drawGhost(context, size, primary, secondary, accent)
-            case .fountain:  drawFountainJet(context, size, primary, secondary, accent)
+            case .fountain, .pondFountain: drawFountainJet(context, size, primary, secondary, accent)
             case .moleGame:  drawMole(context, size, variant)
             case .strengthTester: drawStrikerPuck(context, size, accent)
             default:         break
@@ -253,7 +258,7 @@ enum BuildingArtwork {
             return CGSize(width: buildingSize.width * 0.16, height: buildingSize.height * 0.12)
         case .hauntedHouse:
             return CGSize(width: shortest * 0.20, height: shortest * 0.26)
-        case .fountain:
+        case .fountain, .pondFountain:
             return CGSize(width: shortest * 0.30, height: shortest * 0.42)
         case .moleGame:
             return CGSize(width: shortest * 0.15, height: shortest * 0.17)

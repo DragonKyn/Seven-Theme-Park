@@ -168,6 +168,16 @@ enum BuildingMotif: String, Codable {
     case topiary
     /// Carved figure on a plinth.
     case statue
+    /// Round pads and a blossom or two, for a pond.
+    case lilyPads
+    /// A stand of tall stems with cattail heads, for a pond.
+    case reeds
+    /// A mallard and her ducklings, or a pair of swans, on the water.
+    case duckFamily
+    /// Paper lanterns afloat, lit from inside.
+    case floatingLanterns
+    /// A stone ring in the water with a jet at its heart.
+    case pondFountain
 
     /// How many different ways this shape is drawn. One is the usual answer;
     /// scenery is where variety is worth the drawing.
@@ -180,6 +190,11 @@ enum BuildingMotif: String, Codable {
         case .statue: return 3
         case .lamp: return 2
         case .fountain: return 2
+        case .lilyPads: return 3
+        case .reeds: return 3
+        case .duckFamily: return 2
+        case .floatingLanterns: return 2
+        case .pondFountain: return 2
         case .hedge: return 3
         case .picnicTable: return 2
         case .flagPole: return 3
@@ -223,7 +238,7 @@ enum BuildingMotif: String, Codable {
         case .carpetSlide: return .slide
         case .hauntedHouse: return .hover
         case .wavePool: return .surf
-        case .fountain: return .bob
+        case .fountain, .pondFountain: return .bob
         // The two booths with something to watch. The rest are a backdrop for
         // the guests standing at them.
         case .moleGame: return .pop
@@ -239,7 +254,8 @@ enum BuildingMotif: String, Codable {
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,
              .basketballGame, .waterRaceGame, .balloonGame, .targetGame, .ringTossGame,
-             .tree, .conifer, .flowerBed, .lamp, .topiary, .statue:
+             .tree, .conifer, .flowerBed, .lamp, .topiary, .statue,
+             .lilyPads, .reeds, .duckFamily, .floatingLanterns:
             return .none
         }
     }

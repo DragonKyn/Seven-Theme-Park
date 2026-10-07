@@ -21,8 +21,18 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     /// Whether this is something a guest walks under. An arch over a path is
     /// the point of an arch; a tree over a path is a tree in the way.
     var spansWalkway: Bool = false
+    /// Whether this belongs on the water rather than the ground: lily pads,
+    /// reeds and the rest of what makes a pond look lived in.
+    var onWater: Bool = false
 
     var category: BuildCategory { .scenery }
+
+    var bedTerrain: TerrainType? { onWater ? .water : nil }
+
+    /// Decoration never closes a path it is put on. Guests walk past a flower
+    /// bed on the pavement, and a row of lamps down the middle of a walkway
+    /// should not turn it into a wall.
+    var leavesWalkwayOpen: Bool { true }
 
     var previewAppearance: BuildingAppearance? { appearance }
 

@@ -88,6 +88,9 @@ protocol BuildableDefinition {
     /// Whether it may be built on the walkway itself without closing it. An
     /// arch over a path is the whole point of an arch.
     var mayStandOnWalkway: Bool { get }
+    /// Whether it can stand on a walkway without closing it. Decoration is
+    /// this: a flower bed on the pavement is walked past, not walked round.
+    var leavesWalkwayOpen: Bool { get }
     /// Whether placing this lays coaster track under itself.
     var laysCoasterTrack: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
@@ -103,10 +106,16 @@ extension BuildableDefinition {
         footprint.rotated(by: quarterTurns)
     }
 
-    /// Turning a one-tile object achieves nothing, and turning terrain is
-    /// meaningless, so the build menu only offers it where it does something.
+    /// Everything but terrain can be turned, square or not. A one-tile bench
+    /// has a front, a statue has a face, and a ride with a square footprint
+    /// still has an entrance, so being the same size every way round is no
+    /// reason to refuse. Track pieces are the exception: they join to their
+    /// neighbours at fixed edges, and turning a square one would only break
+    /// the join.
     var canRotate: Bool {
-        !(self is TerrainDefinition) && footprint.width != footprint.height
+        if self is TerrainDefinition { return false }
+        if laysCoasterTrack { return footprint.width != footprint.height }
+        return true
     }
 
     var requiresPathAccess: Bool { true }
@@ -115,6 +124,7 @@ extension BuildableDefinition {
     var bedTerrain: TerrainType? { nil }
     var maySitBesideBed: Bool { false }
     var mayStandOnWalkway: Bool { false }
+    var leavesWalkwayOpen: Bool { false }
     var laysCoasterTrack: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }
