@@ -9,6 +9,17 @@ enum StaffRole: String, Codable, CaseIterable, Identifiable {
     case mascot
 
     var id: String { rawValue }
+
+    /// For headings and filters: "Janitors", "Mascots".
+    var pluralName: String {
+        switch self {
+        case .janitor: return "Janitors"
+        case .mechanic: return "Mechanics"
+        case .entertainer: return "Entertainers"
+        case .security: return "Security"
+        case .mascot: return "Mascots"
+        }
+    }
 }
 
 /// Static configuration for one kind of employee.
