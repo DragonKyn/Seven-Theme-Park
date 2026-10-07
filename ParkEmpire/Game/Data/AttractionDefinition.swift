@@ -166,6 +166,11 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
         )
     }
 
+    /// Never upside down. A ride or a shop turned through half a turn looks
+    /// as if it has been dropped from a height, and there is nothing to gain
+    /// from it: a quarter turn either way is the whole of what turning is for.
+    var allowedTurns: [Int] { [0, 1, 3] }
+
     var previewAppearance: BuildingAppearance? { appearance }
 
     /// Coarse label used in the build menu and ride inspector.

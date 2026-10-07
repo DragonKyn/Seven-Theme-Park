@@ -91,6 +91,8 @@ protocol BuildableDefinition {
     /// Whether it can stand on a walkway without closing it. Decoration is
     /// this: a flower bed on the pavement is walked past, not walked round.
     var leavesWalkwayOpen: Bool { get }
+    /// Quarter turns this can be put at, in the order they are cycled through.
+    var allowedTurns: [Int] { get }
     /// Whether placing this lays coaster track under itself.
     var laysCoasterTrack: Bool { get }
     /// Artwork for the build-menu thumbnail. Walkways have none: they are
@@ -118,6 +120,21 @@ extension BuildableDefinition {
         return true
     }
 
+    /// The next turn after `current`. A building that was saved at a turn it
+    /// can no longer be put at goes to the first one it can.
+    func nextTurn(after current: Int) -> Int {
+        let turns = allowedTurns
+        guard let index = turns.firstIndex(of: ((current % 4) + 4) % 4) else {
+            return turns.first ?? 0
+        }
+        return turns[(index + 1) % turns.count]
+    }
+
+    /// `current` if this can stand at it, otherwise the nearest it can.
+    func settledTurn(_ current: Int) -> Int {
+        allowedTurns.contains(((current % 4) + 4) % 4) ? current : (allowedTurns.first ?? 0)
+    }
+
     var requiresPathAccess: Bool { true }
     var requiresTrackAccess: Bool { false }
     var requiresCoasterTrackAccess: Bool { false }
@@ -125,6 +142,7 @@ extension BuildableDefinition {
     var maySitBesideBed: Bool { false }
     var mayStandOnWalkway: Bool { false }
     var leavesWalkwayOpen: Bool { false }
+    var allowedTurns: [Int] { [0, 1, 2, 3] }
     var laysCoasterTrack: Bool { false }
     var previewAppearance: BuildingAppearance? { nil }
 }

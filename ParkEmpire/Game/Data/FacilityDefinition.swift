@@ -136,6 +136,13 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
         kind.isFurniture
     }
 
+    /// Never upside down. A shop or a restroom turned through half a turn looks
+    /// as if it has been dropped from a height, and there is nothing to gain
+    /// from it: a quarter turn either way is the whole of what turning is for.
+    /// Park furniture is the exception: it is drawn from above and reads
+    /// the same any way up.
+    var allowedTurns: [Int] { kind.isFurniture ? [0, 1, 2, 3] : [0, 1, 3] }
+
     var previewAppearance: BuildingAppearance? { appearance }
 
     var profitPerSale: Double { defaultPrice - unitCost }

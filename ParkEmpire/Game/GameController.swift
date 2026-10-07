@@ -264,7 +264,7 @@ final class GameController: ObservableObject {
 
     func turnSelection() {
         guard canTurnSelection else { return }
-        build.rotation = (build.rotation + 1) % 4
+        build.rotation = selectedDefinition?.nextTurn(after: build.rotation) ?? 0
         updateGhost(at: build.ghost)
     }
 
@@ -281,6 +281,9 @@ final class GameController: ObservableObject {
         build.pending = nil
         build.variant = nil
         build.colour = nil
+        // Carried over from the last thing chosen, which may have been
+        // turned somewhere this one is not allowed to go.
+        if let chosen = selectedDefinition { build.rotation = chosen.settledTurn(build.rotation) }
         if !canDraw { build.isDrawing = false }
     }
 
@@ -392,7 +395,7 @@ final class GameController: ObservableObject {
         guard var pending = build.pending,
               let definition = pendingDefinition,
               definition.canRotate else { return }
-        pending.rotation = (pending.rotation + 1) % 4
+        pending.rotation = definition.nextTurn(after: pending.rotation)
         // Carried into the next placement, so a row of benches all face the
         // same way without being turned one at a time.
         build.rotation = pending.rotation

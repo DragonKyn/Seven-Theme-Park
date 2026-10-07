@@ -27,7 +27,7 @@ extension GameState {
         guard let index = sceneryIndex(id: id),
               let definition = scenery[index].definition else { return false }
         let item = scenery[index]
-        let next = (item.rotation + 1) % 4
+        let next = definition.nextTurn(after: item.rotation)
 
         guard refit(definition,
                     id: id,
@@ -46,7 +46,7 @@ extension GameState {
         guard let index = facilityIndex(id: id),
               let definition = facilities[index].baseDefinition else { return false }
         let facility = facilities[index]
-        let next = (facility.rotation + 1) % 4
+        let next = definition.nextTurn(after: facility.rotation)
         let blocking = !definition.kind.isFurniture
 
         guard refit(definition,
@@ -72,7 +72,7 @@ extension GameState {
         guard let index = attractionIndex(id: id),
               let definition = GameContent.attraction(attractions[index].definitionID) else { return false }
         let attraction = attractions[index]
-        let next = (attraction.rotation + 1) % 4
+        let next = definition.nextTurn(after: attraction.rotation)
 
         guard refit(definition,
                     id: id,
