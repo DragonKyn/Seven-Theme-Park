@@ -55,6 +55,21 @@ struct Staff: Codable, Identifiable {
 
     var resolvedAct: EntertainerAct { act ?? .classic }
 
+    /// What to call them: the job, and for the two jobs that come in kinds,
+    /// which kind. "Entertainer · Magician", "Park Mascot · Frog".
+    var roleTitle: String {
+        let base = definition?.displayName ?? role.rawValue.capitalized
+        switch role {
+        case .entertainer:
+            let kind = resolvedAct == .classic ? "Classic" : resolvedAct.displayName
+            return "\(base) · \(kind)"
+        case .mascot:
+            return "\(base) · \((costume ?? .bear).displayName)"
+        case .janitor, .mechanic, .security:
+            return base
+        }
+    }
+
     var style: StaffStyle {
         StaffStyle(act: act, costume: costume,
                    primary: primaryColour, secondary: secondaryColour, trim: trimColour)

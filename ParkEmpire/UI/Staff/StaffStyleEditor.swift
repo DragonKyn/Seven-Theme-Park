@@ -78,9 +78,12 @@ struct StaffStyleEditor: View {
             colourRow("Bow tie and shoes", current: look.trim) { style.trim = $0 }
 
             Button("Back to the original colours") {
-                style.primary = nil
-                style.secondary = nil
-                style.trim = nil
+                // One change, not three: see `costumeButton`.
+                var next = style
+                next.primary = nil
+                next.secondary = nil
+                next.trim = nil
+                style = next
             }
             .font(.footnote.weight(.semibold))
         }
@@ -91,10 +94,17 @@ struct StaffStyleEditor: View {
         let sample = StaffStyle(costume: costume).look(for: .mascot)
         return Button {
             // A new costume comes in its own colours.
-            style.costume = costume
-            style.primary = nil
-            style.secondary = nil
-            style.trim = nil
+            //
+            // All at once, as one change. Made one field at a time, each
+            // change was built from the employee as the panel last saw them,
+            // which is not yet the employee with the previous change in it, so
+            // the second change put the old costume back.
+            var next = style
+            next.costume = costume
+            next.primary = nil
+            next.secondary = nil
+            next.trim = nil
+            style = next
         } label: {
             VStack(spacing: 2) {
                 Image(uiImage: StaffArtwork.previewImage(for: sample, uniform: uniform,
@@ -151,8 +161,10 @@ struct StaffStyleEditor: View {
         let selected = look.act == act
         let sample = StaffStyle(act: act).look(for: .entertainer)
         return Button {
-            style.act = act
-            style.primary = nil
+            var next = style
+            next.act = act
+            next.primary = nil
+            style = next
         } label: {
             VStack(spacing: 2) {
                 Image(uiImage: StaffArtwork.previewImage(for: sample, uniform: uniform,

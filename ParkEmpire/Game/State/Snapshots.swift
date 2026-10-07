@@ -382,7 +382,7 @@ struct StaffDetail: Identifiable {
 
         id = staff.id
         name = staff.name
-        roleName = staff.definition?.displayName ?? staff.role.rawValue.capitalized
+        roleName = staff.roleTitle
         symbolName = staff.definition?.symbolName ?? "person.fill"
         tasksCompleted = staff.tasksCompleted
         dailyWage = staff.dailyWage

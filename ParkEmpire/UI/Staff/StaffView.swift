@@ -43,8 +43,9 @@ struct StaffView: View {
                             VStack(spacing: 4) {
                                 Text("\(controller.state.staffCount(role: definition.role))")
                                     .font(.system(.body, design: .rounded).weight(.bold))
-                                Button(definition.role == .mascot || definition.role == .entertainer
-                                       ? "Choose…" : "Hire") {
+                                // Mascots and entertainers come in kinds, so hiring one
+                                // goes to the screen where the kind is chosen.
+                                Button("Hire") {
                                     if definition.role == .mascot || definition.role == .entertainer {
                                         hiring = definition.role
                                     } else {
@@ -80,6 +81,9 @@ struct StaffView: View {
                                         VStack(alignment: .leading, spacing: 1) {
                                             Text(member.name)
                                                 .font(.subheadline)
+                                            Text(member.roleTitle)
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(.tint)
                                             Text(StaffDetail.describe(member.activity, state: controller.state))
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
