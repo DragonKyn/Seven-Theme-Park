@@ -52,6 +52,38 @@ struct StaffInspectorView: View {
                 }
             }
 
+            HStack(spacing: 8) {
+                Button {
+                    controller.beginMovingStaff()
+                } label: {
+                    Label("Send somewhere", systemImage: "location.fill")
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Theme.accent)
+                        )
+                        .foregroundStyle(.black)
+                }
+
+                if member.isOnOrders {
+                    Button {
+                        controller.releaseStaff(id: member.id)
+                    } label: {
+                        Label("Back to work", systemImage: "arrow.uturn.backward")
+                            .font(.system(.footnote, design: .rounded).weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 9)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Theme.control)
+                            )
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                }
+            }
+
             Button(role: .destructive) {
                 controller.fireStaff(id: member.id)
             } label: {

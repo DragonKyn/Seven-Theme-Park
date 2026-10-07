@@ -185,7 +185,7 @@ struct StaffView: View {
                         Text(member.roleTitle)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.tint)
-                        Text(StaffDetail.describe(member.activity, state: controller.state))
+                        Text(StaffDetail.describe(member, state: controller.state))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

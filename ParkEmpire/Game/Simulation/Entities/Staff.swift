@@ -13,6 +13,8 @@ enum StaffJob: Codable, Hashable {
     case entertain(GridCoord)
     /// Security stand at a spot and keep an eye on it.
     case patrol(GridCoord)
+    /// Go somewhere the player chose and stay there for a while.
+    case goTo(GridCoord)
     /// Security walk down a particular guest and see them off the premises.
     /// The only job whose destination moves while it is being travelled to.
     case escort(UUID)
@@ -52,6 +54,22 @@ struct Staff: Codable, Identifiable {
     var primaryColour: ParkColour?
     var secondaryColour: ParkColour?
     var trimColour: ParkColour?
+
+    /// Part way through a journey that includes the train, or nil.
+    var transfer: StaffTransfer?
+    /// Something the player told them to do, which they do before choosing
+    /// anything for themselves.
+    var orders: StaffJob?
+
+    /// Hidden from the map while on the train.
+    var isOnTrain: Bool { transfer?.boarded == true }
+
+    /// Sent somewhere by the player, and still on the way or holding there.
+    var isOnOrders: Bool {
+        if orders != nil { return true }
+        if case .goTo = currentJob { return true }
+        return false
+    }
 
     var resolvedAct: EntertainerAct { act ?? .classic }
 
@@ -132,6 +150,8 @@ extension Staff {
         nextJobSearchAt = container.value(.nextJobSearchAt, or: 0)
         tasksCompleted = container.value(.tasksCompleted, or: 0)
         trainingLevel = container.value(.trainingLevel, or: 0)
+        transfer = container.optionalValue(.transfer)
+        orders = container.optionalValue(.orders)
         act = container.optionalValue(.act)
         costume = container.optionalValue(.costume)
         primaryColour = container.optionalValue(.primaryColour)

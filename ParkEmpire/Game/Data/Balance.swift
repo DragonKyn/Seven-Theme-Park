@@ -231,6 +231,18 @@ enum Balance {
     static let staffWalkSpeed: Double = 1.9
     /// Sim-seconds between an idle staff member looking for work.
     static let staffJobSearchInterval: Double = 2.5
+    // MARK: - Staff and the train
+
+    /// What a train journey is worth when comparing it with a walk, in tiles,
+    /// on top of the walking at either end.
+    static let staffTrainTiles = 30
+    /// Sim-seconds on the platform, then on the train.
+    static let staffTrainWait: Double = 6
+    static let staffTrainRide: Double = 10
+    /// Sim-seconds an employee holds a spot they were sent to, before they go
+    /// back to choosing their own work.
+    static let staffPostHold: Double = 90
+
     // MARK: - Performers
 
     /// A mascot works a wider circle, harder, and is a hit with children.

@@ -18,6 +18,10 @@ final class GameController: ObservableObject {
     /// Where the current drag last laid a tile, so the next one can be joined
     /// to it.
     private var lastPaintedTile: GridCoord?
+    /// The employee the player is choosing a destination for, and where they
+    /// have tapped so far, waiting to be confirmed.
+    @Published private(set) var movingStaffID: UUID?
+    @Published private(set) var pendingStaffMove: GridCoord?
     /// The last place the player asked the map to show them. Read by the scene
     /// every frame and never published: nothing in the interface depends on it.
     private(set) var cameraRequest: CameraRequest?
@@ -454,6 +458,13 @@ final class GameController: ObservableObject {
     /// A tap on the map. In build mode it places or removes; otherwise it
     /// inspects whatever is under the finger.
     func handleTap(at coord: GridCoord, guestID: UUID?, staffID: UUID? = nil) {
+        // Choosing where to send somebody: every tap is an answer to that, not
+        // a tap on whatever happens to be under it.
+        if movingStaffID != nil {
+            stageStaffMove(at: coord)
+            return
+        }
+
         if build.isActive {
             if build.isDemolishing {
                 requestDemolition(at: coord)
@@ -845,6 +856,66 @@ final class GameController: ObservableObject {
         return true
     }
 
+    // MARK: - Sending staff somewhere
+
+    /// Starts choosing a destination for the selected employee.
+    func beginMovingStaff() {
+        guard case .staff(let id) = selection?.identity else { return }
+        build = BuildState()
+        movingStaffID = id
+        pendingStaffMove = nil
+    }
+
+    func cancelStaffMove() {
+        movingStaffID = nil
+        pendingStaffMove = nil
+    }
+
+    /// Marks a spot, for the player to confirm or change their mind about.
+    private func stageStaffMove(at coord: GridCoord) {
+        guard state.map.isWalkable(coord) else {
+            notice = "Staff can only stand on a walkway."
+            return
+        }
+        pendingStaffMove = coord
+    }
+
+    func confirmStaffMove() {
+        guard let id = movingStaffID,
+              let coord = pendingStaffMove,
+              let index = state.staff.firstIndex(where: { $0.id == id }) else {
+            cancelStaffMove()
+            return
+        }
+
+        // Whatever they were doing is dropped, and the order is what they
+        // pick up next. They hold the spot for a while, then go back to
+        // choosing their own work.
+        state.staff[index].activity = .idle
+        state.staff[index].route = []
+        state.staff[index].transfer = nil
+        state.staff[index].orders = .goTo(coord)
+        state.staff[index].nextJobSearchAt = state.clock.simTime
+
+        cancelStaffMove()
+        refreshUI()
+    }
+
+    /// Sends somebody who was told to hold a spot back to their usual work.
+    func releaseStaff(id: UUID) {
+        guard let index = state.staff.firstIndex(where: { $0.id == id }) else { return }
+        state.staff[index].activity = .idle
+        state.staff[index].route = []
+        state.staff[index].transfer = nil
+        state.staff[index].orders = nil
+        state.staff[index].nextJobSearchAt = state.clock.simTime
+        refreshUI()
+    }
+
+    var movingStaffName: String? {
+        movingStaffID.flatMap { state.staffMember(id: $0)?.name }
+    }
+
     /// Changes how an entertainer or a mascot looks.
     func setStaffStyle(id: UUID, style: StaffStyle) {
         guard let index = state.staff.firstIndex(where: { $0.id == id }) else { return }
@@ -864,6 +935,7 @@ final class GameController: ObservableObject {
     }
 
     func fireStaff(id: UUID) {
+        if movingStaffID == id { cancelStaffMove() }
         state.staff.removeAll { $0.id == id }
         if case .staff(let selectedID) = selection?.identity, selectedID == id {
             selection = nil

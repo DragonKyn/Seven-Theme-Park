@@ -48,7 +48,10 @@ struct GameView: View {
                 Spacer(minLength: 0)
 
                 VStack(spacing: 8) {
-                    if let selection = controller.selection {
+                    if controller.movingStaffID != nil {
+                        StaffMoveBar(controller: controller)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else if let selection = controller.selection {
                         InspectorHostView(selection: selection, controller: controller)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }

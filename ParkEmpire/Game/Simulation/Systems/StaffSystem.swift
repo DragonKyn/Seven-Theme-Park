@@ -11,6 +11,17 @@ final class StaffSystem {
 
     private let pathfinder: PathfindingSystem
 
+    /// Which stretches of walkway join, worked out once per change to the map
+    /// and shared by every employee's job search.
+    private var islandCache: (generation: Int, labels: [Int])?
+
+    private func islandLabels(_ map: ParkMap) -> [Int] {
+        if let cached = islandCache, cached.generation == map.generation { return cached.labels }
+        let labels = StaffTransit.islands(in: map)
+        islandCache = (map.generation, labels)
+        return labels
+    }
+
     init(pathfinder: PathfindingSystem) {
         self.pathfinder = pathfinder
     }
@@ -29,9 +40,17 @@ final class StaffSystem {
             case .idle:
                 guard now >= state.staff[index].nextJobSearchAt else { continue }
                 state.staff[index].nextJobSearchAt = now + Balance.staffJobSearchInterval
-                if let job = findJob(staffIndex: index, state: state, map: map, claimed: claimed),
-                   beginTravel(to: job, staffIndex: index, state: state, map: map) {
+
+                // What the player asked for comes before anything the employee
+                // would have picked for themselves.
+                let ordered = state.staff[index].orders
+                state.staff[index].orders = nil
+                let job = ordered ?? findJob(staffIndex: index, state: state, map: map, claimed: claimed)
+
+                if let job, beginTravel(to: job, staffIndex: index, state: state, map: map) {
                     claimed.insert(job)
+                } else if let ordered {
+                    stand(staffIndex: index, order: ordered, state: state, map: map)
                 }
 
             case .travelling(let job):
@@ -133,14 +152,26 @@ final class StaffSystem {
         // Distances from this employee to everywhere, in one sweep.
         let field = pathfinder.distanceField(to: [member.tile], in: map)
 
-        func distance(to coord: GridCoord) -> Int? {
+        // Somewhere only reachable by train still counts, for the jobs that
+        // can be done from the far side of it.
+        let transit = StaffTransit(state: state, field: field, labels: islandLabels(map))
+
+        func walkingDistance(to coord: GridCoord) -> Int? {
             guard map.isWalkable(coord) else { return nil }
             let value = field[map.linearIndex(of: coord)]
             return value == PathfindingSystem.unreachable ? nil : value
         }
 
+        func distance(to coord: GridCoord) -> Int? {
+            if let walk = walkingDistance(to: coord) { return walk }
+            guard map.isWalkable(coord) else { return nil }
+            return transit?.plan(to: [coord])?.cost
+        }
+
         func nearestAccess(_ rect: GridRect) -> Int? {
-            map.accessTiles(for: rect).compactMap { distance(to: $0) }.min()
+            let tiles = map.accessTiles(for: rect)
+            if let walk = tiles.compactMap({ walkingDistance(to: $0) }).min() { return walk }
+            return transit?.plan(to: tiles)?.cost
         }
 
         switch member.role {
@@ -224,7 +255,7 @@ final class StaffSystem {
                        && TroublemakerSystem.isNoticed($0, at: now)
                        && !claimed.contains(.escort($0.id))
                }),
-               distance(to: target.tile) != nil {
+               walkingDistance(to: target.tile) != nil {
                 return .escort(target.id)
             }
 
@@ -289,23 +320,53 @@ final class StaffSystem {
         let destinations = destinationTiles(for: job, state: state, map: map)
         guard !destinations.isEmpty else { return false }
 
-        if destinations.contains(state.staff[staffIndex].tile) {
+        let tile = state.staff[staffIndex].tile
+        if destinations.contains(tile) {
             state.staff[staffIndex].route = []
+            state.staff[staffIndex].transfer = nil
             startWork(staffIndex: staffIndex, job: job, state: state)
             return true
         }
 
-        let route = pathfinder.route(from: state.staff[staffIndex].tile, to: destinations, in: map)
-        guard !route.isEmpty else { return false }
+        let route = pathfinder.route(from: tile, to: destinations, in: map)
+        if route.isEmpty {
+            // Not on foot. By train, if there is one that goes there.
+            let field = pathfinder.distanceField(to: [tile], in: map)
+            guard let transit = StaffTransit(state: state, field: field, labels: islandLabels(map)),
+                  let hop = transit.plan(to: destinations) else { return false }
 
+            let toPlatform = hop.boarding.contains(tile)
+                ? []
+                : pathfinder.route(from: tile, to: hop.boarding, in: map)
+            guard hop.boarding.contains(tile) || !toPlatform.isEmpty else { return false }
+
+            state.staff[staffIndex].transfer = hop.transfer
+            state.staff[staffIndex].route = toPlatform
+            state.staff[staffIndex].activity = .travelling(job)
+            return true
+        }
+
+        state.staff[staffIndex].transfer = nil
         state.staff[staffIndex].route = route
         state.staff[staffIndex].activity = .travelling(job)
         return true
     }
 
+    /// An order that could not be carried out by walking or riding: there is
+    /// no way there at all. Rather than ignore it, the employee is put on the
+    /// spot, which is also how an employee stranded somewhere is got out.
+    private func stand(staffIndex: Int, order: StaffJob, state: GameState, map: ParkMap) {
+        guard case .goTo(let coord) = order, map.isWalkable(coord) else { return }
+        state.staff[staffIndex].tile = coord
+        state.staff[staffIndex].position = coord.centre
+        state.staff[staffIndex].route = []
+        state.staff[staffIndex].transfer = nil
+        startWork(staffIndex: staffIndex, job: order, state: state)
+    }
+
     private func destinationTiles(for job: StaffJob, state: GameState, map: ParkMap) -> [GridCoord] {
         switch job {
-        case .cleanLitter(let coord), .entertain(let coord), .patrol(let coord):
+        case .cleanLitter(let coord), .entertain(let coord), .patrol(let coord), .goTo(let coord):
             return map.isWalkable(coord) ? [coord] : []
         case .serviceFacility(let id):
             guard let facility = state.facility(id: id) else { return [] }
@@ -329,6 +390,13 @@ final class StaffSystem {
         // to, so it gets its own chase rather than a route planned once.
         if case .escort(let id) = job {
             chase(staffIndex: staffIndex, guestID: id, state: state, map: map, dt: dt, now: now)
+            return
+        }
+
+        // Part of the way by train: the walk to the platform, the wait, the
+        // ride and the step off are all handled together.
+        if state.staff[staffIndex].transfer != nil {
+            travelByTrain(staffIndex: staffIndex, job: job, state: state, map: map, dt: dt, now: now)
             return
         }
 
@@ -357,6 +425,79 @@ final class StaffSystem {
             state.staff[staffIndex].activity = .idle
             state.staff[staffIndex].nextJobSearchAt = now
         }
+    }
+
+    // MARK: - By train
+
+    private func travelByTrain(staffIndex: Int,
+                               job: StaffJob,
+                               state: GameState,
+                               map: ParkMap,
+                               dt: Double,
+                               now: Double) {
+        guard var transfer = state.staff[staffIndex].transfer else { return }
+
+        // The train has to be running to be caught. If it has stopped, or the
+        // station has gone, the journey is off and they look for something
+        // else.
+        guard let station = state.attraction(id: transfer.stationID), station.isOperational else {
+            abandonJourney(staffIndex: staffIndex, state: state, now: now)
+            return
+        }
+
+        if !transfer.boarded {
+            if !state.staff[staffIndex].route.isEmpty {
+                var member = state.staff[staffIndex]
+                let result = Locomotion.advance(position: &member.position,
+                                                tile: &member.tile,
+                                                route: &member.route,
+                                                speed: member.effectiveWalkSpeed,
+                                                dt: dt,
+                                                map: map)
+                state.staff[staffIndex] = member
+                if case .blocked = result {
+                    abandonJourney(staffIndex: staffIndex, state: state, now: now)
+                }
+                return
+            }
+
+            transfer.waiting -= dt
+            if transfer.waiting <= 0 { transfer.boarded = true }
+            state.staff[staffIndex].transfer = transfer
+            return
+        }
+
+        transfer.riding -= dt
+        guard transfer.riding <= 0 else {
+            state.staff[staffIndex].transfer = transfer
+            return
+        }
+
+        // Off the train, and on with the job.
+        state.staff[staffIndex].tile = transfer.landing
+        state.staff[staffIndex].position = transfer.landing.centre
+        state.staff[staffIndex].transfer = nil
+        state.staff[staffIndex].route = []
+
+        let destinations = destinationTiles(for: job, state: state, map: map)
+        if destinations.contains(transfer.landing) {
+            startWork(staffIndex: staffIndex, job: job, state: state)
+            return
+        }
+
+        let route = pathfinder.route(from: transfer.landing, to: destinations, in: map)
+        if route.isEmpty {
+            abandonJourney(staffIndex: staffIndex, state: state, now: now)
+        } else {
+            state.staff[staffIndex].route = route
+        }
+    }
+
+    private func abandonJourney(staffIndex: Int, state: GameState, now: Double) {
+        state.staff[staffIndex].transfer = nil
+        state.staff[staffIndex].route = []
+        state.staff[staffIndex].activity = .idle
+        state.staff[staffIndex].nextJobSearchAt = now
     }
 
     // MARK: - Doing the work
@@ -392,6 +533,8 @@ final class StaffSystem {
         case .serviceFacility(let id):
             state.staff[staffIndex].workTimer = 0
             beginCleaning(facilityID: id, state: state)
+        case .goTo:
+            state.staff[staffIndex].workTimer = Balance.staffPostHold
         case .cleanLitter, .escort:
             state.staff[staffIndex].workTimer = 0
         }
@@ -411,7 +554,7 @@ final class StaffSystem {
             return ride.isBroken || ride.isImpounded
         case .inspectRide(let id):
             return state.attraction(id: id)?.isInspectionOverdue == true
-        case .entertain, .patrol:
+        case .entertain, .patrol, .goTo:
             return true
         case .escort(let id):
             return state.guest(id: id)?.isTroublemaker == true
@@ -487,6 +630,14 @@ final class StaffSystem {
                 TroublemakerSystem.isNoticed(state.guests[$0], at: now)
             } ?? false
             if state.staff[staffIndex].workTimer <= 0 || wanted {
+                finish(staffIndex: staffIndex, state: state, now: now)
+            }
+
+        case .goTo:
+            // Holding the spot they were sent to, until they have been there
+            // long enough to be left to choose their own work again.
+            state.staff[staffIndex].workTimer -= dt
+            if state.staff[staffIndex].workTimer <= 0 {
                 finish(staffIndex: staffIndex, state: state, now: now)
             }
 

@@ -62,6 +62,7 @@ final class ParkScene: SKScene {
     private var guestPrize: [UUID: GuestPrize] = [:]
     private var guestPopcorn: [UUID: Bool] = [:]
     private var guestBalloon: [UUID: ParkColour] = [:]
+    private var moveMarker: SKSpriteNode?
     /// The last thought each guest has already had a bubble for.
     private var shownThought: [UUID: UUID] = [:]
     /// Bubbles currently on screen. Held so the cap can be enforced without a
@@ -435,7 +436,38 @@ final class ParkScene: SKScene {
             syncGhost(controller: controller)
             syncSelection(controller: controller)
             applyCameraRequest(controller: controller)
+            syncMoveMarker(controller: controller)
         }
+    }
+
+    /// A pulsing square on the spot somebody is about to be sent to.
+    private func syncMoveMarker(controller: GameController) {
+        guard let coord = controller.pendingStaffMove else {
+            moveMarker?.isHidden = true
+            return
+        }
+
+        let marker: SKSpriteNode
+        if let existing = moveMarker {
+            marker = existing
+        } else {
+            marker = SKSpriteNode(texture: SpriteFactory.outlineTexture(
+                colour: ParkPalette.previewValid,
+                size: CGSize(width: Self.tileSide, height: Self.tileSide),
+                lineWidth: 5))
+            marker.size = CGSize(width: Self.tileSide, height: Self.tileSide)
+            marker.zPosition = 24
+            let grow = SKAction.scale(to: 1.12, duration: 0.5)
+            let shrink = SKAction.scale(to: 0.94, duration: 0.5)
+            grow.timingMode = .easeInEaseOut
+            shrink.timingMode = .easeInEaseOut
+            marker.run(.repeatForever(.sequence([grow, shrink])))
+            overlayLayer.addChild(marker)
+            moveMarker = marker
+        }
+        marker.isHidden = false
+        marker.position = CGPoint(x: (CGFloat(coord.x) + 0.5) * Self.tileSide,
+                                  y: (CGFloat(coord.y) + 0.5) * Self.tileSide)
     }
 
     /// Glides the camera to somewhere the player asked to be taken, and in
@@ -1452,6 +1484,8 @@ final class ParkScene: SKScene {
 
             node.position = CGPoint(x: member.position.x * Self.tileSide,
                                     y: member.position.y * Self.tileSide)
+            // Out of sight while on the train.
+            node.isHidden = member.isOnTrain
         }
 
         for (id, node) in staffNodes where !seen.contains(id) {

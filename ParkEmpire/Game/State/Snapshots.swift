@@ -367,10 +367,13 @@ struct StaffDetail: Identifiable {
     let role: StaffRole
     /// How an entertainer or a mascot is dressed, for the panel that changes it.
     let style: StaffStyle
+    /// Sent somewhere by the player, for the button that sends them back to work.
+    let isOnOrders: Bool
 
     init(staff: Staff, state: GameState) {
         role = staff.role
         style = staff.style
+        isOnOrders = staff.isOnOrders
         trainingLevel = staff.trainingLevel
         maxTrainingLevel = UpgradeContent.staffTraining.maxLevel
         trainingTitle = staff.trainingTitle
@@ -386,7 +389,17 @@ struct StaffDetail: Identifiable {
         symbolName = staff.definition?.symbolName ?? "person.fill"
         tasksCompleted = staff.tasksCompleted
         dailyWage = staff.dailyWage
-        activityText = StaffDetail.describe(staff.activity, state: state)
+        activityText = StaffDetail.describe(staff, state: state)
+    }
+
+    /// What they are doing, including the parts of a train journey.
+    static func describe(_ member: Staff, state: GameState) -> String {
+        if let transfer = member.transfer {
+            let job = member.currentJob.map { describe(job: $0, state: state) } ?? "their job"
+            return transfer.boarded ? "Riding the train to \(job)" : "Waiting for the train to \(job)"
+        }
+        if case .working(.goTo) = member.activity { return "Holding the spot you sent them to" }
+        return describe(member.activity, state: state)
     }
 
     static func describe(_ activity: StaffActivity, state: GameState) -> String {
@@ -413,6 +426,8 @@ struct StaffDetail: Identifiable {
             return "repairing \(state.attraction(id: id)?.name ?? "a ride")"
         case .inspectRide(let id):
             return "inspecting \(state.attraction(id: id)?.name ?? "a ride")"
+        case .goTo:
+            return "the spot you sent them to"
         case .entertain:
             return "entertaining the crowd"
         case .patrol:
