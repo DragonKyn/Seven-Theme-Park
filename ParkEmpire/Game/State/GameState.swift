@@ -253,19 +253,28 @@ final class GameState: Codable {
             guard let routeIndex = network.routeIndex(touching: attractions[index].rect) else {
                 attractions[index].trackLength = 0
                 attractions[index].trackThrill = 0
+                attractions[index].coaster = nil
                 continue
             }
-            let tiles = Set(network.routes[routeIndex].tiles)
-            attractions[index].trackLength = tiles.count
+            let route = network.routes[routeIndex]
+            let tiles = Set(route.tiles)
+
             // Elements count for far more than the ground they cover, which is
             // the whole reason to pay for one. An element counts once, however
             // many tiles of the circuit it happens to sit on.
-            attractions[index].trackThrill = trackElements.reduce(0) { total, element in
+            let onCircuit = trackElements.compactMap { element -> CoasterElementDefinition? in
                 guard element.rect.coords.contains(where: { tiles.contains($0) }) else {
-                    return total
+                    return nil
                 }
-                return total + (element.definition?.thrill ?? 0)
+                return element.definition
             }
+
+            let rating = CoasterRating.rate(length: tiles.count,
+                                            isLoop: route.isLoop,
+                                            elements: onCircuit)
+            attractions[index].trackLength = tiles.count
+            attractions[index].trackThrill = rating.thrill
+            attractions[index].coaster = rating
         }
     }
 

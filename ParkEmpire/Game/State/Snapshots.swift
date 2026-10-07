@@ -165,8 +165,13 @@ struct AttractionDetail: Identifiable {
     /// The colour the player picked for this one ride, if any.
     let tint: ParkColour?
     let trackLength: Int
+    /// How the player's circuit judges, for the coaster card.
+    let coaster: CoasterRating?
+    let intensityText: String
 
     init(attraction: Attraction) {
+        coaster = attraction.coaster
+        intensityText = AttractionDetail.intensityLabel(attraction.coaster?.intensity ?? 0)
         isCustomCoaster = attraction.baseDefinition?.kind == .custom
         livery = attraction.livery
         carStyle = attraction.carStyle
@@ -216,6 +221,15 @@ struct AttractionDetail: Identifiable {
             nauseaRating = 0
             operatingCostPerCycle = 0
             estimatedWait = 0
+        }
+    }
+
+    private static func intensityLabel(_ intensity: Double) -> String {
+        switch intensity {
+        case ..<15: return "Gentle"
+        case ..<40: return "Moderate"
+        case ..<65: return "Strong"
+        default: return "Extreme"
         }
     }
 

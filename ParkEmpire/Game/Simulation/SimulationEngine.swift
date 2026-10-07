@@ -82,7 +82,12 @@ final class SimulationEngine {
 
         // Cheap enough to test every tick, and it only does the work when the
         // player has actually changed the map.
-        if state.trackedRideGeneration != state.map.generation {
+        // Or when a coaster saved before circuits were rated has not been
+        // rated yet, which is every one of them on the first tick after a load.
+        let unrated = state.attractions.contains {
+            $0.baseDefinition?.kind == .custom && $0.coaster == nil && $0.trackLength > 0
+        }
+        if state.trackedRideGeneration != state.map.generation || unrated {
             state.trackedRideGeneration = state.map.generation
             state.refreshTrackedRides()
         }

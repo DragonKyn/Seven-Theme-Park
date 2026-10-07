@@ -88,6 +88,25 @@ struct AttractionInspectorView: View {
                 SectionCard(title: "Your coaster") {
                     VStack(alignment: .leading, spacing: 9) {
                         StatRow(label: "Track laid", value: "\(attraction.trackLength) tiles")
+                        if let coaster = attraction.coaster {
+                            StatRow(label: "Circuit",
+                                    value: coaster.isLoop ? "Closed loop" : "Open line",
+                                    tint: coaster.isLoop ? Theme.accent : Theme.accentWarm)
+                            StatRow(label: "Elements",
+                                    value: coaster.elementCount == 0
+                                        ? "None"
+                                        : "\(coaster.elementCount), \(coaster.kindCount) kind\(coaster.kindCount == 1 ? "" : "s")")
+                            StatRow(label: "Intensity", value: attraction.intensityText)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(coaster.advice, id: \.self) { note in
+                                    Label(note, systemImage: "lightbulb")
+                                        .font(.system(size: 10, design: .rounded))
+                                        .foregroundStyle(Theme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
 
                         Text("LIVERY")
                             .font(.system(size: 9, weight: .bold, design: .rounded))

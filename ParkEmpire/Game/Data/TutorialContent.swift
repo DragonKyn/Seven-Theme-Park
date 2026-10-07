@@ -184,7 +184,7 @@ enum TutorialContent {
         TutorialTip(
             id: "tip.coaster",
             title: "Build your own coaster",
-            message: "Coaster Builder is a box of parts rather than a shelf of rides. Lay your own track, put a station beside it, and bolt on loops, corkscrews and a jump. The train runs whatever you build, so a longer, wilder circuit is a better ride.",
+            message: "Coaster Builder is a box of parts rather than a shelf of rides. Lay your own track, put a station beside it, and bolt on loops, corkscrews and a jump. The train runs whatever you build, but it is judged as a design: close the circuit, keep it long, mix different elements and leave room between them. Tap the station to see what it makes of yours.",
             symbolName: "point.topleft.down.curvedto.point.bottomright.up",
             priority: 66,
             condition: { $0.rideCount >= 4 }

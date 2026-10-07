@@ -356,7 +356,7 @@ struct BuildMenuView: View {
             return "Drag out a loop of track, then put stations on it. Guests ride between them."
         }
         if controller.build.category == .coaster {
-            return "Drag out a circuit of track, drop elements on to it, then put a station beside it."
+            return "Drag out a closed circuit of track, drop different elements on it with room between them, then put a station beside it. Tap the station to see how the design is judged."
         }
         if controller.build.category == .scenery {
             return "Tap open ground to decorate. Guests are happier near it, and the rating notices."

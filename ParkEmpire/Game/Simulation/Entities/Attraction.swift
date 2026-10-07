@@ -42,6 +42,10 @@ struct Attraction: Codable, Identifiable {
     var trackLength: Int = 0
     /// What the special pieces on that track are worth.
     var trackThrill: Double = 0
+    /// How the circuit judges as a whole: closed or not, how varied, how
+    /// hard. Nil until the simulation has looked at it, and for any ride that
+    /// is not a custom coaster.
+    var coaster: CoasterRating?
     /// What the player painted the train, and what shape they chose for it.
     /// Cosmetic, and only ever read for a custom ride.
     var livery: ParkColour = .red
@@ -70,7 +74,10 @@ struct Attraction: Codable, Identifiable {
 
     /// The ride as it actually runs, upgrades included.
     var definition: AttractionDefinition? {
-        baseDefinition?.applying(upgrades, trackLength: trackLength, trackThrill: trackThrill)
+        baseDefinition?.applying(upgrades,
+                                 trackLength: trackLength,
+                                 trackThrill: trackThrill,
+                                 coaster: coaster)
     }
 
     func upgradeLevel(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
@@ -131,6 +138,7 @@ extension Attraction {
         upgrades = container.value(.upgrades, or: [:])
         trackLength = container.value(.trackLength, or: 0)
         trackThrill = container.value(.trackThrill, or: 0)
+        coaster = container.optionalValue(.coaster)
         livery = container.value(.livery, or: .red)
         carStyle = container.value(.carStyle, or: .classic)
         tint = container.optionalValue(.tint)

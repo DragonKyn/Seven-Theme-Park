@@ -126,7 +126,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     /// already reads a definition picks up upgrades without being told.
     func applying(_ upgrades: [String: Int],
                   trackLength: Int = 0,
-                  trackThrill: Double = 0) -> AttractionDefinition {
+                  trackThrill: Double = 0,
+                  coaster: CoasterRating? = nil) -> AttractionDefinition {
         guard !upgrades.isEmpty || kind == .custom else { return self }
         func level(_ kind: RideUpgradeKind) -> Int { upgrades[kind.rawValue] ?? 0 }
 
@@ -135,8 +136,12 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
         // the ride lasts as long as it takes to get round.
         let track = self.kind == .custom ? Double(trackLength) : 0
         let thrill = self.kind == .custom ? trackThrill : 0
-        let trackExcitement = min(30, track * 0.7) + min(35, thrill)
-        let trackDuration = min(150, track * 1.6)
+        //
+        // Judged as a whole where the circuit has been rated: closed or open,
+        // varied or repeated, gentle or brutal. The two plain numbers are what
+        // an older save has until the simulation has looked at it again.
+        let trackExcitement = coaster?.excitementBonus ?? (min(30, track * 0.7) + min(35, thrill))
+        let trackDuration = coaster?.duration ?? min(150, track * 1.6)
 
         return AttractionDefinition(
             id: id,
@@ -148,9 +153,10 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             loadDuration: loadDuration * UpgradeContent.loadingFactor(level: level(.loading)),
             excitement: SimMath.clamp(excitement + trackExcitement
                                       + UpgradeContent.themingExcitement(level: level(.theming))),
-            nausea: nausea,
-            maintenanceRate: maintenanceRate * UpgradeContent.wearFactor(level: level(.reliability)),
-            operatingCostPerCycle: operatingCostPerCycle,
+            nausea: min(100, nausea + (coaster?.nauseaBonus ?? 0)),
+            maintenanceRate: maintenanceRate * UpgradeContent.wearFactor(level: level(.reliability))
+                * (coaster?.wearFactor ?? 1),
+            operatingCostPerCycle: operatingCostPerCycle + (coaster?.runningCost ?? 0),
             footprint: footprint,
             unlockLevel: unlockLevel,
             appearance: appearance,

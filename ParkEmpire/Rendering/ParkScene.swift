@@ -278,9 +278,11 @@ final class ParkScene: SKScene {
 
         switch recognizer.state {
         case .began, .changed:
+            if recognizer.state == .began { controller.endPaint() }
             controller.updateGhost(at: coord)
             controller.paint(at: coord)
         case .ended, .cancelled:
+            controller.endPaint()
             controller.updateGhost(at: coord)
         default:
             break

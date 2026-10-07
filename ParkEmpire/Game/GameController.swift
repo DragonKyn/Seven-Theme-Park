@@ -15,6 +15,9 @@ final class GameController: ObservableObject {
 
     @Published private(set) var hud = HUDSnapshot()
     @Published private(set) var selection: SelectionDetail?
+    /// Where the current drag last laid a tile, so the next one can be joined
+    /// to it.
+    private var lastPaintedTile: GridCoord?
     @Published private(set) var alerts: [ParkAlert] = []
     @Published var build = BuildState()
     @Published var pendingDemolition: PendingDemolition?
@@ -467,12 +470,48 @@ final class GameController: ObservableObject {
     }
 
     /// Paint a run of path tiles as the finger drags.
+    ///
+    /// A finger moves faster than the touch events arrive, so two events can
+    /// land several tiles apart. Painting only where each one lands left gaps
+    /// in the middle of the run, and a gap in coaster track is a circuit that
+    /// does not close and a train that never runs. Every tile between the last
+    /// one painted and this one is laid too, always stepping to an orthogonal
+    /// neighbour, so the run is joined up whatever the finger did.
     func paint(at coord: GridCoord) {
         guard build.isActive, build.isDrawing, !build.isDemolishing,
               let definition = selectedDefinition,
               definition is TerrainDefinition else { return }
-        _ = state.place(definition, at: coord)
+
+        for tile in tilesToPaint(to: coord) {
+            _ = state.place(definition, at: tile)
+        }
+        lastPaintedTile = coord
         refreshUI()
+    }
+
+    /// Called when a drag begins or ends, so the next run starts afresh and is
+    /// not joined to wherever the previous one stopped.
+    func endPaint() {
+        lastPaintedTile = nil
+    }
+
+    private func tilesToPaint(to coord: GridCoord) -> [GridCoord] {
+        guard let from = lastPaintedTile, from != coord,
+              from.manhattanDistance(to: coord) <= Balance.maxPaintGap else { return [coord] }
+
+        var run: [GridCoord] = []
+        var current = from
+        while current != coord {
+            let dx = coord.x - current.x
+            let dy = coord.y - current.y
+            if abs(dx) >= abs(dy) {
+                current.x += dx > 0 ? 1 : -1
+            } else {
+                current.y += dy > 0 ? 1 : -1
+            }
+            run.append(current)
+        }
+        return run
     }
 
     private func requestDemolition(at coord: GridCoord) {

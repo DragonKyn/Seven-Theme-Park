@@ -131,6 +131,34 @@ enum Balance {
     /// moved to find a walkway to stand on.
     static let buildOverEvictionRadius: Int = 8
 
+    // MARK: - Coaster circuits
+
+    /// Furthest apart, in tiles, two events of one drag can be and still be
+    /// joined up. Further than that and the finger was lifted and put down
+    /// somewhere else, and filling the space between would be a mistake.
+    static let maxPaintGap = 12
+
+    /// How much each repeat of the same element is worth compared with the
+    /// one before it. The second loop is worth sixty per cent of the first.
+    static let coasterRepeatDecay: Double = 0.6
+    /// Extra thrill for each different kind of element beyond the first, up to
+    /// `coasterVarietyKinds` of them.
+    static let coasterVarietyBonus: Double = 4
+    static let coasterVarietyKinds = 3
+    /// Elements covering more than this share of the track leave it no straight
+    /// run between them, and are worth less for it.
+    static let coasterCrowdingLimit: Double = 0.6
+    static let coasterCrowdingFactor: Double = 0.75
+    /// A circuit that is not closed rides as a shuttle: this much of what it
+    /// would otherwise be worth.
+    static let coasterOpenLineFactor: Double = 0.65
+    /// How much each point of an element's intensity above 1 adds up to.
+    static let coasterIntensityScale: Double = 40
+    static let coasterIntenseThreshold: Double = 55
+    static let coasterNauseaCeiling: Double = 35
+    /// Below this many tiles the player is told the track is too short.
+    static let coasterShortLength = 16
+
     /// How much longer a filthy restroom takes to clean than a spotless one,
     /// as a share of its base time. A restroom at the point of closing takes a
     /// third as long again, which is how fifteen minutes becomes twenty.
