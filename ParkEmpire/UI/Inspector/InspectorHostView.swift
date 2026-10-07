@@ -12,6 +12,16 @@ struct InspectorHostView: View {
                     .font(.system(.subheadline, design: .rounded).weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
+                if case .staff = selection {
+                    Button {
+                        controller.beginMovingStaff()
+                    } label: {
+                        Label("Send", systemImage: "location.fill")
+                            .font(.system(.caption, design: .rounded).weight(.bold))
+                            .foregroundStyle(Theme.accent)
+                    }
+                    .padding(.trailing, 8)
+                }
                 if controller.canRemoveSelected {
                     Button {
                         controller.removeSelected()
