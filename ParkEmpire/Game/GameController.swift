@@ -25,6 +25,9 @@ final class GameController: ObservableObject {
     @Published var build = BuildState()
     @Published var pendingDemolition: PendingDemolition?
     @Published private(set) var saveMessage: String?
+    /// A short message to the player that is not about saving: a turn that
+    /// was refused, for one. Shown in the same place and cleared the same way.
+    @Published private(set) var notice: String?
     /// The award currently being celebrated on screen, if any. Awards queue in
     /// the park and are shown one at a time, because two party poppers at once
     /// is not twice as good.
@@ -394,11 +397,35 @@ final class GameController: ObservableObject {
         updateGhost(at: origin)
     }
 
+    /// Whether `definition` could stand at `origin` turned this way, leaving
+    /// the player's cash out of it: a turn is not refused for being unaffordable.
+    private func fits(_ definition: BuildableDefinition, at origin: GridCoord, rotation: Int) -> Bool {
+        PlacementValidator.check(definition: definition,
+                                 origin: origin,
+                                 rotation: rotation,
+                                 map: state.map,
+                                 cash: .infinity,
+                                 price: 0).isValid
+    }
+
     func rotatePending() {
         guard var pending = build.pending,
               let definition = pendingDefinition,
               definition.canRotate else { return }
-        pending.rotation = definition.nextTurn(after: pending.rotation)
+
+        // A turn that changes the ground a building covers can sweep it across
+        // something. Where it fits as it stands, a turn that would not fit is
+        // refused, rather than leaving the building overlapping its
+        // neighbours. A square footprint covers the same ground whichever way
+        // it faces, so nothing is ever refused for it, and a placement that is
+        // already in the way can still be turned while it is being moved.
+        let fitsNow = fits(definition, at: pending.origin, rotation: pending.rotation)
+        let next = definition.nextTurn(after: pending.rotation)
+        if fitsNow && !fits(definition, at: pending.origin, rotation: next) {
+            notice = "No room to turn it here."
+            return
+        }
+        pending.rotation = next
         // Carried into the next placement, so a row of benches all face the
         // same way without being turned one at a time.
         build.rotation = pending.rotation
@@ -656,10 +683,7 @@ final class GameController: ObservableObject {
         case .guest, .staff: return
         }
         if !turned {
-            state.postAlert("There is no room to turn that here.",
-                            severity: .info,
-                            key: "turn.blocked",
-                            cooldown: 3)
+            notice = "No room to turn that here."
         }
         refreshUI()
     }
@@ -949,6 +973,7 @@ final class GameController: ObservableObject {
 
     func clearSaveMessage() {
         saveMessage = nil
+        notice = nil
     }
 
     // MARK: - UI snapshots

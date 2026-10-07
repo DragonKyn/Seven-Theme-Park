@@ -231,7 +231,7 @@ private struct ControlBarView: View {
         .padding(8)
         .panelBackground()
         .overlay(alignment: .top) {
-            if let message = controller.saveMessage {
+            if let message = controller.saveMessage ?? controller.notice {
                 Text(message)
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 10)
