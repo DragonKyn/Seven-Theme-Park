@@ -97,6 +97,20 @@ struct FacilityInspectorView: View {
                     )
                     .foregroundStyle(.black)
             }
+
+            Button {
+                controller.turnSelected()
+            } label: {
+                Label("Turn", systemImage: "rotate.right")
+                    .font(.system(.footnote, design: .rounded).weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 9)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.control)
+                    )
+                    .foregroundStyle(Theme.textPrimary)
+            }
         }
     }
 

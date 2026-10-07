@@ -221,6 +221,16 @@ final class GameController: ObservableObject {
         selectedDefinition?.previewAppearance?.motif.variantCount ?? 1
     }
 
+    /// Colours on offer for the selected thing: flowers, so far.
+    var colourChoices: [ParkColour] {
+        selectedDefinition?.previewAppearance?.motif.colourChoices ?? []
+    }
+
+    /// Nil leaves it in the colours it was designed in.
+    func chooseColour(_ colour: ParkColour?) {
+        build.colour = colour
+    }
+
     /// Nil means mixed: every one placed picks its own style, which is what
     /// makes a hedge row look grown rather than extruded.
     func chooseStyle(_ variant: Int?) {
@@ -267,6 +277,7 @@ final class GameController: ObservableObject {
         build.isDemolishing = false
         build.pending = nil
         build.variant = nil
+        build.colour = nil
         if !canDraw { build.isDrawing = false }
     }
 
@@ -391,7 +402,8 @@ final class GameController: ObservableObject {
         guard state.place(definition,
                           at: pending.origin,
                           rotation: pending.rotation,
-                          variant: build.variant) else {
+                          variant: build.variant,
+                          colour: build.colour) else {
             return false
         }
         build.pending = nil
@@ -420,7 +432,8 @@ final class GameController: ObservableObject {
                     _ = state.place(definition,
                                     at: coord,
                                     rotation: build.rotation,
-                                    variant: build.variant)
+                                    variant: build.variant,
+                                    colour: build.colour)
                     refreshUI()
                 }
             }
@@ -442,6 +455,12 @@ final class GameController: ObservableObject {
             case .facility(let id): selection = makeSelection(.facility(id))
             default: selection = nil
             }
+            return
+        }
+        // Decoration is not a destination, but it can be edited, so a tap on
+        // it opens its own small panel.
+        if let item = state.sceneryItem(at: coord) {
+            selection = makeSelection(.scenery(item.id))
             return
         }
         selection = nil
@@ -502,6 +521,37 @@ final class GameController: ObservableObject {
         case .facility(let id): selection = makeSelection(.facility(id))
         default: break
         }
+    }
+
+    /// Turns whatever is selected a quarter, if there is room for it.
+    func turnSelected() {
+        guard let identity = selection?.identity else { return }
+        let turned: Bool
+        switch identity {
+        case .scenery(let id): turned = state.turnScenery(id: id)
+        case .facility(let id): turned = state.turnFacility(id: id)
+        case .attraction(let id): turned = state.turnAttraction(id: id)
+        case .guest, .staff: return
+        }
+        if !turned {
+            state.postAlert("There is no room to turn that here.",
+                            severity: .info,
+                            key: "turn.blocked",
+                            cooldown: 3)
+        }
+        refreshUI()
+    }
+
+    func setSceneryStyle(_ variant: Int) {
+        guard case .scenery(let id) = selection?.identity else { return }
+        state.setSceneryStyle(variant, id: id)
+        refreshUI()
+    }
+
+    func setSceneryColour(_ colour: ParkColour?) {
+        guard case .scenery(let id) = selection?.identity else { return }
+        state.setSceneryColour(colour, id: id)
+        refreshUI()
     }
 
     func setRideOpen(_ isOpen: Bool, attractionID: UUID) {
@@ -996,6 +1046,9 @@ final class GameController: ObservableObject {
         case .staff(let id):
             guard let member = state.staffMember(id: id) else { return nil }
             return .staff(StaffDetail(staff: member, state: state))
+        case .scenery(let id):
+            guard let item = state.scenery.first(where: { $0.id == id }) else { return nil }
+            return .scenery(SceneryDetail(item: item, scheme: state.scheme))
         }
     }
 }
@@ -1015,6 +1068,8 @@ struct BuildState {
     /// Which cut of the selected thing to build, or nil to let each one pick
     /// its own.
     var variant: Int?
+    /// A colour for the thing about to be built, where it comes in several.
+    var colour: ParkColour?
     /// A placement lined up and waiting to be confirmed. Nothing has been
     /// built or charged while this is set.
     var pending: PendingPlacement?
@@ -1045,6 +1100,7 @@ enum SelectionIdentity: Equatable {
     case attraction(UUID)
     case facility(UUID)
     case staff(UUID)
+    case scenery(UUID)
 }
 
 enum SelectionDetail {
@@ -1052,6 +1108,7 @@ enum SelectionDetail {
     case attraction(AttractionDetail)
     case facility(FacilityDetail)
     case staff(StaffDetail)
+    case scenery(SceneryDetail)
 
     var identity: SelectionIdentity {
         switch self {
@@ -1059,6 +1116,7 @@ enum SelectionDetail {
         case .attraction(let detail): return .attraction(detail.id)
         case .facility(let detail): return .facility(detail.id)
         case .staff(let detail): return .staff(detail.id)
+        case .scenery(let detail): return .scenery(detail.id)
         }
     }
 }

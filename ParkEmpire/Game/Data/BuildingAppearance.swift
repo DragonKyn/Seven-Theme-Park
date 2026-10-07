@@ -42,6 +42,10 @@ struct BuildingAppearance: Codable, Equatable {
         guard let colour else { return self }
         var copy = self
         copy.primary = colour
+        // A flower bed is two colours set against each other, so choosing
+        // one means choosing what goes with it, or the bed is a single colour
+        // of dots.
+        if motif == .flowerBed { copy.secondary = colour.flowerCompanion }
         return copy
     }
 
@@ -179,6 +183,16 @@ enum BuildingMotif: String, Codable {
     /// A stone ring in the water with a jet at its heart.
     case pondFountain
 
+    /// Colours the player can pick for this shape when placing it or
+    /// afterwards. Empty for everything that is meant to look the way it was
+    /// designed.
+    var colourChoices: [ParkColour] {
+        switch self {
+        case .flowerBed: return [.pink, .red, .orange, .yellow, .violet, .blue, .white]
+        default: return []
+        }
+    }
+
     /// How many different ways this shape is drawn. One is the usual answer;
     /// scenery is where variety is worth the drawing.
     var variantCount: Int {
@@ -305,6 +319,21 @@ enum BuildingMotion: String, Codable {
 struct ParkScheme: Codable, Equatable {
     var primary: ParkColour = .teal
     var trim: ParkColour = .cream
+}
+
+extension ParkColour {
+    /// The colour a flower bed sets against this one.
+    var flowerCompanion: ParkColour {
+        switch self {
+        case .red: return .white
+        case .orange: return .yellow
+        case .yellow: return .orange
+        case .violet: return .pink
+        case .blue: return .white
+        case .white: return .pink
+        default: return .yellow
+        }
+    }
 }
 
 enum ParkColour: String, Codable {

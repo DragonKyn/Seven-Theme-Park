@@ -28,7 +28,8 @@ extension GameState {
     func place(_ definition: BuildableDefinition,
                at origin: GridCoord,
                rotation: Int = 0,
-               variant: Int? = nil) -> Bool {
+               variant: Int? = nil,
+               colour: ParkColour? = nil) -> Bool {
         guard placementCheck(for: definition, at: origin, rotation: rotation).isValid else {
             return false
         }
@@ -99,7 +100,8 @@ extension GameState {
                 origin: origin,
                 size: sceneryDefinition.footprint(rotatedBy: rotation),
                 rotation: rotation,
-                variant: style
+                variant: style,
+                colour: sceneryDefinition.appearance.motif.colourChoices.isEmpty ? nil : colour
             )
             scenery.append(item)
             map.setBuilding(item.id,
@@ -121,7 +123,7 @@ extension GameState {
     /// standing on it and rubbish lying on it. Neither can stay: a guest
     /// inside a wall is stuck, and rubbish nobody can reach is rubbish no
     /// janitor will ever clear.
-    private func clearGround(of rect: GridRect) {
+    func clearGround(of rect: GridRect) {
         for coord in rect.coords where map.tile(at: coord)?.isWalkable == false {
             map.clearLitter(at: coord)
         }
@@ -314,7 +316,7 @@ extension GameState {
     }
 
     /// Sends anyone queueing for or using a removed object back onto the paths.
-    private func evictGuests(from target: ParkTarget) {
+    func evictGuests(from target: ParkTarget) {
         for index in guests.indices {
             switch guests[index].activity {
             case .walking(let current), .queueing(let current), .engaged(let current):

@@ -47,6 +47,10 @@ struct BuildMenuView: View {
                 styleChips
             }
 
+            if !controller.build.isDemolishing && !controller.colourChoices.isEmpty {
+                colourChips
+            }
+
             Text(hintText)
                 .font(.caption2)
                 .foregroundStyle(hintIsError ? Theme.danger : Theme.textSecondary)
@@ -208,6 +212,44 @@ struct BuildMenuView: View {
                     ForEach(Array(0..<controller.styleCount), id: \.self) { index in
                         styleChip(index, title: "Style \(index + 1)")
                     }
+                }
+            }
+            .padding(.vertical, 1)
+        }
+    }
+
+    /// Which colour to build in. Classic is the default, and the point of the
+    /// others is a bed that matches the one beside it.
+    private var colourChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Button {
+                    controller.chooseColour(nil)
+                } label: {
+                    Text("Classic")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .padding(.horizontal, 9)
+                        .frame(height: 26)
+                        .foregroundStyle(controller.build.colour == nil ? Color.black : Theme.textPrimary)
+                        .background(Capsule().fill(controller.build.colour == nil
+                                                   ? Theme.accent : Theme.control))
+                }
+                .buttonStyle(.plain)
+
+                ForEach(controller.colourChoices, id: \.rawValue) { colour in
+                    let selected = controller.build.colour == colour
+                    Button {
+                        controller.chooseColour(colour)
+                    } label: {
+                        Circle()
+                            .fill(Color(ParkPalette.colour(colour)))
+                            .frame(width: 22, height: 22)
+                            .overlay(
+                                Circle().stroke(selected ? Theme.accent : Color.white.opacity(0.35),
+                                                lineWidth: selected ? 3 : 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.vertical, 1)

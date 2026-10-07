@@ -42,6 +42,7 @@ struct InspectorHostView: View {
         // Employees say so in the header, because a name on its own reads
         // exactly like a visitor's.
         case .staff(let detail): return "\(detail.name), \(detail.roleName)"
+        case .scenery(let detail): return detail.name
         }
     }
 
@@ -56,6 +57,8 @@ struct InspectorHostView: View {
             FacilityInspectorView(facility: detail, controller: controller)
         case .staff(let detail):
             StaffInspectorView(member: detail, controller: controller)
+        case .scenery(let detail):
+            SceneryInspectorView(item: detail, controller: controller)
         }
     }
 }

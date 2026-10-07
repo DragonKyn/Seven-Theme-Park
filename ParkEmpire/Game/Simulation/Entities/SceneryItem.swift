@@ -13,6 +13,9 @@ struct SceneryItem: Codable, Identifiable {
     /// Which cut of this shape was planted. Picked when it is placed, kept
     /// forever after, so an avenue of trees stays the avenue it was.
     var variant: Int = 0
+    /// A colour the player chose for it, or nil for the one it was designed
+    /// in.
+    var colour: ParkColour?
 
     var rect: GridRect { GridRect(origin: origin, size: size) }
 
@@ -30,5 +33,6 @@ extension SceneryItem {
         size = container.value(.size, or: .single)
         rotation = container.value(.rotation, or: 0)
         variant = container.value(.variant, or: 0)
+        colour = container.optionalValue(.colour)
     }
 }

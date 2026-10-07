@@ -39,6 +39,19 @@ final class ParkScene: SKScene {
     /// repainted is rebuilt and one that has not is left alone.
     private var renderedAppearance: [UUID: BuildingAppearance] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
+    /// What each decoration looked like when its node was made, so one that
+    /// has since been turned or repainted is drawn again.
+    private var renderedSceneryLook: [UUID: SceneryLook] = [:]
+    /// Turn and ground of each building as drawn, for the same reason.
+    private var renderedGeometry: [UUID: [Int]] = [:]
+
+    private struct SceneryLook: Equatable {
+        let variant: Int
+        let colour: ParkColour?
+        let rotation: Int
+        let width: Int
+        let height: Int
+    }
     private var elementNodes: [UUID: SKSpriteNode] = [:]
     private var guestNodes: [UUID: SKSpriteNode] = [:]
     /// Which mood each guest sprite is currently drawn with, so the texture is
@@ -422,6 +435,8 @@ final class ParkScene: SKScene {
         for node in buildingNodes.values { node.removeFromParent() }
         buildingNodes.removeAll()
         renderedAppearance.removeAll()
+        renderedGeometry.removeAll()
+        renderedSceneryLook.removeAll()
         for node in sceneryNodes.values { node.removeFromParent() }
         sceneryNodes.removeAll()
     }
@@ -1003,6 +1018,7 @@ final class ParkScene: SKScene {
             node.removeFromParent()
             buildingNodes.removeValue(forKey: id)
             renderedAppearance.removeValue(forKey: id)
+            renderedGeometry.removeValue(forKey: id)
         }
     }
 
@@ -1013,10 +1029,22 @@ final class ParkScene: SKScene {
 
         for item in state.scenery {
             seen.insert(item.id)
-            guard sceneryNodes[item.id] == nil else { continue }
+
+            let look = SceneryLook(variant: item.variant,
+                                   colour: item.colour,
+                                   rotation: item.rotation,
+                                   width: item.size.width,
+                                   height: item.size.height)
+            if let existing = sceneryNodes[item.id] {
+                if renderedSceneryLook[item.id] == look { continue }
+                existing.removeFromParent()
+                sceneryNodes.removeValue(forKey: item.id)
+            }
+            renderedSceneryLook[item.id] = look
 
             let appearance = (item.definition?.appearance ?? .unknown)
                 .withVariant(item.variant)
+                .tinted(item.colour)
                 .applying(state.scheme)
             let drawnSize = item.size.rotated(by: item.rotation)
             let pixelSize = CGSize(width: CGFloat(drawnSize.width) * Self.tileSide,
@@ -1037,6 +1065,7 @@ final class ParkScene: SKScene {
         for (id, node) in sceneryNodes where !seen.contains(id) {
             node.removeFromParent()
             sceneryNodes.removeValue(forKey: id)
+            renderedSceneryLook.removeValue(forKey: id)
         }
     }
 
@@ -1046,8 +1075,9 @@ final class ParkScene: SKScene {
                               rotation: Int,
                               appearance: BuildingAppearance,
                               title: String) -> BuildingNode {
+        let geometry = [rotation, size.width, size.height]
         if let existing = buildingNodes[id] {
-            if renderedAppearance[id] == appearance {
+            if renderedAppearance[id] == appearance && renderedGeometry[id] == geometry {
                 existing.setTitle(title)
                 return existing
             }
@@ -1072,6 +1102,7 @@ final class ParkScene: SKScene {
         buildingLayer.addChild(node)
         buildingNodes[id] = node
         renderedAppearance[id] = appearance
+        renderedGeometry[id] = geometry
         return node
     }
 
@@ -1535,6 +1566,7 @@ final class ParkScene: SKScene {
             // in, so the preview is the thing rather than a picture of it.
             let styled = appearance
                 .withVariant(controller.build.variant ?? 0)
+                .tinted(controller.build.colour)
                 .applying(controller.state.scheme)
             art.texture = BuildingArtwork.bodyTexture(for: styled, size: drawnSize)
         } else {
@@ -1633,6 +1665,11 @@ final class ParkScene: SKScene {
                 centre = CGPoint(x: member.position.x * Self.tileSide,
                                  y: member.position.y * Self.tileSide)
                 size = markerSize(around: Self.staffHeight, aspect: StaffArtwork.aspect)
+            }
+        case .scenery(let detail):
+            if let item = controller.state.scenery.first(where: { $0.id == detail.id }) {
+                centre = rectCentre(origin: item.origin, size: item.size)
+                size = pixelSize(for: item.size)
             }
         }
 
