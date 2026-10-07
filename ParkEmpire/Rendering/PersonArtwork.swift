@@ -106,12 +106,16 @@ enum PersonArtwork {
         // Ground pad. Sized from the figure rather than the canvas, so a
         // caller can ask for a wider sprite to make room for a tool without
         // the person inside it growing to match.
-        let padWidth = figureHeight * 0.62
+        //
+        // A faint shadow, not a coloured disc. The disc was how mood and role
+        // showed from a distance, but it read as a stain being dragged
+        // along behind everybody, and the face already shows the mood.
+        let padWidth = figureHeight * 0.46
         let pad = CGRect(x: centreX - padWidth / 2,
-                         y: bottom - figureHeight * 0.10,
+                         y: bottom - figureHeight * 0.075,
                          width: padWidth,
-                         height: figureHeight * 0.15)
-        tint.withAlphaComponent(0.92).setFill()
+                         height: figureHeight * 0.085)
+        UIColor.black.withAlphaComponent(0.13).setFill()
         UIBezierPath(ovalIn: pad).fill()
 
         let bodyWidth = figureHeight * 0.43
@@ -427,9 +431,12 @@ enum PersonArtwork {
     private static func drawHeldBalloon(_ look: Look, head: CGRect, body: CGRect) {
         guard let colour = look.balloon else { return }
 
-        let radius = head.width * 0.44
-        let centre = CGPoint(x: head.maxX + head.width * 0.14,
-                             y: head.minY + head.height * 0.14)
+        // Sized so its right edge stays inside the sprite: a guest fills the
+        // width as well as the height of theirs, and a balloon any bigger than
+        // this, or any further out, is cut off by the edge of the picture.
+        let radius = head.width * 0.24
+        let centre = CGPoint(x: head.maxX + head.width * 0.04,
+                             y: head.minY + head.height * 0.12)
         let hand = CGPoint(x: body.maxX, y: body.midY)
 
         let string = UIBezierPath()

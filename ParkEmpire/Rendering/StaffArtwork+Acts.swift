@@ -108,11 +108,12 @@ extension StaffArtwork {
     /// The cape, drawn before the figure so it hangs behind the shoulders and
     /// shows either side of the body. Placed with the same proportions the
     /// figure is drawn to, since the figure has not been drawn yet.
-    static func drawCapeBehind(colour: UIColor, size: CGSize) {
-        let figure = size.height
+    static func drawCapeBehind(colour: UIColor, size: CGSize, figureScale: CGFloat) {
+        let figure = size.height * figureScale
         let centreX = size.width / 2
-        let top = size.height - figure * 0.58
-        let hem = size.height - figure * 0.06
+        let bottom = size.height - (size.height - figure) * 0.20
+        let top = bottom - figure * 0.58
+        let hem = bottom - figure * 0.06
 
         let cape = UIBezierPath()
         cape.move(to: CGPoint(x: centreX - figure * 0.20, y: top))

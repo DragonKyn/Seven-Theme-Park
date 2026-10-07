@@ -118,10 +118,10 @@ extension StaffArtwork {
                               pen: Pen(ink: UIColor.black.withAlphaComponent(0.34),
                                        line: max(1, u * 0.017)))
 
-        // The ground pad every figure stands on.
-        ParkPalette.colour(for: .mascot).withAlphaComponent(0.92).setFill()
-        let pad = CGRect(x: costume.cx - costume.m * 0.32, y: costume.floor - costume.m * 0.06,
-                         width: costume.m * 0.64, height: costume.m * 0.12)
+        // A faint shadow to stand on, the same as everybody else.
+        UIColor.black.withAlphaComponent(0.13).setFill()
+        let pad = CGRect(x: costume.cx - costume.m * 0.30, y: costume.floor - costume.m * 0.05,
+                         width: costume.m * 0.60, height: costume.m * 0.09)
         UIBezierPath(ovalIn: pad).fill()
 
         drawBackdrop(costume)

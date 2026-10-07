@@ -16,8 +16,24 @@ enum StaffArtwork {
     /// A costume is a head taller than a person, and drawn that way.
     static let mascotScale: CGFloat = 1.45
 
-    static func sizeScale(for role: StaffRole) -> CGFloat {
-        role == .mascot ? mascotScale : 1
+    /// An entertainer with something held up over their head is drawn on a
+    /// bigger canvas, with the figure the same size inside it, so there is
+    /// room above them for balloons and balls instead of the top of the
+    /// picture cutting them off.
+    static let propScale: CGFloat = 1.45
+
+    static func sizeScale(for look: StaffLook) -> CGFloat {
+        switch look.role {
+        case .mascot: return mascotScale
+        case .entertainer: return look.act == .mime ? 1 : propScale
+        case .janitor, .mechanic, .security: return 1
+        }
+    }
+
+    /// How big the person is inside that canvas: the reverse of how much
+    /// bigger the canvas is, so they stay the size everybody else is.
+    static func figureScale(for look: StaffLook) -> CGFloat {
+        1 / sizeScale(for: look)
     }
 
     /// What a drawing is filed under. Only the parts of the look that show are
@@ -38,7 +54,7 @@ enum StaffArtwork {
     static func texture(for look: StaffLook,
                         uniform: ParkColour,
                         height: CGFloat) -> SKTexture {
-        let scale = sizeScale(for: look.role)
+        let scale = sizeScale(for: look)
         let size = CGSize(width: height * scale * aspect * PersonArtwork.supersample,
                           height: height * scale * PersonArtwork.supersample)
         let key = cacheKey(for: look, uniform: uniform) + "-\(Int(size.height))"
@@ -66,7 +82,9 @@ enum StaffArtwork {
 
         let shirt = shirtColour(for: look, uniform: uniform)
         if look.role == .entertainer && look.act == .magician {
-            drawCapeBehind(colour: ParkPalette.colour(look.primary), size: size)
+            drawCapeBehind(colour: ParkPalette.colour(look.primary),
+                           size: size,
+                           figureScale: figureScale(for: look))
         }
 
         let layout = PersonArtwork.draw(personLook(for: look, shirt: shirt),
@@ -160,7 +178,7 @@ enum StaffArtwork {
             shirt: shirt,
             headwear: headwear,
             headwearColour: headwearColour,
-            heightScale: 1.0,
+            heightScale: figureScale(for: look),
             // Work trousers, the same for everybody: the uniform is the
             // shirt, and that is what the park's colour is for.
             bottoms: ParkPalette.colour(.charcoal),

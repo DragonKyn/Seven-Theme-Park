@@ -1416,7 +1416,7 @@ final class ParkScene: SKScene {
 
             let look = member.look
             let lookKey = StaffArtwork.cacheKey(for: look, uniform: state.uniformColour)
-            let scale = StaffArtwork.sizeScale(for: member.role)
+            let scale = StaffArtwork.sizeScale(for: look)
             let size = CGSize(width: staffSize.width * scale, height: staffSize.height * scale)
 
             let node: SKSpriteNode
@@ -1738,7 +1738,10 @@ final class ParkScene: SKScene {
             if let member = controller.state.staffMember(id: detail.id) {
                 centre = CGPoint(x: member.position.x * Self.tileSide,
                                  y: member.position.y * Self.tileSide)
-                size = markerSize(around: Self.staffHeight * StaffArtwork.sizeScale(for: member.role),
+                // The marker goes round the person, not round the whole
+                // canvas, which can be much bigger to leave room for props.
+                let costumeScale = member.role == .mascot ? StaffArtwork.mascotScale : 1
+                size = markerSize(around: Self.staffHeight * costumeScale,
                                   aspect: StaffArtwork.aspect)
             }
         case .scenery(let detail):
