@@ -63,6 +63,8 @@ import com.wickedstudios.wonderlot.MapGround
 import com.wickedstudios.wonderlot.SaveGameService
 import com.wickedstudios.wonderlot.SaveSlotSummary
 import com.wickedstudios.wonderlot.TrialContent
+import com.wickedstudios.wonderlot.GameController
+import com.wickedstudios.wonderlot.app.GraphicsBudget
 import com.wickedstudios.wonderlot.app.AppRouter
 import com.wickedstudios.wonderlot.app.AppServices
 import kotlinx.coroutines.delay
@@ -78,7 +80,11 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
     var showingAbout by remember { mutableStateOf(false) }
     var showingGraphics by remember { mutableStateOf(false) }
     var slotToDelete by remember { mutableStateOf<Int?>(null) }
-    val demo = remember { services.demoController() }
+    // Built off the main thread: the live park behind the menu takes a while to set up, and the menu should not wait for it.
+    var demo by remember { mutableStateOf<GameController?>(null) }
+    LaunchedEffect(Unit) {
+        if (!GraphicsBudget.isReduced) demo = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { services.demoController() }
+    }
     val tick = remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -94,7 +100,12 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
     val mostRecent = router.mostRecentSlot
 
     Box(Modifier.fillMaxSize()) {
-        ParkViewHost(demo, interactive = false, modifier = Modifier.fillMaxSize(), onVersion = { tick.intValue = it })
+        val backdrop = demo
+        if (backdrop != null) {
+            ParkViewHost(backdrop, interactive = false, modifier = Modifier.fillMaxSize(), onVersion = { tick.intValue = it })
+        } else {
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0.20f, 0.44f, 0.62f), Color(0.36f, 0.66f, 0.45f)))))
+        }
 
         Box(
             Modifier.fillMaxSize().background(
@@ -187,21 +198,6 @@ private fun Masthead(modifier: Modifier = Modifier) {
         Tagline()
         Box(Modifier.width(190.dp).height(1.dp).background(
             Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent))))
-    }
-}
-
-/** Rotates through the taglines, one at a time under the title. */
-@Composable
-private fun Tagline() {
-    var index by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(5200)
-            index = (index + 1) % AppInfo.taglines.size
-        }
-    }
-    AnimatedContent(targetState = index, transitionSpec = { fadeIn(tween(400, delayMillis = 350)) togetherWith fadeOut(tween(300)) }, label = "tagline") { current ->
-        Label(AppInfo.taglines[current], size = 14.sp, weight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.9f))
     }
 }
 

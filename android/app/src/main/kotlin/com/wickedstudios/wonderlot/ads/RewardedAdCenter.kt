@@ -78,7 +78,10 @@ class RewardedAdCenter(private val appContext: Context) {
     private fun startSdkIfAllowed() {
         if (consent?.canRequestAds() != true) return
         if (!sdkStarted.compareAndSet(false, true)) return
-        MobileAds.initialize(appContext) { load() }
+        // The SDK's start-up is heavy and its own documentation asks for a background thread.
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute {
+            MobileAds.initialize(appContext) { android.os.Handler(android.os.Looper.getMainLooper()).post { load() } }
+        }
     }
 
     /** Whether the player can change their consent answer from the boosts screen. */

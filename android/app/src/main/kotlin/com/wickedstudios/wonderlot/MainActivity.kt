@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
             RootScreen(router = router, services = services)
         }
 
-        services.ads.start(this)
+        window.decorView.postDelayed({ if (!isFinishing) services.ads.start(this) }, 1500)
     }
 
     override fun onStop() {
