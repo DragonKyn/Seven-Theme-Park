@@ -45,7 +45,7 @@ def interesting(line):
 
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else ".."
-    for name in ("core-test.log", "app-build.log"):
+    for name in ("core-test.log", "app-build.log", "release-build.log"):
         lines = read(os.path.join(root, name))
         if not lines:
             continue
