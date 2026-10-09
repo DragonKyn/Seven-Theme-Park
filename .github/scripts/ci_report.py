@@ -4,14 +4,28 @@ import os
 import re
 import sys
 
+PREFIX = re.compile(
+    r"file:///home/runner/work/[^/]+/[^/]+/android/(core|app)/src/(main|test)/kotlin/com/wickedstudios/wonderlot/")
+NEWLINE = chr(10)
+
 
 def annotate(level, title, lines):
+    """Annotation messages are cut off at a few KB, so a long list is split."""
     if not lines:
         return
-    text = "\n".join(lines)
-    text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
-    # Annotation messages are capped, so keep it well under the limit.
-    print("::%s title=%s::%s" % (level, title, text[:60000]))
+    chunk, size, part = [], 0, 1
+    for line in lines + [None]:
+        if line is None or size + len(line) > 3200:
+            if chunk:
+                text = NEWLINE.join(chunk).replace("%", "%25").replace(NEWLINE, "%0A")
+                print("::%s title=%s (%d)::%s" % (level, title, part, text))
+                part += 1
+            chunk, size = [], 0
+            if line is None:
+                break
+        short = PREFIX.sub("", line)[:300]
+        chunk.append(short)
+        size += len(short) + 1
 
 
 def read(path):
@@ -20,6 +34,13 @@ def read(path):
             return handle.read().splitlines()
     except OSError:
         return []
+
+
+def interesting(line):
+    if re.match(r"^e: ", line):
+        return True
+    return ("FAILED" in line or "What went wrong" in line or "Execution failed" in line
+            or "AssertionError" in line)
 
 
 def main():
@@ -31,17 +52,15 @@ def main():
 
         errors = []
         for index, line in enumerate(lines):
-            if re.match(r"^e: ", line) or "error:" in line or "FAILED" in line \
-                    or "What went wrong" in line or "Execution failed" in line \
-                    or "AssertionError" in line or "Exception" in line and "at " not in line[:6]:
+            if interesting(line):
                 errors.append(line.strip())
                 if "What went wrong" in line or "Execution failed" in line:
-                    errors.extend(l.strip() for l in lines[index + 1:index + 4])
-            if len(errors) > 150:
+                    errors.extend(item.strip() for item in lines[index + 1:index + 4])
+            if len(errors) > 200:
                 break
-        annotate("error", name + " problems", errors[:150])
+        annotate("error", name + " problems", errors[:200])
 
-        info = [l.strip() for l in lines if re.match(r"^\s*(days=|BUILD |.*tests completed)", l)]
+        info = [item.strip() for item in lines if re.match(r"^\s*(days=|BUILD |.*tests completed)", item)]
         annotate("notice", name + " summary", info[:20])
 
 

@@ -187,10 +187,13 @@ class Facility(
 
     /** Guests will not use a restroom in this state. */
     val isUnusable: Boolean
-        get() = when (definition?.kind ?: return false) {
-            FacilityKind.bathroom -> soiling > 92
-            FacilityKind.bin -> soiling >= 100
-            else -> false
+        get() {
+            val kind = definition?.kind ?: return false
+            return when (kind) {
+                FacilityKind.bathroom -> soiling > 92
+                FacilityKind.bin -> soiling >= 100
+                else -> false
+            }
         }
 
     /** How urgently a janitor should attend to this, or null when it is fine. */
