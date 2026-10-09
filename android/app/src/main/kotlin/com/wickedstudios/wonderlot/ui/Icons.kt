@@ -43,6 +43,7 @@ fun symbolIcon(name: String): ImageVector = when (name) {
     "clock", "clock.fill", "timer", "hourglass.bottomhalf.filled" -> Icons.Filled.Schedule
     "xmark", "xmark.circle.fill", "xmark.seal.fill" -> Icons.Filled.Close
     "plus" -> Icons.Filled.Add
+    "speedometer" -> Icons.Filled.Speed
     "checkmark", "checkmark.circle.fill", "checkmark.seal.fill" -> Icons.Filled.CheckCircle
     "chevron.down" -> Icons.Filled.KeyboardArrowDown
     "chevron.up" -> Icons.Filled.KeyboardArrowUp

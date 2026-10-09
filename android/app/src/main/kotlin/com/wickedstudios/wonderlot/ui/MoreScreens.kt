@@ -161,6 +161,7 @@ fun GraphicsSheet(services: AppServices, onDismiss: () -> Unit) {
             Change("person.2.fill", "Fewer figures drawn", "Only so many guests are drawn at once.")
             Change("bubble.left.fill", "Fewer thought bubbles", "Three at a time instead of ten.")
             Change("photo.on.rectangle", "Smaller artwork", "Rides, guests and tiles are drawn at a lower resolution, which is a fraction of the memory.")
+            Change("play.rectangle", "A still title screen", "No live park running behind the main menu.")
         }
 
         SectionCard("What it does not change") {
