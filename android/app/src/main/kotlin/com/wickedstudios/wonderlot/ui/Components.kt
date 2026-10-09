@@ -137,21 +137,21 @@ fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composab
     }
 }
 
-/** A square icon-over-label button, as used on the control bar. */
+/** An icon-over-label button, as used on the control bar. 40 by 42, like the iOS one; [scale] shrinks it on a narrow screen. */
 @Composable
 fun ControlButton(symbol: String, title: String, onClick: () -> Unit, modifier: Modifier = Modifier,
-                  highlighted: Boolean = false, tint: Color? = null) {
+                  highlighted: Boolean = false, tint: Color? = null, scale: Float = 1f) {
     Column(
         modifier = modifier
-            .size(width = 46.dp, height = 46.dp)
+            .size(width = (40 * scale).dp, height = 42.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(if (highlighted) Theme.accentWarm else Theme.control)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        SymbolIcon(symbol, if (highlighted) Color.Black else (tint ?: Theme.textPrimary), 16.dp)
-        Text(title, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+        SymbolIcon(symbol, if (highlighted) Color.Black else (tint ?: Theme.textPrimary), 15.dp)
+        Text(title, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
             color = if (highlighted) Color.Black else Theme.textPrimary)
     }
 }
