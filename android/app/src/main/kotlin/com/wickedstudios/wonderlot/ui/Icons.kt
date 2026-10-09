@@ -29,7 +29,8 @@ fun symbolIcon(name: String): ImageVector = when (name) {
     "figure.walk", "figure.walk.arrival" -> Icons.Filled.DirectionsWalk
     "figure.seated.side" -> Icons.Filled.EventSeat
     "figure.2.and.child.holdinghands" -> Icons.Filled.FamilyRestroom
-    "dollarsign.circle.fill", "banknote.fill" -> Icons.Filled.MonetizationOn
+    "dollarsign.circle.fill", "banknote.fill", "banknote" -> Icons.Filled.MonetizationOn
+    "square.and.arrow.down" -> Icons.Filled.Save
     "wallet.bifold", "wallet.bifold.fill", "creditcard.fill" -> Icons.Filled.CreditCard
     "line.3.horizontal" -> Icons.Filled.Menu
     "bell.fill", "bell.badge.fill" -> Icons.Filled.Notifications

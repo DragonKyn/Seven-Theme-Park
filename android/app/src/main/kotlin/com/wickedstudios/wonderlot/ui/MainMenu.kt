@@ -31,6 +31,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -313,6 +317,9 @@ private fun NewParkSheet(
     var slot by remember { mutableStateOf(suggestedSlot) }
     var mapID by remember { mutableStateOf(MapCatalogue.openMeadowID) }
     var confirmingReplace by remember { mutableStateOf(false) }
+    var editorOpen by remember { mutableStateOf(false) }
+    var editorMap by remember { mutableStateOf<com.wickedstudios.wonderlot.CustomMap?>(null) }
+    var deleting by remember { mutableStateOf<MapBlueprint?>(null) }
     val maps = router.availableMaps
     val selectedMap = maps.firstOrNull { it.id == mapID } ?: MapCatalogue.openMeadow
 
@@ -337,7 +344,10 @@ private fun NewParkSheet(
         }
 
         SectionCard("Map") {
-            MapPicker(maps, mapID, onSelect = { mapID = it })
+            MapPicker(maps, mapID, onSelect = { mapID = it },
+                onCreate = { editorMap = null; editorOpen = true },
+                onEdit = { editorMap = router.customMap(it.id.removePrefix("custom.")); editorOpen = true },
+                onDelete = { deleting = it })
         }
 
         SectionCard("Mode") {
@@ -390,6 +400,26 @@ private fun NewParkSheet(
         )
     }
 
+    if (editorOpen) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { editorOpen = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+        ) {
+            MapEditorScreen(editorMap, onSave = { saved -> router.saveCustomMap(saved); mapID = "custom.${saved.id}"; editorOpen = false },
+                onCancel = { editorOpen = false })
+        }
+    }
+
+    deleting?.let { map ->
+        ConfirmDialog("Delete ${map.name}?", "The map is removed for good. Parks already built on it are not affected.", "Delete", destructive = true,
+            onConfirm = {
+                router.customMap(map.id.removePrefix("custom."))?.let { router.deleteCustomMap(it.id) }
+                if (mapID == map.id) mapID = MapCatalogue.openMeadowID
+                deleting = null
+            },
+            onDismiss = { deleting = null })
+    }
+
     if (confirmingReplace) {
         val chosen = slot
         val existing = chosen?.let { summaries[it] }
@@ -403,34 +433,62 @@ private fun NewParkSheet(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun MapPicker(maps: List<MapBlueprint>, selectedID: String, onSelect: (String) -> Unit) {
+private fun MapPicker(
+    maps: List<MapBlueprint>, selectedID: String, onSelect: (String) -> Unit,
+    onCreate: () -> Unit, onEdit: (MapBlueprint) -> Unit, onDelete: (MapBlueprint) -> Unit,
+) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         for (map in maps) {
             val selected = map.id == selectedID
             val shape = RoundedCornerShape(12.dp)
-            Column(
-                Modifier.width(128.dp).clip(shape).background(Color.White.copy(alpha = if (selected) 0.20f else 0.10f))
-                    .border(BorderStroke(2.dp, if (selected) Theme.accent else Color.Transparent), shape)
-                    .clickable { onSelect(map.id) }.padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                val thumbnail = remember(map.id, map.layout.ground.hashCode()) { mapThumbnail(map) }
-                Image(thumbnail.asImageBitmap(), null, Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(8.dp)),
-                    filterQuality = FilterQuality.None)
-                Label(map.name, size = 12.sp, weight = FontWeight.Bold, maxLines = 1)
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    for (dot in 1..5) {
-                        Box(Modifier.size(6.dp).clip(CircleShape).background(if (dot <= map.difficulty) Theme.accentWarm else Color.White.copy(alpha = 0.25f)))
+            var menu by remember { mutableStateOf(false) }
+            Box {
+                Column(
+                    Modifier.width(128.dp).clip(shape).background(Color.White.copy(alpha = if (selected) 0.20f else 0.10f))
+                        .border(BorderStroke(2.dp, if (selected) Theme.accent else Color.Transparent), shape)
+                        .combinedClickable(onClick = { onSelect(map.id) }, onLongClick = { if (map.isCustom) menu = true })
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    val thumbnail = remember(map.id, map.layout.ground.hashCode()) { mapThumbnail(map) }
+                    Image(thumbnail.asImageBitmap(), null, Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(8.dp)),
+                        filterQuality = FilterQuality.None)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Label(map.name, size = 12.sp, weight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
+                        if (map.isCustom) SymbolIcon("person.fill", Theme.textSecondary, 10.dp)
                     }
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        for (dot in 1..5) {
+                            Box(Modifier.size(6.dp).clip(CircleShape).background(if (dot <= map.difficulty) Theme.accentWarm else Color.White.copy(alpha = 0.25f)))
+                        }
+                    }
+                    Label(map.summary, size = 10.sp, weight = FontWeight.Normal, color = Theme.textSecondary, maxLines = 3)
+                    if (map.isCustom) Label("Hold to edit or delete", size = 9.sp, weight = FontWeight.Normal, color = Theme.textSecondary)
                 }
-                Label(map.summary, size = 10.sp, weight = FontWeight.Normal, color = Theme.textSecondary, maxLines = 3)
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(text = { Text("Edit map") }, onClick = { menu = false; onEdit(map) })
+                    DropdownMenuItem(text = { Text("Delete map", color = Theme.danger) }, onClick = { menu = false; onDelete(map) })
+                }
             }
+        }
+
+        // A card for drawing a new one.
+        val dashed = RoundedCornerShape(12.dp)
+        Column(
+            Modifier.width(128.dp).height(212.dp).clip(dashed).border(BorderStroke(1.5.dp, Theme.accent.copy(alpha = 0.6f)), dashed)
+                .clickable(onClick = onCreate).padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+        ) {
+            SymbolIcon("pencil", Theme.accent, 28.dp)
+            Label("Draw your own", size = 12.sp, weight = FontWeight.Bold)
+            Label("Paint water, rock and forest, and put the gate where you like.", size = 10.sp, weight = FontWeight.Normal, color = Theme.textSecondary)
         }
     }
 }
 
-private fun mapThumbnail(map: MapBlueprint): Bitmap {
+internal fun mapThumbnail(map: MapBlueprint): Bitmap {
     val layout = map.layout
     val bitmap = Bitmap.createBitmap(layout.width, layout.height, Bitmap.Config.ARGB_8888)
     val colours = mapOf(

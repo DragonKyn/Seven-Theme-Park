@@ -31,62 +31,6 @@ import com.wickedstudios.wonderlot.app.AppRouter
 import com.wickedstudios.wonderlot.app.AppServices
 import com.wickedstudios.wonderlot.gfx.SpriteFactory
 
-/** The ladder of timed challenges, each unlocked by winning the one before. */
-@Composable
-fun TrialLadderScreen(router: AppRouter, services: AppServices, onClose: () -> Unit) {
-    val completed = router.completedTrials.value
-    val runs = router.trialRuns.value
-    var confirmRestart by remember { mutableStateOf<com.wickedstudios.wonderlot.TrialDefinition?>(null) }
-
-    Box(Modifier.fillMaxSize().background(Color(0.05f, 0.08f, 0.12f)).statusBarsPadding()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Label("Trials", size = 24.sp, weight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                PillButton("Close", onClose, background = Theme.control, foreground = Theme.textPrimary)
-            }
-            Label("${completed.size} of ${TrialContent.all.size} complete", size = 12.sp, color = Theme.textSecondary)
-
-            for (trial in TrialContent.all) {
-                val unlocked = router.isTrialUnlocked(trial)
-                val best = completed[trial.id]
-                val run = runs[trial.id]
-                Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Theme.control).padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        SymbolIcon(if (!unlocked) "lock.fill" else trial.medal.symbolName, if (best != null) Theme.money else Theme.textSecondary, 24.dp)
-                        Column(Modifier.weight(1f)) {
-                            Label("TRIAL ${trial.number}", size = 9.sp, weight = FontWeight.ExtraBold, color = Theme.textSecondary)
-                            Label(trial.title, size = 16.sp, weight = FontWeight.ExtraBold)
-                        }
-                        best?.let { Label("Day $it", weight = FontWeight.ExtraBold, color = Theme.money) }
-                    }
-                    if (unlocked) {
-                        Label(trial.briefing, size = 12.sp, color = Theme.textSecondary)
-                        Label("${trial.dayLimit} days  ·  ${com.wickedstudios.wonderlot.CurrencyFormatter.short(trial.startingCash)} to start", size = 11.sp, color = Theme.textSecondary)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (run != null) {
-                                PillButton("Resume (day ${run.day})", { onClose(); router.resumeTrial(trial) })
-                                PillButton("Restart", { confirmRestart = trial }, background = Theme.control, foreground = Theme.textPrimary)
-                            } else {
-                                PillButton("Start", { onClose(); router.startTrial(trial) })
-                            }
-                        }
-                    } else {
-                        Label("Win the previous trial to unlock this one.", size = 11.sp, color = Theme.textSecondary)
-                    }
-                }
-            }
-        }
-    }
-
-    confirmRestart?.let { trial ->
-        ConfirmDialog("Restart ${trial.title}?", "The run in progress will be replaced.", "Restart", destructive = true,
-            onConfirm = { confirmRestart = null; onClose(); router.startTrial(trial) }, onDismiss = { confirmRestart = null })
-    }
-}
-
 @Composable
 fun AboutSheet(onDismiss: () -> Unit) {
     BottomSheet("About", onDismiss) {
