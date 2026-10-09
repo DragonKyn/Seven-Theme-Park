@@ -1,6 +1,7 @@
 package com.wickedstudios.wonderlot.ui
 
 import android.graphics.Bitmap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -195,7 +196,7 @@ private fun Tagline() {
             index = (index + 1) % AppInfo.taglines.size
         }
     }
-    AnimatedContent(targetState = index, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "tagline") { current ->
+    AnimatedContent(targetState = index, transitionSpec = { fadeIn(tween(400, delayMillis = 350)) togetherWith fadeOut(tween(300)) }, label = "tagline") { current ->
         Label(AppInfo.taglines[current], size = 14.sp, weight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.9f))
     }
 }
