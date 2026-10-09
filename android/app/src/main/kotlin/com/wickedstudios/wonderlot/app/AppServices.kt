@@ -40,6 +40,7 @@ class WonderLotApp : Application() {
     override fun onCreate() {
         super.onCreate()
         services = AppServices(this)
+        GraphicsBudget.init(this, services.store)
     }
 }
 

@@ -22,6 +22,7 @@ import com.wickedstudios.wonderlot.ParkScheme
 import com.wickedstudios.wonderlot.ParkTarget
 import com.wickedstudios.wonderlot.SelectionDetail
 import com.wickedstudios.wonderlot.StaffLook
+import com.wickedstudios.wonderlot.app.GraphicsBudget
 import com.wickedstudios.wonderlot.StaffRole
 import com.wickedstudios.wonderlot.TerrainType
 import com.wickedstudios.wonderlot.Tile
@@ -233,6 +234,7 @@ class ParkRenderer(
         time += delta
         frameDelta = delta
 
+        controller.maxTicksPerFrame = GraphicsBudget.maxTicksPerFrame
         controller.advance(delta)
 
         if (isInteractive) {
@@ -760,10 +762,13 @@ class ParkRenderer(
         val spriteWidth = spriteHeight * GuestArtwork.aspect
         val live = HashSet<UUID>()
         val now = state.clock.simTime
+        val budget = GraphicsBudget.guestSprites
+        var drawn = 0
 
         for (guest in state.guests) {
             if (!guest.isActive) continue
             live.add(guest.id)
+            if (drawn >= budget) continue
 
             val activity = guest.activity
             if (activity is GuestActivity.Engaged && !isInTheOpen(activity.target, state)) continue
@@ -789,6 +794,7 @@ class ParkRenderer(
             }
 
             drawSprite(canvas, sprite.bitmap, place.x, place.y, spriteWidth / tileSide, spriteHeight / tileSide)
+            drawn += 1
             maybeShowBubble(guest, now)
         }
 
@@ -892,7 +898,7 @@ class ParkRenderer(
         shownThought[guest.id] = thought.id
 
         bubbles.removeAll { time - it.startedAt > 3.2 }
-        if (now - thought.simTime >= 2.5 || bubbles.size >= 10) return
+        if (now - thought.simTime >= 2.5 || bubbles.size >= GraphicsBudget.bubbles) return
 
         val bitmap = GuestArtwork.bubbleTexture(thought.icon, thought.mood, tileSide * 0.62)
         bubbles.add(Bubble(guest.id, bitmap, time))

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.view.MotionEvent
+import com.wickedstudios.wonderlot.app.GraphicsBudget
 import android.view.View
 import android.view.ViewConfiguration
 import com.wickedstudios.wonderlot.GameController
@@ -64,7 +65,8 @@ class ParkView(
             reportedVersion = controller.uiVersion
             onVersion(reportedVersion)
         }
-        postInvalidateOnAnimation()
+        val interval = GraphicsBudget.frameIntervalMillis
+        if (interval > 0) postInvalidateDelayed(interval) else postInvalidateOnAnimation()
     }
 
     override fun onDetachedFromWindow() {
