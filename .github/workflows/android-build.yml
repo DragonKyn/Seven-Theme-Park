@@ -39,6 +39,11 @@ jobs:
           set -o pipefail
           gradle :app:assembleDebug --stacktrace 2>&1 | tee ../app-build.log
 
+      - name: Lint (release)
+        run: |
+          set -o pipefail
+          gradle :app:lintRelease --stacktrace 2>&1 | tee ../lint.log
+
       - name: Upload key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

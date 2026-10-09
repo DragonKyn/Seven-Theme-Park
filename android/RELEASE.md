@@ -19,12 +19,16 @@ for checking the build and useless for the store.
 1. Create a developer account at <https://play.google.com/console> (one-off US$25 fee, and identity verification).
 2. Create an app: name **Wonder Lot**, default language, "Game", free, with the declarations the form asks for.
 3. Let Play manage the app signing key when asked (the default for new apps). You only need an **upload key**.
-4. Fill in the store listing: short and full description, a 512x512 icon, a 1024x500 feature graphic, and at least two
-   phone screenshots. The iOS listing text can be reused.
+4. Fill in the store listing from `android/store/LISTING.md`: the text is ready to paste, and `icon-512.png`,
+   `feature-graphic.png` and `screenshots/` are the graphics. (The screenshots come from an emulator; replace them with
+   real-phone ones if you like.)
 5. Content rating questionnaire, target audience (not designed for children), data safety form, and the privacy policy URL.
+   `android/store/LISTING.md` has the answers for each.
    - Data safety: the game collects nothing itself. Google's advertising SDK collects the advertising ID and
      device/usage data for advertising, so declare that under "Advertising or marketing" and "Device or other IDs".
-   - The privacy policy must be public. The existing GitHub Pages one needs an Android/AdMob section.
+   - The privacy policy must be public. The existing GitHub Pages one only mentions iPhone and iPad:
+     `android/store/privacy-policy-draft.html` is the same page with the Android wording added. Review it and, if you are
+     happy, copy it over `docs/index.html` and push. It has not been published.
 6. Ads declaration: **Yes, contains ads**.
 
 ## 3. AdMob
@@ -71,7 +75,7 @@ it always goes up.
 
 ## Local builds
 
-Needs JDK 17 and the Android SDK (platform 35):
+Needs JDK 17 and the Android SDK (platform 36):
 
 ```bash
 cd android

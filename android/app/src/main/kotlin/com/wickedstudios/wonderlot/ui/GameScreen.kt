@@ -219,11 +219,11 @@ private fun ControlBar(
             SpeedControl(controller, onLockedTap = onBoosts, scale = scale)
             Box {
                 ControlButton("line.3.horizontal", "Menu", { menuOpen = true }, scale = scale)
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(text = { Text("Achievements") }, onClick = { menuOpen = false; onAchievements() })
-                    DropdownMenuItem(text = { Text("Boosts") }, onClick = { menuOpen = false; onBoosts() })
-                    DropdownMenuItem(text = { Text("Save park") }, onClick = { menuOpen = false; controller.save() })
-                    DropdownMenuItem(text = { Text("Leave park", color = Theme.danger) }, onClick = { menuOpen = false; onLeave() })
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = Theme.panelRaised) {
+                    DropdownMenuItem(text = { Text("Achievements", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onAchievements() })
+                    DropdownMenuItem(text = { Text("Boosts", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onBoosts() })
+                    DropdownMenuItem(text = { Text("Save park", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; controller.save() })
+                    DropdownMenuItem(text = { Text("Leave park", color = Theme.danger, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onLeave() })
                 }
             }
         }

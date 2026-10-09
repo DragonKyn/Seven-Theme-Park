@@ -236,7 +236,7 @@ fun ManagementSheet(controller: GameController, onDismiss: () -> Unit) {
             StatRow("Guests in park", "${snapshot.guestCount}")
             StatRow("Park rating", "${snapshot.parkRating.toInt()} / 100  (${snapshot.starRating} stars)")
             StatRow("Profit today", CurrencyFormatter.signed(snapshot.todayProfit))
-            StatRow("Arrivals", String.format("%.1f per minute", snapshot.arrivalsPerMinute))
+            StatRow("Arrivals", String.format(java.util.Locale.US, "%.1f per minute", snapshot.arrivalsPerMinute))
         }
         SectionCard("Guests") {
             StatRow("Average happiness", "${snapshot.averageHappiness.toInt()}%")
@@ -248,7 +248,7 @@ fun ManagementSheet(controller: GameController, onDismiss: () -> Unit) {
         SectionCard("Attractions") {
             StatRow("Total rides", "${snapshot.attractionCount}")
             StatRow("Closed rides", "${snapshot.closedAttractions}")
-            StatRow("Average queue", String.format("%.1f", snapshot.averageQueueLength))
+            StatRow("Average queue", String.format(java.util.Locale.US, "%.1f", snapshot.averageQueueLength))
             StatRow("Most popular", snapshot.mostPopular ?: "No data")
             snapshot.leastPopular?.let { StatRow("Least popular", it) }
             StatRow("Facilities", "${snapshot.facilityCount}")

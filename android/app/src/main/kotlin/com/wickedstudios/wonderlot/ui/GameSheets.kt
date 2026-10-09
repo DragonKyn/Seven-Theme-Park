@@ -256,7 +256,7 @@ fun ParkSettingsSheet(controller: GameController, services: AppServices, onDismi
         }
 
         SectionCard("Right now") {
-            StatRow("Arrivals", String.format("%.1f guests per minute", hud.arrivalsPerMinute))
+            StatRow("Arrivals", String.format(java.util.Locale.US, "%.1f guests per minute", hud.arrivalsPerMinute))
             StatRow("Guests in park", "${hud.guestCount}")
             StatRow("Park rating", "${hud.parkRating.toInt()} / 100")
         }

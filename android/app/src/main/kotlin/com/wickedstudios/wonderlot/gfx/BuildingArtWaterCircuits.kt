@@ -312,10 +312,10 @@ internal object BuildingArtWaterCircuits {
             val startWeight: Double = inverse * inverse
             val controlWeight: Double = 2 * inverse * t
             val endWeight: Double = t * t
-            val x: Double = startWeight * left.x + controlWeight * size.width * 0.5
-                + endWeight * right.x
-            val y: Double = startWeight * left.y + controlWeight * size.height * 0.78
-                + endWeight * right.y
+            val x: Double = startWeight * left.x + controlWeight * size.width * 0.5 +
+                endWeight * right.x
+            val y: Double = startWeight * left.y + controlWeight * size.height * 0.78 +
+                endWeight * right.y
             val bulb = size.height * 0.020
             BuildingArtwork.fill(UIBezierPath(ovalIn =  CGRect(x - bulb, y,
                                              bulb * 2, bulb * 2.4)),
