@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +23,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import android.view.WindowManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,46 +50,63 @@ fun BottomSheet(
     trailing: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Box(
+    androidx.activity.compose.BackHandler(onBack = onDismiss)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.45f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        val shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
-            contentAlignment = Alignment.BottomCenter,
+                .fillMaxWidth()
+                .then(if (tall) Modifier.fillMaxHeight(0.88f) else Modifier.heightIn(max = 640.dp))
+                .clip(shape)
+                .background(Theme.panelGradient)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .navigationBarsPadding()
+                .imePadding(),
         ) {
-            val shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(title, color = Theme.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f))
+                trailing?.invoke()
+                Box(
+                    Modifier.clip(RoundedCornerShape(50)).background(Theme.control).clickable(onClick = onDismiss)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) { Label("Done", size = 13.sp, weight = FontWeight.Bold) }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (tall) Modifier.fillMaxHeight(0.88f) else Modifier.heightIn(max = 640.dp))
-                    .clip(shape)
-                    .background(Theme.panelGradient)
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                    .navigationBarsPadding(),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(title, color = Theme.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.weight(1f))
-                    trailing?.invoke()
-                    Box(
-                        Modifier.clip(RoundedCornerShape(50)).background(Theme.control).clickable(onClick = onDismiss)
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    ) { Label("Done", size = 13.sp, weight = FontWeight.Bold) }
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = tall)
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    content = content,
-                )
-            }
+                    .weight(1f, fill = tall)
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content,
+            )
+        }
+    }
+}
+
+/** Lets a dialog's window cover the whole screen, including the areas behind the system bars, so a sheet has no gaps. */
+@Composable
+fun FullScreenDialogWindow() {
+    val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+    SideEffect {
+        window ?: return@SideEffect
+        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        window.setDimAmount(0f)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+            systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
         }
     }
 }

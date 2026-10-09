@@ -11,6 +11,12 @@ fun RootScreen(router: AppRouter, services: AppServices) {
         is AppRouter.Screen.Game -> GameScreen(screen.controller, router, services)
     }
 
+    router.editor?.let { request ->
+        MapEditorScreen(request.map,
+            onSave = { saved -> request.onSaved(saved); router.editor = null },
+            onCancel = { router.editor = null })
+    }
+
     val error = router.errorMessage
     if (error != null) {
         ConfirmDialog(

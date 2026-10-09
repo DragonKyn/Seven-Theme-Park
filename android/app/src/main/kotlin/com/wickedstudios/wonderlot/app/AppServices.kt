@@ -76,6 +76,10 @@ class AppRouter(private val services: AppServices) {
     val trialRuns = mutableStateOf<Map<String, SaveSlotSummary>>(emptyMap())
     var errorMessage by mutableStateOf<String?>(null)
 
+    /** The map editor, when open. It lives at the root so it covers the whole screen, system bars included. */
+    class EditorRequest(val map: com.wickedstudios.wonderlot.CustomMap?, val onSaved: (com.wickedstudios.wonderlot.CustomMap) -> Unit)
+    var editor by mutableStateOf<EditorRequest?>(null)
+
     /** Set when a finished trial sends the player back to the ladder, so the menu opens straight onto it. */
     var opensLadderOnMenu by mutableStateOf(false)
 

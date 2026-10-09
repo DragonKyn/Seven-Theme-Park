@@ -313,8 +313,9 @@ private fun NewParkSheet(
     var slot by remember { mutableStateOf(suggestedSlot) }
     var mapID by remember { mutableStateOf(MapCatalogue.openMeadowID) }
     var confirmingReplace by remember { mutableStateOf(false) }
-    var editorOpen by remember { mutableStateOf(false) }
-    var editorMap by remember { mutableStateOf<com.wickedstudios.wonderlot.CustomMap?>(null) }
+    val openEditor = { map: com.wickedstudios.wonderlot.CustomMap? ->
+        router.editor = AppRouter.EditorRequest(map) { saved -> router.saveCustomMap(saved); mapID = "custom.${saved.id}" }
+    }
     var deleting by remember { mutableStateOf<MapBlueprint?>(null) }
     val maps = router.availableMaps
     val selectedMap = maps.firstOrNull { it.id == mapID } ?: MapCatalogue.openMeadow
@@ -341,8 +342,8 @@ private fun NewParkSheet(
 
         SectionCard("Map") {
             MapPicker(maps, mapID, onSelect = { mapID = it },
-                onCreate = { editorMap = null; editorOpen = true },
-                onEdit = { editorMap = router.customMap(it.id.removePrefix("custom.")); editorOpen = true },
+                onCreate = { openEditor(null) },
+                onEdit = { openEditor(router.customMap(it.id.removePrefix("custom."))) },
                 onDelete = { deleting = it })
         }
 
@@ -394,16 +395,6 @@ private fun NewParkSheet(
             },
             size = 12.sp, weight = FontWeight.Normal, color = Theme.textSecondary,
         )
-    }
-
-    if (editorOpen) {
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { editorOpen = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-        ) {
-            MapEditorScreen(editorMap, onSave = { saved -> router.saveCustomMap(saved); mapID = "custom.${saved.id}"; editorOpen = false },
-                onCancel = { editorOpen = false })
-        }
     }
 
     deleting?.let { map ->
