@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -65,7 +68,7 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
         // Top: readouts, then whatever advice or goals apply.
         Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Hud(controller, onOpenFinance = { sheet = GameSheet.Finance }, onAlerts = { sheet = GameSheet.Alerts },
-                onMenu = { confirmExit = true })
+                onSettings = { sheet = GameSheet.Settings })
             hud.trial?.let { TrialTracker(it, trialExpanded) { trialExpanded = !trialExpanded } }
             controller.currentTip?.let {
                 TutorialTipCard(it, onDismiss = { controller.dismissTip() }, onTurnOff = { controller.setTipsEnabled(false); controller.dismissTip() })
@@ -75,17 +78,16 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
         // Bottom: speed, then the build menu or the control bar.
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().navigationBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            controller.movingStaffID?.let { StaffMoveBar(controller) }
-            controller.selection?.let { if (!build.isActive) InspectorHost(it, controller) }
-            if (build.isActive) {
-                BuildMenu(controller)
-            } else {
-                SpeedControl(controller)
-                ControlBar(controller,
-                    onFinance = { sheet = GameSheet.Finance }, onManage = { sheet = GameSheet.Management },
-                    onStaff = { sheet = GameSheet.Staff }, onSettings = { sheet = GameSheet.Settings },
-                    onBoosts = { sheet = GameSheet.Boosts }, onAchievements = { sheet = GameSheet.Achievements })
+            if (controller.movingStaffID != null) StaffMoveBar(controller)
+            else controller.selection?.let { InspectorHost(it, controller) }
+            if (build.isActive) BuildMenu(controller)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                SpeedControl(controller, onLockedTap = { sheet = GameSheet.Boosts })
             }
+            ControlBar(controller,
+                onFinance = { sheet = GameSheet.Finance }, onManage = { sheet = GameSheet.Management },
+                onStaff = { sheet = GameSheet.Staff }, onBoosts = { sheet = GameSheet.Boosts },
+                onAchievements = { sheet = GameSheet.Achievements }, onLeave = { confirmExit = true })
         }
 
         controller.notice?.let { message ->
@@ -137,7 +139,7 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
 }
 
 @Composable
-private fun Hud(controller: GameController, onOpenFinance: () -> Unit, onAlerts: () -> Unit, onMenu: () -> Unit) {
+private fun Hud(controller: GameController, onOpenFinance: () -> Unit, onAlerts: () -> Unit, onSettings: () -> Unit) {
     val hud = controller.hud
     Row(Modifier.fillMaxWidth().panelBackground().padding(8.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -155,27 +157,27 @@ private fun Hud(controller: GameController, onOpenFinance: () -> Unit, onAlerts:
         val hasAlerts = controller.alerts.isNotEmpty()
         Box(Modifier.size(34.dp).clip(CircleShape).background(if (hasAlerts) Theme.accentWarm else Theme.control).clickable(onClick = onAlerts),
             contentAlignment = Alignment.Center) { SymbolIcon("bell.fill", if (hasAlerts) Color.Black else Theme.textPrimary, 16.dp) }
-        Box(Modifier.size(34.dp).clip(CircleShape).background(Theme.control).clickable(onClick = onMenu), contentAlignment = Alignment.Center) {
-            SymbolIcon("line.3.horizontal", Theme.textPrimary, 16.dp)
+        Box(Modifier.size(34.dp).clip(CircleShape).background(Theme.control).clickable(onClick = onSettings), contentAlignment = Alignment.Center) {
+            SymbolIcon("gearshape.fill", Theme.textPrimary, 16.dp)
         }
     }
 }
 
 @Composable
-private fun SpeedControl(controller: GameController) {
+private fun SpeedControl(controller: GameController, onLockedTap: () -> Unit, modifier: Modifier = Modifier) {
     val current = controller.hud.speed
     val turbo = controller.isTurboUnlocked
-    Row(Modifier.fillMaxWidth().panelBackground().padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(modifier.clip(RoundedCornerShape(10.dp)).background(Theme.control).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         for (speed in GameSpeed.entries) {
             val locked = speed.needsBoost && !turbo
             Box(
-                Modifier.weight(1f).height(34.dp).clip(RoundedCornerShape(9.dp))
-                    .background(if (speed == current) Theme.accent else Theme.control)
-                    .clickable(enabled = !locked) { controller.setSpeed(speed) },
+                Modifier.size(width = 30.dp, height = 40.dp).clip(RoundedCornerShape(8.dp))
+                    .background(if (speed == current) Theme.accent else Color.Transparent)
+                    .clickable { if (locked) onLockedTap() else controller.setSpeed(speed) },
                 contentAlignment = Alignment.Center,
             ) {
-                if (locked) SymbolIcon("lock.fill", Theme.textSecondary, 13.dp)
-                else Label(speed.label, size = 13.sp, weight = FontWeight.ExtraBold, color = if (speed == current) Color.Black else Theme.textPrimary)
+                if (locked) SymbolIcon("lock.fill", Theme.textSecondary, 12.dp)
+                else Label(speed.label, size = 11.sp, weight = FontWeight.ExtraBold, color = if (speed == current) Color.Black else Theme.textPrimary)
             }
         }
     }
@@ -184,17 +186,25 @@ private fun SpeedControl(controller: GameController) {
 @Composable
 private fun ControlBar(
     controller: GameController, onFinance: () -> Unit, onManage: () -> Unit, onStaff: () -> Unit,
-    onSettings: () -> Unit, onBoosts: () -> Unit, onAchievements: () -> Unit,
+    onBoosts: () -> Unit, onAchievements: () -> Unit, onLeave: () -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().panelBackground().horizontalScroll(rememberScrollState()).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        ControlButton("hammer.fill", "Build", { controller.enterBuildMode(BuildCategory.path) }, highlighted = true)
-        ControlButton("trash.fill", "Demolish", { controller.enterDemolishMode() })
+    var menuOpen by remember { mutableStateOf(false) }
+    val building = controller.build.isActive
+    Row(Modifier.fillMaxWidth().panelBackground().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        ControlButton(if (building) "xmark" else "hammer.fill", if (building) "Close" else "Build",
+            { if (building) controller.exitBuildMode() else controller.enterBuildMode(BuildCategory.path) }, highlighted = building)
+        ControlButton("chart.bar.fill", "Manage", onManage)
         ControlButton("person.2.badge.gearshape.fill", "Staff", onStaff)
-        ControlButton("chart.line.uptrend.xyaxis", "Finance", onFinance)
-        ControlButton("slider.horizontal.3", "Manage", onManage)
-        ControlButton("gearshape.fill", "Park", onSettings)
-        ControlButton("trophy.fill", "Awards", onAchievements)
-        ControlButton("bolt.fill", "Boosts", onBoosts)
+        ControlButton("dollarsign.circle.fill", "Money", onFinance, tint = Theme.money)
+        Box {
+            ControlButton("line.3.horizontal", "Menu", { menuOpen = true })
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(text = { Text("Achievements") }, onClick = { menuOpen = false; onAchievements() })
+                DropdownMenuItem(text = { Text("Boosts") }, onClick = { menuOpen = false; onBoosts() })
+                DropdownMenuItem(text = { Text("Save park") }, onClick = { menuOpen = false; controller.save() })
+                DropdownMenuItem(text = { Text("Leave park", color = Theme.danger) }, onClick = { menuOpen = false; onLeave() })
+            }
+        }
     }
 }
 

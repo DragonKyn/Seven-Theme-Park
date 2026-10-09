@@ -38,3 +38,9 @@ operator fun Int.times(other: Double): Double = this.toDouble() * other
 operator fun Int.plus(other: Double): Double = this.toDouble() + other
 operator fun Int.minus(other: Double): Double = this.toDouble() - other
 operator fun Int.div(other: Double): Double = this.toDouble() / other
+
+/** A pair of points, as the artwork's cables and wires are described. */
+class Segment(val start: CGPoint, val end: CGPoint)
+
+/** The two wires of a chairlift, out and back. */
+class CablePair(val out: List<CGPoint>, val back: List<CGPoint>)

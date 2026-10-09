@@ -43,3 +43,10 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 }
+
+// The interface reads plain, mutable game state that is not observable by Compose, and is told to
+// redraw by a version number instead. With strong skipping, a composable handed the same controller
+// object is skipped and never sees the change, so the menus appear dead. Turn it off.
+composeCompiler {
+    enableStrongSkippingMode = false
+}

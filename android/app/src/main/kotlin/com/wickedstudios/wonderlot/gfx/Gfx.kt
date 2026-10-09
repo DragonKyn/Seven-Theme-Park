@@ -139,6 +139,7 @@ class UIColor(val red: Double, val green: Double, val blue: Double, val alpha: D
     }
 }
 
+enum class UIRectCorner { topLeft, topRight, bottomLeft, bottomRight }
 enum class LineCap { butt, round, square }
 enum class LineJoin { miter, round, bevel }
 enum class BlendMode { normal, clear, multiply, destinationOut }
@@ -164,6 +165,17 @@ class UIBezierPath() {
     constructor(roundedRect: CGRect, cornerRadius: Number) : this() {
         val radius = min(cornerRadius.toDouble(), min(roundedRect.width, roundedRect.height) / 2).toFloat()
         path.addRoundRect(roundedRect.toRectF(), radius, radius, Path.Direction.CW)
+    }
+
+    constructor(rect: CGRect, corners: List<UIRectCorner>, radii: CGSize) : this() {
+        val rx = radii.width.toFloat()
+        val ry = radii.height.toFloat()
+        fun r(corner: UIRectCorner) = if (corner in corners) floatArrayOf(rx, ry) else floatArrayOf(0f, 0f)
+        val tl = r(UIRectCorner.topLeft)
+        val tr = r(UIRectCorner.topRight)
+        val br = r(UIRectCorner.bottomRight)
+        val bl = r(UIRectCorner.bottomLeft)
+        path.addRoundRect(rect.toRectF(), floatArrayOf(tl[0], tl[1], tr[0], tr[1], br[0], br[1], bl[0], bl[1]), Path.Direction.CW)
     }
 
     /** An arc about a centre, in radians, clockwise in the y-down space the artwork is drawn in. */
