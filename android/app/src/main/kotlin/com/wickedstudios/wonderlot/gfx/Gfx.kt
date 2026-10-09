@@ -279,8 +279,8 @@ class CGContext(val canvas: Canvas) {
     fun scaleBy(x: Number, y: Number) = canvas.scale(x.toFloat(), y.toFloat())
     fun rotate(by: Number) = canvas.rotate(Math.toDegrees(by.toDouble()).toFloat())
 
-    fun setFillColor(color: UIColor) { fillColor = color }
-    fun setStrokeColor(color: UIColor) { strokeColor = color }
+    @JvmName("applyFillColor") fun setFillColor(color: UIColor) { fillColor = color }
+    @JvmName("applyStrokeColor") fun setStrokeColor(color: UIColor) { strokeColor = color }
     fun setLineWidth(width: Number) { lineWidth = width.toDouble() }
     fun setBlendMode(mode: BlendMode) { blend = mode }
 
