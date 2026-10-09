@@ -9,6 +9,7 @@
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="Wonder Lot"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <meta-data
