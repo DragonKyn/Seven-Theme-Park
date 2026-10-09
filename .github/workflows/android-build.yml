@@ -3,7 +3,7 @@ name: Build Android
 on:
   push:
     branches: [main]
-    paths: ['android/**', '.github/workflows/android-build.yml']
+    paths: ['android/**', '.github/workflows/android-build.yml', '.github/scripts/ci_report.py']
   workflow_dispatch:
 
 jobs:
@@ -24,43 +24,18 @@ jobs:
           gradle-version: '8.9'
 
       - name: Core tests
-        id: tests
         run: |
           set -o pipefail
           gradle :core:test --stacktrace -i 2>&1 | tee ../core-test.log
 
       - name: Debug APK
-        id: apk
         run: |
           set -o pipefail
           gradle :app:assembleDebug --stacktrace 2>&1 | tee ../app-build.log
 
-      - name: Report test output
+      - name: Report
         if: always()
-        run: |
-          # Surfaces the interesting lines as annotations so they can be read
-          # without downloading logs.
-          if [ -f ../core-test.log ]; then
-            lines=$(grep -E "^(days=|e: |FAILED|.*AssertionError|.*Exception)" ../core-test.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            [ -n "$lines" ] && echo "::notice title=core-test::$lines"
-            summary=$(grep -E "tests completed|BUILD (SUCCESSFUL|FAILED)" ../core-test.log | head -5 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            [ -n "$summary" ] && echo "::notice title=core-summary::$summary"
-          fi
-          if [ -f ../app-build.log ]; then
-            lines=$(grep -E "^(e: |w: .*(error)|.*error:|FAILURE|\* What went wrong|BUILD (SUCCESSFUL|FAILED))" ../app-build.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            [ -n "$lines" ] && echo "::notice title=app-build::$lines"
-          fi
-          true
-
-      - name: Report compile errors
-        if: failure()
-        run: |
-          for f in ../core-test.log ../app-build.log; do
-            [ -f "$f" ] || continue
-            msg=$(grep -E "^e: |What went wrong|Execution failed|error:|Unresolved|Type mismatch" -A2 "$f" | head -120 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            [ -n "$msg" ] && echo "::error title=$(basename $f)::$msg"
-          done
-          true
+        run: python3 ../.github/scripts/ci_report.py .. || true
 
       - uses: actions/upload-artifact@v4
         if: always()
