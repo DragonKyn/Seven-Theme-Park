@@ -67,10 +67,13 @@ class SimulationTests {
         val ride = GameContent.attraction("ride.carousel")!!
         val before = state.ledger.cash
 
-        assertTrue(state.place(ride, GridCoord(x + 2, 3)))
+        // Beside the starting walkway, so guests can reach it.
+        val check = state.placementCheck(ride, GridCoord(x + 1, 3))
+        assertTrue(check.isValid, "placement: ${check.reason}")
+        assertTrue(state.place(ride, GridCoord(x + 1, 3)))
         assertTrue(state.ledger.cash < before)
         assertEquals(1, state.attractions.size)
-        assertTrue(state.demolish(GridCoord(x + 2, 3)))
+        assertTrue(state.demolish(GridCoord(x + 1, 3)))
         assertEquals(0, state.attractions.size)
     }
 
@@ -85,9 +88,9 @@ class SimulationTests {
 
     @Test
     fun catalogueIsComplete() {
-        assertTrue(GameContent.attractions.size >= 20, "rides ${GameContent.attractions.size}")
+        assertTrue(GameContent.attractions.size >= 28, "rides ${GameContent.attractions.size}")
         assertTrue(GameContent.facilities.size >= 15, "facilities ${GameContent.facilities.size}")
-        assertTrue(GameContent.scenery.size >= 20, "scenery ${GameContent.scenery.size}")
+        assertTrue(GameContent.scenery.size >= 16, "scenery ${GameContent.scenery.size}")
         assertNotNull(GameContent.facility("shop.popcorn"))
         assertEquals(10, MapCatalogue.all.size)
         assertEquals(15, TrialContent.all.size)

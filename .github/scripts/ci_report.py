@@ -56,6 +56,8 @@ def main():
                 errors.append(line.strip())
                 if "What went wrong" in line or "Execution failed" in line:
                     errors.extend(item.strip() for item in lines[index + 1:index + 4])
+                elif "FAILED" in line and ">" in line:
+                    errors.extend(item.strip() for item in lines[index + 1:index + 4])
             if len(errors) > 200:
                 break
         annotate("error", name + " problems", errors[:200])
