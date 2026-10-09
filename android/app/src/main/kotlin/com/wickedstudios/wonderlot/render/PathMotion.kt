@@ -25,7 +25,13 @@ object PathMotion {
      * along a straight does not crawl through one and race the other. The
      * heading eases through the whole of each leg, as the original does.
      */
-    class Loop(val points: List<CGPoint>, val duration: Double, private val headings: List<Double>? = null) {
+    class Loop(
+        val points: List<CGPoint>,
+        val duration: Double,
+        private val headings: List<Double>? = null,
+        /** How much of each leg is spent turning: a kart sweeps through all of it, a bumper car snaps round and then drives. */
+        private val turnFraction: Double = 1.0,
+    ) {
         private val lengths = DoubleArray(points.size)
         private val total: Double
 
@@ -58,7 +64,8 @@ object PathMotion {
             val previousIndex = (index - 1 + points.size) % points.size
             val previous = headings?.get(previousIndex) ?: heading(points[previousIndex], from)
             val current = headings?.get(index) ?: heading(from, to)
-            return Pose(from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u, easeAngle(previous, current, u))
+            val turned = min(1.0, u / min(1.0, max(0.05, turnFraction)))
+            return Pose(from.x + (to.x - from.x) * u, from.y + (to.y - from.y) * u, easeAngle(previous, current, turned))
         }
     }
 

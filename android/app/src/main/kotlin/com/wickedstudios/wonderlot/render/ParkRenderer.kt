@@ -190,6 +190,9 @@ class ParkRenderer(
     private class CachedBuilding(val key: String, val bitmap: Bitmap)
 
     private val buildingBitmaps = HashMap<UUID, CachedBuilding>()
+    private val motionSets = HashMap<UUID, MotionSet>()
+    private val motionLive = HashSet<UUID>()
+    private var frameDelta = 0.0
     private val sceneryBitmaps = HashMap<UUID, CachedBuilding>()
     private var renderedScheme: ParkScheme? = null
 
@@ -227,6 +230,7 @@ class ParkRenderer(
         density = densityScale
         val delta = min(deltaSeconds, 0.25)
         time += delta
+        frameDelta = delta
 
         controller.advance(delta)
 
@@ -252,9 +256,11 @@ class ParkRenderer(
         drawCarPark(canvas, state)
         drawTiles(canvas, state)
         drawLitter(canvas, state)
+        motionLive.clear()
         drawScenery(canvas, state)
         drawTrains(canvas, state)
         drawBuildings(canvas, state)
+        motionSets.keys.retainAll(motionLive)
         drawEntranceSign(canvas, state)
         if (isInteractive) drawGhost(canvas)
         drawGuests(canvas, state)
@@ -317,6 +323,7 @@ class ParkRenderer(
         renderedScheme = state.scheme
         buildingBitmaps.clear()
         sceneryBitmaps.clear()
+        motionSets.clear()
     }
 
     private fun syncTiles(state: GameState) {
@@ -531,8 +538,10 @@ class ParkRenderer(
             val bitmap = cachedBitmap(sceneryBitmaps, item.id, appearance, drawn.width, drawn.height)
             val centre = item.rect.centre
             drawSprite(canvas, bitmap, centre.x, centre.y, drawn.width.toDouble(), drawn.height.toDouble(), quarterTurns = item.rotation)
+            drawMotion(canvas, item.id, appearance, drawn.width, drawn.height, centre.x, centre.y, item.rotation, running = true, alpha = 1f)
         }
         sceneryBitmaps.keys.retainAll(live)
+        motionLive.addAll(live)
     }
 
     private fun drawBuildings(canvas: Canvas, state: GameState) {
@@ -542,7 +551,7 @@ class ParkRenderer(
             live.add(attraction.id)
             drawBuilding(canvas, attraction.id, attraction.size, attraction.origin.x, attraction.origin.y, attraction.rotation,
                 (attraction.definition?.appearance ?: BuildingAppearance.unknown).tinted(attraction.tint).applying(state.scheme),
-                alpha = if (attraction.isOperational) 1f else 0.45f)
+                alpha = if (attraction.isOperational) 1f else 0.45f, running = attraction.isOperational)
         }
 
         for (facility in state.facilities) {
@@ -550,14 +559,15 @@ class ParkRenderer(
             val dimmed = !facility.isOpen || facility.isUnusable || facility.isBeingCleaned
             drawBuilding(canvas, facility.id, facility.size, facility.origin.x, facility.origin.y, facility.rotation,
                 (facility.definition?.appearance ?: BuildingAppearance.unknown).withVariant(facility.variant).applying(state.scheme),
-                alpha = if (dimmed) 0.45f else 1f)
+                alpha = if (dimmed) 0.45f else 1f, running = !dimmed)
         }
 
         buildingBitmaps.keys.retainAll(live)
+        motionLive.addAll(live)
     }
 
     private fun drawBuilding(canvas: Canvas, id: UUID, size: GridSize, originX: Int, originY: Int, rotation: Int,
-                             appearance: BuildingAppearance, alpha: Float) {
+                             appearance: BuildingAppearance, alpha: Float, running: Boolean) {
         val centreX = originX + size.width / 2.0
         val centreY = originY + size.height / 2.0
         if (!isVisible(centreX, centreY, max(size.width, size.height).toDouble())) return
@@ -566,7 +576,56 @@ class ParkRenderer(
         val drawn = size.rotated(rotation)
         val bitmap = cachedBitmap(buildingBitmaps, id, appearance, drawn.width, drawn.height)
         drawSprite(canvas, bitmap, centreX, centreY, drawn.width.toDouble(), drawn.height.toDouble(), quarterTurns = rotation, alpha = alpha)
+        drawMotion(canvas, id, appearance, drawn.width, drawn.height, centreX, centreY, rotation, running, alpha)
     }
+
+    /**
+     * The parts of a building that move. Each building keeps its own clock, which only runs while the building does,
+     * so a closed or broken ride freezes mid-motion.
+     */
+    private fun drawMotion(canvas: Canvas, id: UUID, appearance: BuildingAppearance, widthTiles: Int, heightTiles: Int,
+                           centreX: Double, centreY: Double, rotation: Int, running: Boolean, alpha: Float) {
+        if (appearance.motif.motion == com.wickedstudios.wonderlot.BuildingMotion.none) return
+
+        val key = "${appearance.motif.name}${appearance.primary.name}${appearance.secondary.name}" +
+            "${appearance.accent.name}${appearance.variant}-${widthTiles}x$heightTiles"
+        var set = motionSets[id]
+        if (set == null || set.key != key) {
+            val buildingSize = CGSize(widthTiles * tileSide, heightTiles * tileSide)
+            val fresh = MotionSet(key, RideMotion.build(appearance, buildingSize))
+            fresh.clock = set?.clock ?: (id.hashCode() and 0xff) / 25.0
+            set = fresh
+            motionSets[id] = set
+        }
+        if (running) set.clock += frameDelta
+
+        val k = (pixelsPerTile / tileSide).toFloat()
+        val pose = motionPose
+        canvas.save()
+        canvas.translate(screenX(centreX), screenY(centreY))
+        canvas.rotate(((rotation % 4 + 4) % 4) * 90f)
+        for (part in set.parts) {
+            pose.reset()
+            part.pose(set.clock, pose)
+            val w = (part.size.width * k).toFloat()
+            val h = (part.size.height * k).toFloat()
+            canvas.save()
+            canvas.translate((pose.x * k).toFloat(), (-pose.y * k).toFloat())
+            canvas.rotate((-Math.toDegrees(pose.angle)).toFloat())
+            canvas.scale(pose.scaleX.toFloat(), pose.scaleY.toFloat())
+            bitmapPaint.alpha = (alpha * pose.alpha.coerceIn(0.0, 1.0) * 255).toInt()
+            val left = (-part.anchorX * w).toFloat()
+            val top = (-(1 - part.anchorY) * h).toFloat()
+            motionRect.set(left, top, left + w, top + h)
+            canvas.drawBitmap(part.bitmap, null, motionRect, bitmapPaint)
+            canvas.restore()
+        }
+        bitmapPaint.alpha = 255
+        canvas.restore()
+    }
+
+    private val motionPose = MotionPose()
+    private val motionRect = android.graphics.RectF()
 
     // endregion
 
