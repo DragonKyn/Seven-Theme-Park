@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
+        shell: bash
         working-directory: android
     steps:
       - uses: actions/checkout@v4
@@ -21,10 +22,46 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
       - name: Core tests
-        run: gradle :core:test --stacktrace
+        id: tests
+        run: |
+          set -o pipefail
+          gradle :core:test --stacktrace -i 2>&1 | tee ../core-test.log
+
       - name: Debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        id: apk
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --stacktrace 2>&1 | tee ../app-build.log
+
+      - name: Report test output
+        if: always()
+        run: |
+          # Surfaces the interesting lines as annotations so they can be read
+          # without downloading logs.
+          if [ -f ../core-test.log ]; then
+            lines=$(grep -E "^(days=|e: |FAILED|.*AssertionError|.*Exception)" ../core-test.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            [ -n "$lines" ] && echo "::notice title=core-test::$lines"
+            summary=$(grep -E "tests completed|BUILD (SUCCESSFUL|FAILED)" ../core-test.log | head -5 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            [ -n "$summary" ] && echo "::notice title=core-summary::$summary"
+          fi
+          if [ -f ../app-build.log ]; then
+            lines=$(grep -E "^(e: |w: .*(error)|.*error:|FAILURE|\* What went wrong|BUILD (SUCCESSFUL|FAILED))" ../app-build.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            [ -n "$lines" ] && echo "::notice title=app-build::$lines"
+          fi
+          true
+
+      - name: Report compile errors
+        if: failure()
+        run: |
+          for f in ../core-test.log ../app-build.log; do
+            [ -f "$f" ] || continue
+            msg=$(grep -E "^e: |What went wrong|Execution failed|error:|Unresolved|Type mismatch" -A2 "$f" | head -120 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            [ -n "$msg" ] && echo "::error title=$(basename $f)::$msg"
+          done
+          true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
