@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import com.wickedstudios.wonderlot.AppInfo
 import com.wickedstudios.wonderlot.Balance
@@ -74,6 +75,18 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
 
     val hud = controller.hud
     val build = controller.build
+
+    // The system Back button peels things off one layer at a time and only then offers to leave.
+    BackHandler(enabled = sheet == GameSheet.None) {
+        when {
+            controller.pendingDemolition != null -> controller.cancelPendingDemolition()
+            confirmExit -> confirmExit = false
+            controller.movingStaffID != null -> controller.cancelStaffMove()
+            build.isActive -> controller.exitBuildMode()
+            controller.selection != null -> controller.clearSelection()
+            else -> confirmExit = true
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         ParkViewHost(controller, interactive = true, modifier = Modifier.fillMaxSize(), onVersion = { version.intValue = it })

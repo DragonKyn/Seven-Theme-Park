@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.wickedstudios.wonderlot"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.wickedstudios.wonderlot"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         // The store insists the code goes up on every upload; CI passes its run number.
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
         versionName = "1.2.2"
