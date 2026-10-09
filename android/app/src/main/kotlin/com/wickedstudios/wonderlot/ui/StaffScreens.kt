@@ -46,21 +46,21 @@ import com.wickedstudios.wonderlot.gfx.CGSize
 import com.wickedstudios.wonderlot.gfx.ParkPalette
 import com.wickedstudios.wonderlot.gfx.StaffArtwork
 
-private enum class StaffSort(val title: String) { name("Name"), mostTasks("Most done"), idleFirst("Idle first") }
+private enum class StaffSort(val title: String) { byName("Name"), mostTasks("Most done"), idleFirst("Idle first") }
 
 /** Hiring, firing and the wage bill. */
 @Composable
 fun StaffSheet(controller: GameController, onDismiss: () -> Unit) {
     var hiring by remember { mutableStateOf<StaffRole?>(null) }
     var filter by remember { mutableStateOf<StaffRole?>(null) }
-    var sort by remember { mutableStateOf(StaffSort.name) }
+    var sort by remember { mutableStateOf(StaffSort.byName) }
     val state = controller.state
 
     fun countOf(role: StaffRole) = state.staff.count { it.role == role }
     fun members(role: StaffRole): List<Staff> {
         val people = state.staff.filter { it.role == role }
         return when (sort) {
-            StaffSort.name -> people.sortedBy { it.name }
+            StaffSort.byName -> people.sortedBy { it.name }
             StaffSort.mostTasks -> people.sortedByDescending { it.tasksCompleted }
             StaffSort.idleFirst -> people.sortedWith(compareByDescending<Staff> { it.isIdle }.thenBy { it.name })
         }

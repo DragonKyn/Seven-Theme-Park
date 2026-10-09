@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -407,7 +408,7 @@ private fun Confetti(progress: Float) {
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.graphicsLayerRotate(pivot: Offset, degrees: Float, draw: () -> Unit) {
-    androidx.compose.ui.graphics.drawscope.rotate(degrees, pivot) { draw() }
+    rotate(degrees, pivot) { draw() }
 }
 
 // endregion

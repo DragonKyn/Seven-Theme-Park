@@ -142,7 +142,7 @@ private fun Hud(controller: GameController, onOpenFinance: () -> Unit, onAlerts:
     Row(Modifier.fillMaxWidth().panelBackground().padding(8.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.clickable(onClick = onOpenFinance)) {
-            MoneyPill(hud.cash, hud.todayProfit, hud.mode == GameMode.sandbox)
+            MoneyPill(hud.cash, hud.todayProfit, hud.mode == GameMode.freeBuild)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Label(hud.parkName, size = 13.sp, weight = FontWeight.ExtraBold, maxLines = 1)
