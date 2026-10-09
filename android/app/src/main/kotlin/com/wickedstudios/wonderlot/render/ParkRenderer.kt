@@ -21,6 +21,7 @@ import com.wickedstudios.wonderlot.ParkMap
 import com.wickedstudios.wonderlot.ParkScheme
 import com.wickedstudios.wonderlot.ParkTarget
 import com.wickedstudios.wonderlot.SelectionDetail
+import com.wickedstudios.wonderlot.StaffLook
 import com.wickedstudios.wonderlot.StaffRole
 import com.wickedstudios.wonderlot.TerrainType
 import com.wickedstudios.wonderlot.Tile
@@ -795,6 +796,53 @@ class ParkRenderer(
         shownThought.keys.retainAll(live)
     }
 
+    private val ballPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    /**
+     * The balls a juggler keeps in the air. They are drawn on top of the figure rather than painted into it, because a
+     * ball painted into a still picture is a ball hanging in mid air. Each flies a parabola from one hand to the
+     * other; three are started a beat apart, which is the ordinary three-ball cascade.
+     */
+    private fun drawJugglerBalls(canvas: Canvas, centreX: Double, centreY: Double, canvasHeight: Double, look: StaffLook) {
+        val figure = canvasHeight * StaffArtwork.figureScale(look)
+        val bottom = canvasHeight - (canvasHeight - figure) * 0.20
+        val handY = canvasHeight / 2 - (bottom - figure * 0.30)
+        val reach = figure * 0.24
+        val lift = figure * 0.62
+        val diameter = figure * 0.16
+        val flight = 0.9
+        val beat = flight / 3
+        val colours = listOf(ParkColour.red, ParkColour.yellow, ParkColour.blue)
+
+        for ((index, colour) in colours.withIndex()) {
+            val startsLeft = index % 2 == 0
+            val first = if (startsLeft) -reach else reach
+            val second = -first
+            var phase = (time - beat * index) % (flight * 2)
+            if (phase < 0) phase = 0.0
+            val throwing = phase < flight
+            val u = (if (throwing) phase else phase - flight) / flight
+            val from = if (throwing) first else second
+            val to = if (throwing) second else first
+            val x = from + (to - from) * u
+            val y = handY + 4 * lift * u * (1 - u)
+
+            val sx = screenX(centreX + x / tileSide)
+            val sy = screenY(centreY + y / tileSide)
+            val radius = (diameter / tileSide * pixelsPerTile / 2).toFloat()
+            ballPaint.style = Paint.Style.FILL
+            ballPaint.color = ParkPalette.colour(colour).argb
+            canvas.drawCircle(sx, sy, radius, ballPaint)
+            ballPaint.style = Paint.Style.STROKE
+            ballPaint.strokeWidth = max(1f, radius * 0.12f)
+            ballPaint.color = Color.argb(77, 0, 0, 0)
+            canvas.drawCircle(sx, sy, radius, ballPaint)
+            ballPaint.style = Paint.Style.FILL
+            ballPaint.color = Color.argb(153, 255, 255, 255)
+            canvas.drawCircle(sx - radius * 0.3f, sy - radius * 0.3f, radius * 0.22f, ballPaint)
+        }
+    }
+
     private fun drawStaff(canvas: Canvas, state: GameState) {
         if (renderedUniform != state.uniformColour) {
             renderedUniform = state.uniformColour
@@ -809,7 +857,7 @@ class ParkRenderer(
             if (member.isOnTrain) continue
 
             val look = member.look
-            val scale = StaffArtwork.figureScale(look)
+            val scale = StaffArtwork.sizeScale(look)
             val key = "${look.role.name}${look.act.name}${look.costume.name}${look.primary.name}${look.secondary.name}${look.trim.name}"
             var entry = staffBitmaps[member.id]
             if (entry == null || entry.first != key) {
@@ -826,6 +874,9 @@ class ParkRenderer(
             if (member.role == StaffRole.mascot) sway = Math.sin(time * Math.PI / 0.28 / 2) * 0.07 * (180 / Math.PI)
 
             drawSprite(canvas, entry.second, member.position.x, member.position.y, sizeWidth / tileSide, sizeHeight / tileSide, degrees = sway)
+            if (look.role == StaffRole.entertainer && look.act == com.wickedstudios.wonderlot.EntertainerAct.juggler) {
+                drawJugglerBalls(canvas, member.position.x, member.position.y, sizeHeight, look)
+            }
         }
         staffBitmaps.keys.retainAll(live)
     }
@@ -957,7 +1008,7 @@ class ParkRenderer(
             }
             is SelectionDetail.OfStaff -> state.staffMember(selection.detail.id)?.let {
                 cx = it.position.x; cy = it.position.y
-                val scale = StaffArtwork.figureScale(it.look)
+                val scale = if (it.role == StaffRole.mascot) StaffArtwork.mascotScale else 1.0
                 val margin = 0.16
                 w = staffHeight / tileSide * scale * StaffArtwork.aspect + margin
                 h = staffHeight / tileSide * scale + margin
