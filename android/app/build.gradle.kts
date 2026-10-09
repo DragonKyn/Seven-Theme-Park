@@ -14,10 +14,20 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.2.2"
+
+        // Google's own test identifiers until the real AdMob Android app and rewarded unit exist. Supply the real
+        // ones with -PADMOB_APP_ID=... -PADMOB_REWARDED_UNIT_ID=... (or in ~/.gradle/gradle.properties).
+        val appId = (project.findProperty("ADMOB_APP_ID") as String?) ?: "ca-app-pub-3940256099942544~3347511713"
+        manifestPlaceholders["admobAppId"] = appId
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "REWARDED_UNIT_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
+        }
         release {
+            val unit = (project.findProperty("ADMOB_REWARDED_UNIT_ID") as String?) ?: "ca-app-pub-3940256099942544/5224354917"
+            buildConfigField("String", "REWARDED_UNIT_ID", "\"$unit\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -30,7 +40,10 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -42,6 +55,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+    implementation("com.google.android.ump:user-messaging-platform:3.1.0")
 }
 
 // The interface reads plain, mutable game state that is not observable by Compose, and is told to

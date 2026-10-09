@@ -30,6 +30,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             RootScreen(router = router, services = services)
         }
+
+        services.ads.start(this)
     }
 
     override fun onStop() {

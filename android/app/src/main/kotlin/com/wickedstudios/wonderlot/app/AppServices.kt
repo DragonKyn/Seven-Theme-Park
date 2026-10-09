@@ -49,6 +49,7 @@ class AppServices(context: Context) {
     val saveService = SaveGameService(context.filesDir)
     val mapStore = CustomMapStore(context.filesDir)
     val boosts = BoostCenter(store)
+    val ads = com.wickedstudios.wonderlot.ads.RewardedAdCenter(context.applicationContext)
     val perkStore = PerkStore(store)
     val trialProgress = TrialProgressStore(store)
     val tutorial = TutorialDirector(TutorialStore(store))

@@ -24,6 +24,16 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
+import com.wickedstudios.wonderlot.AppInfo
+import com.wickedstudios.wonderlot.Balance
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.alpha
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.border
+import android.app.Activity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -273,19 +283,85 @@ private fun AlertsSheet(controller: GameController, onDismiss: () -> Unit) {
 
 @Composable
 private fun BoostsSheet(services: AppServices, onDismiss: () -> Unit) {
-    BottomSheet("Boosts", onDismiss) {
-        Label("Short helpers you can switch on. Rewarded adverts are not wired up in this build yet, so boosts cannot be started.",
-            size = 12.sp, color = Theme.textSecondary)
+    val activity = LocalContext.current as? Activity
+    val ads = services.ads
+    val scope = rememberCoroutineScope()
+    var pending by remember { mutableStateOf<BoostKind?>(null) }
+    // Ticks once a second so the countdowns move.
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            services.boosts.refresh()
+            tick += 1
+        }
+    }
+    @Suppress("UNUSED_VARIABLE") val observed = tick
+    val minutes = Balance.adBoostMinutes.toInt()
+
+    BottomSheet("Boosts", onDismiss, tall = true) {
+        Label(
+            "Watch a short advert to switch one of these on for $minutes minutes. Watch another and the time stacks. " +
+                "Neither is needed to finish anything in the game.",
+            size = 13.sp, weight = FontWeight.Medium, color = Theme.textSecondary,
+        )
+
         for (kind in BoostKind.entries) {
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Theme.control).padding(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                SymbolIcon(kind.symbolName, Theme.accentWarm, 22.dp)
-                Column(Modifier.weight(1f)) {
-                    Label(kind.title, weight = FontWeight.ExtraBold)
-                    Label(kind.summary, size = 11.sp, color = Theme.textSecondary)
+            val remaining = services.boosts.remainingLabel(kind)
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.08f))
+                    .border(if (remaining == null) 1.dp else 2.dp, if (remaining == null) Color.White.copy(alpha = 0.08f) else Theme.money.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(42.dp).clip(CircleShape)
+                            .then(if (remaining == null) Modifier.background(Theme.control) else Modifier.background(Theme.moneyGradient)),
+                        contentAlignment = Alignment.Center,
+                    ) { SymbolIcon(kind.symbolName, if (remaining == null) Theme.textSecondary else Color.Black.copy(alpha = 0.85f), 20.dp) }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Label(kind.title, size = 16.sp, weight = FontWeight.ExtraBold)
+                        Label(kind.summary, size = 12.sp, weight = FontWeight.Medium, color = Theme.textSecondary)
+                    }
                 }
-                services.boosts.remainingLabel(kind)?.let { Label(it, weight = FontWeight.ExtraBold, color = Theme.accent) }
+
+                remaining?.let { Label("Running, $it left", size = 13.sp, weight = FontWeight.Bold, color = Theme.accent) }
+
+                val busy = pending != null
+                Box(
+                    Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp)).background(Theme.moneyGradient)
+                        .alpha(if (!busy || pending == kind) 1f else 0.5f)
+                        .clickable(enabled = !busy && activity != null) {
+                            pending = kind
+                            scope.launch {
+                                val earned = ads.show(activity!!)
+                                if (earned) services.boosts.grant(kind)
+                                pending = null
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Label(
+                        when {
+                            pending == kind -> "Loading advert"
+                            remaining != null -> "Watch another, add $minutes minutes"
+                            else -> "Watch an advert, $minutes minutes"
+                        },
+                        size = 14.sp, weight = FontWeight.ExtraBold, color = Color.Black.copy(alpha = 0.88f),
+                    )
+                }
             }
+        }
+
+        ads.lastError?.let { Label(it, size = 12.sp, weight = FontWeight.SemiBold, color = Theme.danger) }
+        Label(ads.statusLine, size = 11.sp, weight = FontWeight.SemiBold, color = Theme.textSecondary)
+        Label(
+            "No advert will ever interrupt your park. The only ones in ${AppInfo.gameName} are the ones you choose to watch here.",
+            size = 11.sp, weight = FontWeight.Medium, color = Theme.textSecondary,
+        )
+        if (ads.canChangePrivacyChoices && activity != null) {
+            PillButton("Privacy choices", { ads.showPrivacyOptions(activity) }, background = Theme.control, foreground = Theme.textPrimary)
         }
     }
 }

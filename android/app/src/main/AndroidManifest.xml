@@ -11,6 +11,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Wonder Lot"
         android:theme="@android:style/Theme.Material.NoActionBar">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
