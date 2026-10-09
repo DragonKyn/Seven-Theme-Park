@@ -517,7 +517,7 @@ class GameController(
         if (from == null || from == coord || from.manhattanDistance(coord) > Balance.maxPaintGap) return listOf(coord)
 
         val run = ArrayList<GridCoord>()
-        var current = from
+        var current: GridCoord = from
         while (current != coord) {
             val dx = coord.x - current.x
             val dy = coord.y - current.y
