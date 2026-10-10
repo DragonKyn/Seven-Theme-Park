@@ -139,7 +139,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Label("SAVED PARKS", size = 10.sp, weight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.62f),
+                    Label("SAVED PARKS", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 1.6f, color = Color.White.copy(alpha = 0.62f),
                         modifier = Modifier.padding(start = 4.dp))
                     for (slot in 0 until SaveGameService.slotCount) {
                         SaveSlotRow(slot, slots[slot], onLoad = { router.loadGame(slot) }, onDelete = { slotToDelete = slot })
@@ -325,7 +325,7 @@ private fun NewParkSheet(
         if (summaries[chosen] != null) confirmingReplace = true else onStart(parkName, mode, selectedMap, chosen)
     }
 
-    BottomSheet("New Park", onDismiss, tall = true, trailing = {
+    BottomSheet("New Park", onDismiss, tall = true, closeLabel = "Cancel", trailing = {
         PillButton("Start", { start() }, enabled = slot != null)
         Spacer(Modifier.width(8.dp))
     }) {
@@ -346,6 +346,8 @@ private fun NewParkSheet(
                 onEdit = { openEditor(router.customMap(it.id.removePrefix("custom."))) },
                 onDelete = { deleting = it })
         }
+        Label("Hold a map you drew to edit or delete it.", size = 12.sp, weight = FontWeight.Normal, color = Theme.textSecondary,
+            modifier = Modifier.padding(horizontal = 4.dp))
 
         SectionCard("Mode") {
             for (option in GameMode.sandboxModes) {

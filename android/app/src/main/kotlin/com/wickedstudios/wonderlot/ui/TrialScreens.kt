@@ -219,7 +219,7 @@ private fun Briefing(trial: TrialDefinition, router: AppRouter, onBack: () -> Un
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Label("TRIAL ${trial.number}  ·  ${trial.map.name.uppercase()}", size = 10.sp, weight = FontWeight.ExtraBold, color = Theme.money)
+                Label("TRIAL ${trial.number}  ·  ${trial.map.name.uppercase()}", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 1.6f, color = Theme.money)
                 Label(trial.title, size = 26.sp, weight = FontWeight.ExtraBold)
                 Label(trial.briefing, size = 14.sp, weight = FontWeight.Medium, color = Color.White.copy(alpha = 0.85f))
             }
@@ -306,7 +306,7 @@ fun CompleteStamp(scale: Float = 1f) {
         horizontalArrangement = Arrangement.spacedBy((4 * scale).dp), verticalAlignment = Alignment.CenterVertically,
     ) {
         SymbolIcon("checkmark.seal.fill", Theme.accent, (13 * scale).dp)
-        Label("COMPLETE", size = (12 * scale).sp, weight = FontWeight.Black, color = Theme.accent)
+        Label("COMPLETE", size = (12 * scale).sp, weight = FontWeight.Black, tracking = 1.5f * scale, color = Theme.accent)
     }
 }
 
@@ -351,7 +351,7 @@ private fun PerkTree(router: AppRouter, services: AppServices, onBack: () -> Uni
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
                         SymbolIcon(branch.symbolName, Theme.accentWarm, 14.dp)
-                        Label(branch.displayName.uppercase(), size = 11.sp, weight = FontWeight.ExtraBold, color = Theme.accentWarm, modifier = Modifier.weight(1f))
+                        Label(branch.displayName.uppercase(), size = 11.sp, weight = FontWeight.ExtraBold, tracking = 1.6f, color = Theme.accentWarm, modifier = Modifier.weight(1f))
                         Label("${store.spent(branch)} spent here", size = 10.sp, weight = FontWeight.Bold, color = Theme.textSecondary)
                     }
                     Label(branch.summary, size = 12.sp, weight = FontWeight.Medium, color = Theme.textSecondary)

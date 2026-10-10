@@ -96,7 +96,7 @@ fun AboutSheet(onDismiss: () -> Unit) {
 
 @Composable
 private fun AboutHeading(text: String) {
-    Label(text.uppercase(), size = 11.sp, weight = FontWeight.ExtraBold, color = Theme.money, modifier = Modifier.padding(top = 8.dp))
+    Label(text.uppercase(), size = 11.sp, weight = FontWeight.ExtraBold, tracking = 1.8f, color = Theme.money, modifier = Modifier.padding(top = 8.dp))
 }
 
 @Composable

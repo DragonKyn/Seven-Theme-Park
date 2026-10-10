@@ -181,7 +181,7 @@ fun UpgradeRow(title: String, summary: String, symbolName: String, level: Int, m
                onBuy: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
-            SymbolIcon(symbolName, if (level > 0) Theme.accentWarm else Theme.textSecondary, 16.dp)
+            SymbolIcon(symbolName, if (level > 0) Theme.accentWarm else Theme.textSecondary, 14.dp)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

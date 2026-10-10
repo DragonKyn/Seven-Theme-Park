@@ -47,6 +47,7 @@ fun BottomSheet(
     title: String,
     onDismiss: () -> Unit,
     tall: Boolean = false,
+    closeLabel: String = "Done",
     trailing: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -79,7 +80,7 @@ fun BottomSheet(
                 Box(
                     Modifier.clip(RoundedCornerShape(50)).background(Theme.control).clickable(onClick = onDismiss)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
-                ) { Label("Done", size = 13.sp, weight = FontWeight.Bold) }
+                ) { Label(closeLabel, size = 13.sp, weight = FontWeight.Bold) }
             }
             Column(
                 modifier = Modifier

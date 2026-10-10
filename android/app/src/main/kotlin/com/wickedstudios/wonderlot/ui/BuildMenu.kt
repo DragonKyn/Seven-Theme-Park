@@ -13,7 +13,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -83,7 +88,7 @@ private fun ToolRow(controller: GameController, itemCount: Int) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Label(
             if (build.isDemolishing) "REMOVING" else build.category.displayName.uppercase(),
-            size = 10.sp, weight = FontWeight.ExtraBold,
+            size = 10.sp, weight = FontWeight.ExtraBold, tracking = 1.6f,
             color = if (build.isDemolishing) Theme.danger else Theme.textSecondary,
         )
         if (!build.isDemolishing && itemCount > 0) {
@@ -114,7 +119,7 @@ private fun ToolChip(title: String, symbol: String, active: Boolean, activeTint:
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        SymbolIcon(symbol, if (active) Color.Black else restTint, 13.dp)
+        SymbolIcon(symbol, if (active) Color.Black else restTint, 11.dp)
         Label(title, size = 11.sp, weight = FontWeight.Bold, color = if (active) Color.Black else restTint)
     }
 }
@@ -138,7 +143,7 @@ private fun CategoryGrid(controller: GameController) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        SymbolIcon(category.symbolName, if (selected) Color.Black else Theme.textPrimary, 16.dp)
+                        SymbolIcon(category.symbolName, if (selected) Color.Black else Theme.textPrimary, 15.dp)
                         Label(category.shortName, size = 9.sp, weight = FontWeight.Bold,
                             color = if (selected) Color.Black else Theme.textPrimary, maxLines = 1)
                     }
@@ -150,8 +155,18 @@ private fun CategoryGrid(controller: GameController) {
 
 @Composable
 private fun ItemStrip(controller: GameController, items: List<BuildableDefinition>) {
+    // The last card fades out at the edge rather than being cut in half, so it reads as a list with more in it.
     Row(
-        modifier = Modifier.fillMaxWidth().height(86.dp).horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth().height(82.dp)
+            .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    Brush.horizontalGradient(0f to Color.Black, 0.92f to Color.Black, 1f to Color.Transparent),
+                    blendMode = BlendMode.DstIn,
+                )
+            }
+            .horizontalScroll(rememberScrollState()).padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         for (item in items) {
@@ -159,6 +174,7 @@ private fun ItemStrip(controller: GameController, items: List<BuildableDefinitio
                 controller.select(item.id)
             }
         }
+        Spacer(Modifier.width(12.dp))
     }
 }
 
@@ -216,7 +232,7 @@ private fun ColourChips(controller: GameController) {
 
         for (colour in controller.colourChoices) {
             val selected = controller.build.colour == colour
-            ColourSwatch(ParkPalette.colour(colour).compose(), selected, { controller.chooseColour(colour) }, 24.dp)
+            ColourSwatch(ParkPalette.colour(colour).compose(), selected, { controller.chooseColour(colour) }, 22.dp)
         }
     }
 }
@@ -232,7 +248,16 @@ private fun RideGroups(controller: GameController) {
 @Composable
 private fun GroupChip(controller: GameController, group: RideGroup?, title: String, symbol: String) {
     val selected = controller.build.rideGroup == group
-    Chip(title, selected, { controller.showRideGroup(group) }, symbol = symbol)
+    val tint = if (selected) Color.Black else Theme.textPrimary
+    Row(
+        modifier = Modifier.height(26.dp).clip(CircleShape).background(if (selected) Theme.accent else Theme.control)
+            .clickable { controller.showRideGroup(group) }.padding(horizontal = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        SymbolIcon(symbol, tint, 12.dp)
+        Label(title, size = 11.sp, weight = FontWeight.Bold, color = tint, maxLines = 1)
+    }
 }
 
 private fun hintText(controller: GameController): String {
@@ -258,7 +283,7 @@ private fun BuildItemCard(definition: BuildableDefinition, isSelected: Boolean, 
     val shape = RoundedCornerShape(10.dp)
     Row(
         modifier = Modifier
-            .width(150.dp)
+            .width(142.dp)
             .clip(shape)
             .background(if (isSelected) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.11f))
             .border(BorderStroke(2.dp, if (isSelected) Theme.accent else Color.Transparent), shape)
@@ -334,7 +359,7 @@ fun PlacementConfirmBar(controller: GameController, definition: BuildableDefinit
                     Modifier.size(width = 38.dp, height = 34.dp).clip(RoundedCornerShape(9.dp)).background(Theme.control)
                         .clickable { controller.nudgePending(dx, dy) },
                     contentAlignment = Alignment.Center,
-                ) { SymbolIcon(symbol, Theme.textPrimary, 15.dp) }
+                ) { SymbolIcon(symbol, Theme.textPrimary, 13.dp) }
             }
             Box(Modifier.weight(1f))
             if (definition.canRotate) {

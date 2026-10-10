@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,9 +40,10 @@ fun Label(
     weight: FontWeight = FontWeight.SemiBold,
     color: Color = Theme.textPrimary,
     maxLines: Int = Int.MAX_VALUE,
+    tracking: Float = 0f,
 ) {
     Text(text, modifier = modifier, fontSize = size, fontWeight = weight, color = color, maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis)
+        overflow = TextOverflow.Ellipsis, letterSpacing = tracking.sp)
 }
 
 /** Cash on hand, with the day's profit under it. Deliberately the loudest thing on the screen. */
@@ -186,10 +188,11 @@ fun PillButton(
 fun Chip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, symbol: String? = null) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .heightIn(min = 28.dp)
+            .clip(CircleShape)
             .background(if (selected) Theme.accent else Theme.control)
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {

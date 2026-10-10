@@ -173,7 +173,7 @@ private fun NoticeRow(alert: ParkAlert, onSelect: (com.wickedstudios.wonderlot.P
                 Label(alert.message, size = 13.sp, weight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Label(alert.timeLabel, size = 10.sp, weight = FontWeight.Bold, color = Theme.textSecondary)
-                    if (target != null) Label("TAP TO SHOW ME", size = 9.sp, weight = FontWeight.ExtraBold, color = Theme.accent)
+                    if (target != null) Label("TAP TO SHOW ME", size = 9.sp, weight = FontWeight.ExtraBold, tracking = 0.8f, color = Theme.accent)
                 }
             }
             if (target != null) SymbolIcon("chevron.right", Theme.textSecondary, 12.dp, Modifier.padding(top = 2.dp))
@@ -203,7 +203,7 @@ fun ParkSettingsSheet(controller: GameController, services: AppServices, onDismi
         else -> "Great value — expect a steady stream of visitors."
     }
 
-    BottomSheet(hud.parkName, onDismiss, tall = true) {
+    BottomSheet(hud.parkName, onDismiss) {
         Label("PARK SETTINGS", size = 10.sp, weight = FontWeight.ExtraBold, color = Theme.textSecondary)
 
         SectionCard("Admission price") {

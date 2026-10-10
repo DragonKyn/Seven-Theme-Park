@@ -74,7 +74,7 @@ fun TutorialTipCard(tip: TutorialTip, onDismiss: () -> Unit, onTurnOff: () -> Un
             contentAlignment = Alignment.Center) { SymbolIcon(tip.symbolName, Color.Black.copy(alpha = 0.82f), 19.dp) }
 
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Label("TIP", size = 8.sp, weight = FontWeight.ExtraBold, color = Theme.accentWarm)
+            Label("TIP", size = 8.sp, weight = FontWeight.ExtraBold, tracking = 2.2f, color = Theme.accentWarm)
             Label(tip.title, size = 15.sp, weight = FontWeight.ExtraBold)
             Label(tip.message, size = 12.sp, weight = FontWeight.Normal, color = Theme.textSecondary)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 2.dp)) {
@@ -117,7 +117,7 @@ fun TrialTracker(trial: TrialSnapshot, expanded: Boolean, onToggle: () -> Unit) 
                 SymbolIcon(statusSymbol, statusColour, 13.dp)
             }
             Column(Modifier.weight(1f)) {
-                Label("TRIAL ${trial.number}  ·  ${trial.title.uppercase()}", size = 9.sp, weight = FontWeight.ExtraBold, color = Theme.textSecondary, maxLines = 1)
+                Label("TRIAL ${trial.number}  ·  ${trial.title.uppercase()}", size = 9.sp, weight = FontWeight.ExtraBold, tracking = 1f, color = Theme.textSecondary, maxLines = 1)
                 Label(statusLine, size = 12.sp, weight = FontWeight.Bold, maxLines = 1)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -256,7 +256,7 @@ fun EventCard(event: ParkEvent, remaining: Double, onDismiss: () -> Unit) {
                     .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
                     SymbolIcon(style.symbolName, Color.White, 28.dp)
                 }
-                Label(style.kicker, size = 9.sp, weight = FontWeight.ExtraBold, color = style.tint)
+                Label(style.kicker, size = 9.sp, weight = FontWeight.ExtraBold, tracking = 2.4f, color = style.tint)
                 Text21(style.headline)
                 Label(style.detail, size = 13.sp, color = Color.White.copy(alpha = 0.85f), modifier = Modifier.fillMaxWidth())
                 if (style.figures.isNotEmpty()) {
@@ -265,7 +265,7 @@ fun EventCard(event: ParkEvent, remaining: Double, onDismiss: () -> Unit) {
                             Column(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.10f)).padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Label(figure.value, size = 16.sp, weight = FontWeight.ExtraBold, color = style.tint, maxLines = 1)
-                                Label(figure.caption, size = 8.sp, weight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.6f))
+                                Label(figure.caption, size = 8.sp, weight = FontWeight.ExtraBold, tracking = 1.2f, color = Color.White.copy(alpha = 0.6f))
                             }
                         }
                     }
@@ -309,14 +309,14 @@ private fun EventBanner(banner: Banner) {
                 }
             }
             Box(Modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.72f)).padding(horizontal = 12.dp, vertical = 3.dp)) {
-                Label(banner.title, size = 10.sp, weight = FontWeight.Black, color = Color.White)
+                Label(banner.title, size = 10.sp, weight = FontWeight.Black, tracking = 3f, color = Color.White)
             }
         }
 
         is Banner.Destination -> Column {
             Box(Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.80f)).padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
                 androidx.compose.material3.Text(banner.text.uppercase(), color = Theme.money, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Monospace, maxLines = 1)
+                    fontFamily = FontFamily.Monospace, letterSpacing = 2.sp, maxLines = 1)
             }
             Box(Modifier.fillMaxWidth().height(2.dp).background(Theme.moneyDeep.copy(alpha = 0.8f)))
         }
@@ -325,7 +325,7 @@ private fun EventBanner(banner: Banner) {
             val colour = if (banner.passed) Theme.accent else Theme.danger
             Column {
                 Box(Modifier.fillMaxWidth().background(colour.copy(alpha = 0.18f)).padding(vertical = 9.dp), contentAlignment = Alignment.Center) {
-                    Label(banner.title, size = 10.sp, weight = FontWeight.Black, color = colour)
+                    Label(banner.title, size = 10.sp, weight = FontWeight.Black, tracking = 3f, color = colour)
                 }
                 Box(Modifier.fillMaxWidth().height(2.dp).background(colour.copy(alpha = 0.55f)))
             }
@@ -363,7 +363,7 @@ fun CelebrationCard(award: AchievementAward, onDismiss: () -> Unit) {
         ) {
             Box(Modifier.size(62.dp).clip(CircleShape).background(Theme.moneyGradient).border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape),
                 contentAlignment = Alignment.Center) { SymbolIcon(award.symbolName, Color.Black.copy(alpha = 0.82f), 32.dp) }
-            Label("ACHIEVEMENT UNLOCKED", size = 9.sp, weight = FontWeight.ExtraBold, color = Theme.accentWarm)
+            Label("ACHIEVEMENT UNLOCKED", size = 9.sp, weight = FontWeight.ExtraBold, tracking = 2.4f, color = Theme.accentWarm)
             androidx.compose.material3.Text(award.name, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
             Box(Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.12f)).padding(horizontal = 9.dp, vertical = 2.dp)) {
                 Label("Tier ${award.tierName}", size = 12.sp, weight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.8f))
@@ -446,7 +446,7 @@ fun TrialResultCard(report: TrialResultReport, onKeepPlaying: () -> Unit, onLeav
                 .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
                 SymbolIcon(if (won) medalSymbol else "hourglass.bottomhalf.filled", if (won) Color.Black.copy(alpha = 0.8f) else Theme.danger, 36.dp)
             }
-            Label(if (won) "TRIAL $number COMPLETE" else "TRIAL $number · OUT OF TIME", size = 10.sp, weight = FontWeight.ExtraBold, color = accent)
+            Label(if (won) "TRIAL $number COMPLETE" else "TRIAL $number · OUT OF TIME", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 2.2f, color = accent)
             androidx.compose.material3.Text(trial?.title ?: "Trial", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
             androidx.compose.material3.Text(detail, color = Color.White.copy(alpha = 0.82f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
 

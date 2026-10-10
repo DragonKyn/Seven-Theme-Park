@@ -35,7 +35,8 @@ fun symbolIcon(name: String): ImageVector = when (name) {
     "line.3.horizontal" -> Icons.Filled.Menu
     "bell.fill", "bell.badge.fill" -> Icons.Filled.Notifications
     "bell.slash.fill" -> Icons.Filled.NotificationsOff
-    "gearshape.fill", "gearshape.2.fill", "slider.horizontal.3" -> Icons.Filled.Settings
+    "gearshape.fill", "gearshape.2.fill" -> Icons.Filled.Settings
+    "slider.horizontal.3" -> Icons.Filled.Tune
     "face.smiling", "face.smiling.inverse" -> Icons.Filled.SentimentSatisfied
     "face.dashed" -> Icons.Filled.SentimentDissatisfied
     "star.fill", "star.circle.fill", "star.bubble.fill" -> Icons.Filled.Star

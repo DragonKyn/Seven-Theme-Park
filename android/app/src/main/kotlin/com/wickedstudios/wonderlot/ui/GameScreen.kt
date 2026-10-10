@@ -129,7 +129,7 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
                 onKeepPlaying = { controller.dismissTrialResult() },
                 onLeave = {
                     controller.dismissTrialResult()
-                    router.opensLadderOnMenu = report.result.trial != null
+                    router.opensLadderOnMenu = report.result.won
                     router.exitToMenu()
                 })
         }
@@ -137,9 +137,9 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
 
     controller.pendingDemolition?.let { pending ->
         ConfirmDialog(
-            title = "Demolish ${pending.name}?",
-            message = "You will be refunded ${CurrencyFormatter.short(pending.refund)}.",
-            confirmText = "Demolish", destructive = true,
+            title = "Remove this structure?",
+            message = "Removing ${pending.name} refunds ${CurrencyFormatter.short(pending.refund)}.",
+            confirmText = "Remove", destructive = true,
             onConfirm = { controller.confirmPendingDemolition() },
             onDismiss = { controller.cancelPendingDemolition() },
         )
@@ -147,7 +147,8 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
 
     if (confirmExit) {
         ConfirmDialog(
-            title = "Back to the menu?", message = "The park is saved first.", confirmText = "Save and leave",
+            title = "Leave the park?", message = "Your park is saved before you go, and will be waiting in the same slot.",
+            confirmText = "Save and exit", cancelText = "Stay here", destructive = true,
             onConfirm = { confirmExit = false; router.exitToMenu() }, onDismiss = { confirmExit = false },
         )
     }
@@ -220,8 +221,10 @@ private fun ControlBar(
             Box {
                 ControlButton("line.3.horizontal", "Menu", { menuOpen = true }, scale = scale)
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = Theme.panelRaised) {
-                    DropdownMenuItem(text = { Text("Achievements", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onAchievements() })
-                    DropdownMenuItem(text = { Text("Boosts", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onBoosts() })
+                    DropdownMenuItem(text = { Text("Achievements", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) },
+                        leadingIcon = { SymbolIcon("rosette", Theme.textPrimary, 18.dp) }, onClick = { menuOpen = false; onAchievements() })
+                    DropdownMenuItem(text = { Text("Boosts", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) },
+                        leadingIcon = { SymbolIcon("bolt.fill", Theme.textPrimary, 18.dp) }, onClick = { menuOpen = false; onBoosts() })
                     DropdownMenuItem(text = { Text("Save park", color = Theme.textPrimary, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; controller.save() })
                     DropdownMenuItem(text = { Text("Leave park", color = Theme.danger, fontWeight = FontWeight.SemiBold) }, onClick = { menuOpen = false; onLeave() })
                 }
