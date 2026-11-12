@@ -37,7 +37,8 @@ object BuildingArtwork {
 
     private fun key(appearance: BuildingAppearance, prefix: String, size: CGSize): String =
         "$prefix-${appearance.motif.name}-${appearance.primary.name}-${appearance.secondary.name}" +
-            "-${appearance.accent.name}-v${appearance.variant}-${size.width.toInt()}x${size.height.toInt()}"
+            "-${appearance.accent.name}-v${appearance.variant}-${size.width.toInt()}x${size.height.toInt()}" +
+            (if (appearance.holiday) "-holiday" else "")
 
     /** Shared by the map texture and the menu preview, so the two can never show different artwork. */
     internal fun drawBody(appearance: BuildingAppearance, context: CGContext, size: CGSize) {
@@ -236,7 +237,29 @@ object BuildingArtwork {
         BuildingMotif.clockTower -> {
             BuildingArtScenery.drawClockTower(context, size, primary, secondary, accent, variant)
         }
+        BuildingMotif.reindeerCarousel -> BuildingArtHoliday.drawReindeerCarouselBase(context, size, primary, secondary, accent)
+        BuildingMotif.sleighRide -> BuildingArtHoliday.drawSleighRideBase(context, size, primary, secondary, accent)
+        BuildingMotif.candyCoaster -> BuildingArtHoliday.drawCandyCoasterBase(context, size, primary, secondary, accent)
+        BuildingMotif.snowGlobe -> BuildingArtHoliday.drawSnowGlobeBase(context, size, primary, secondary, accent)
+        BuildingMotif.polarExpress -> BuildingArtHoliday.drawPolarExpressBase(context, size, primary, secondary, accent)
+        BuildingMotif.gingerbreadManor -> BuildingArtHoliday.drawGingerbreadManorBase(context, size, primary, secondary, accent)
+        BuildingMotif.starTopper -> BuildingArtHoliday.drawStarTopperBase(context, size, primary, secondary, accent)
+        BuildingMotif.countdownWheel -> BuildingArtHoliday.drawCountdownWheelBase(context, size, primary, secondary, accent)
+        BuildingMotif.confettiSwing -> BuildingArtHoliday.drawConfettiSwingBase(context, size, primary, secondary, accent)
+        BuildingMotif.ballDrop -> BuildingArtHoliday.drawBallDropBase(context, size, primary, secondary, accent)
+        BuildingMotif.starburstCoaster -> BuildingArtHoliday.drawStarburstCoasterBase(context, size, primary, secondary, accent)
+        BuildingMotif.xmasTree -> BuildingArtHoliday.drawXmasTree(context, size, primary, secondary, accent, variant)
+        BuildingMotif.snowman -> BuildingArtHoliday.drawSnowman(context, size, primary, secondary, accent)
+        BuildingMotif.wreathArch -> BuildingArtHoliday.drawWreathArch(context, size, primary, secondary, accent)
+        BuildingMotif.giftStack -> BuildingArtHoliday.drawGiftStack(context, size, primary, secondary, accent)
+        BuildingMotif.lightPole -> BuildingArtHoliday.drawLightPole(context, size, primary, secondary, accent)
+        BuildingMotif.candyCanePost -> BuildingArtHoliday.drawCandyCanePost(context, size, primary, secondary, accent)
+        BuildingMotif.fireworkStand -> BuildingArtHoliday.drawFireworkStand(context, size, primary, secondary, accent)
+        BuildingMotif.countdownClock -> BuildingArtHoliday.drawCountdownClock(context, size, primary, secondary, accent)
         }
+
+        // A ride that has had its holiday makeover is dressed on top.
+        if (appearance.holiday) BuildingArtHoliday.drawHolidayDressing(context, size)
     }
 
     // The moving part, drawn in its own texture so it can be animated
@@ -244,6 +267,7 @@ object BuildingArtwork {
     // How many moving parts a motif has. A track with one vehicle on it is a
     // test track; a bumper car arena with one car in it has nothing to bump.
     internal fun motionPartCount(motif: BuildingMotif): Int {
+        BuildingArtHoliday.motionPartCount(motif)?.let { return it }
         when (motif) {
         BuildingMotif.goKarts -> {
             return 4
@@ -394,6 +418,16 @@ object BuildingArtwork {
             BuildingMotif.strengthTester -> {
                 BuildingArtGameBooths.drawStrikerPuck(context, size, accent)
             }
+            BuildingMotif.reindeerCarousel -> BuildingArtHoliday.drawReindeerCanopy(context, size, primary, secondary, accent)
+            BuildingMotif.sleighRide -> BuildingArtHoliday.drawSleigh(context, size, primary, secondary, accent)
+            BuildingMotif.candyCoaster, BuildingMotif.starburstCoaster -> drawCoasterCar(context, size, primary, variant)
+            BuildingMotif.snowGlobe -> BuildingArtHoliday.drawSnowGlobePods(context, size, primary, secondary, accent)
+            BuildingMotif.polarExpress -> BuildingArtHoliday.drawTrainCar(context, size, primary, secondary, variant)
+            BuildingMotif.gingerbreadManor -> BuildingArtHoliday.drawGingerbreadMan(context, size, primary, secondary, accent)
+            BuildingMotif.starTopper -> drawTowerCar(context, size, accent, secondary, primary)
+            BuildingMotif.countdownWheel -> drawWheel(context, size, primary, secondary, accent)
+            BuildingMotif.confettiSwing -> BuildingArtStructures.drawSwingChair(context, size, primary, secondary, accent)
+            BuildingMotif.ballDrop -> BuildingArtHoliday.drawDropBall(context, size, primary, secondary, accent)
             else -> {}
             }
         }
@@ -401,6 +435,7 @@ object BuildingArtwork {
 
     // Size of the moving part relative to the building it sits on.
     internal fun motionPartSize(motif: BuildingMotif, buildingSize: CGSize): CGSize {
+        BuildingArtHoliday.motionPartSize(motif, buildingSize)?.let { return it }
         val shortest = min(buildingSize.width, buildingSize.height)
         when (motif) {
         BuildingMotif.carousel -> {

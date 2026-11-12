@@ -103,6 +103,8 @@ object StaffArtwork {
                 // The balls are not painted: they are sprites of their own, so they can be thrown.
                 EntertainerAct.mime, EntertainerAct.juggler -> {}
                 EntertainerAct.magician -> drawWand(layout)
+                EntertainerAct.santa -> StaffArtHoliday.drawSantaExtras(layout)
+                EntertainerAct.missus -> StaffArtHoliday.drawMrsClausExtras(layout)
             }
             StaffRole.security -> drawSecurityMarkings(layout)
             StaffRole.mascot -> {}
@@ -115,8 +117,8 @@ object StaffArtwork {
         return when (look.act) {
             EntertainerAct.classic -> ParkPalette.colour(uniform)
             EntertainerAct.magician -> ParkPalette.colour(ParkColour.cream)
-            EntertainerAct.clown, EntertainerAct.balloonArtist, EntertainerAct.mime, EntertainerAct.juggler ->
-                ParkPalette.colour(look.primary)
+            EntertainerAct.clown, EntertainerAct.balloonArtist, EntertainerAct.mime, EntertainerAct.juggler,
+            EntertainerAct.santa, EntertainerAct.missus -> ParkPalette.colour(look.primary)
         }
     }
 
@@ -172,6 +174,17 @@ object StaffArtwork {
                     headwear = PersonArtwork.Headwear.topHat
                     headwearColour = ParkPalette.colour(ParkColour.charcoal)
                 }
+                EntertainerAct.santa -> {
+                    // The red hat and its pompom; the white band is added over it.
+                    headwear = PersonArtwork.Headwear.partyHat
+                    headwearColour = ParkPalette.colour(look.primary)
+                    bottoms = ParkPalette.colour(look.primary)
+                }
+                EntertainerAct.missus -> {
+                    headwear = PersonArtwork.Headwear.none
+                    headwearColour = shirt
+                    bottoms = ParkPalette.colour(look.primary)
+                }
             }
             // A dark peaked cap whatever the park's colours are. A guard in a pink cap is not a guard.
             StaffRole.security -> {
@@ -186,7 +199,7 @@ object StaffArtwork {
 
         return PersonArtwork.Look(
             skin = GuestAppearance.SkinTone.tan,
-            hair = GuestAppearance.HairColour.dark,
+            hair = if (look.role == StaffRole.entertainer && look.act.isSeasonal) GuestAppearance.HairColour.grey else GuestAppearance.HairColour.dark,
             shirt = shirt,
             headwear = headwear,
             headwearColour = headwearColour,
