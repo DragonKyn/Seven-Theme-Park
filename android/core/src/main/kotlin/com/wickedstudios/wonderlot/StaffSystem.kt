@@ -605,6 +605,10 @@ class StaffSystem(private val pathfinder: PathfindingSystem) {
             if (guest.ageCategory == AgeCategory.child) lift *= profile.childFactor
             if (guest.activity is GuestActivity.Queueing) lift *= profile.queueFactor
             guest.adjustHappiness(lift)
+            // Mrs. Claus's cookies: anybody in her circle gets a little less hungry.
+            if (profile.bakesCookies) guest.hunger = maxOf(0.0, guest.hunger - Balance.missusHungerRelief * member.workRate * dt)
+            // Santa's cheer: those who have been near him buy more for a while.
+            if (profile.spreadsCheer) guest.cheerUntil = now + Balance.santaCheerSeconds
             audience.add(guest)
         }
         if (audience.isEmpty()) return

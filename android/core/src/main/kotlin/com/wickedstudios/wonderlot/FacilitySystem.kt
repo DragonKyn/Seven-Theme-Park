@@ -149,7 +149,7 @@ class FacilitySystem {
 
         // The shop records how fair the crowd found the price, which an advert should not flatter.
         val fairness = GuestEconomics.purchaseWillingness(price, definition.referencePrice, guest.personality.spending)
-        val willingness = fairness * state.adBoosts.spendFactor
+        val willingness = fairness * state.adBoosts.spendFactor * guest.cheerFactor(state.clock.simTime)
 
         facility.sentimentSum += fairness
         facility.sentimentCount += 1

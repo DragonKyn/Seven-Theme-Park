@@ -81,6 +81,15 @@ object GuestNames {
 
     fun tourGroup(rng: SeededGenerator): String = rng.pick(tourGroups) ?: "A day out"
 
+    private val holidayParties = listOf(
+        "Alderbrook Accounting", "Hollis & Pike Legal", "Marsh Lane Logistics", "Thorne Valley Insurance",
+        "Kerr Road Dental", "Wilde Brothers Plumbing", "Vance Software", "Sable Park Estate Agents",
+        "Frost Hill Bank", "Ingram Engineering", "Rowe & Daughters", "Quist Marketing",
+    )
+
+    fun holidayParty(rng: SeededGenerator): String = rng.pick(holidayParties) ?: "The Office"
+
+
     fun random(rng: SeededGenerator): String {
         val first = rng.pick(given) ?: "Guest"
         val last = rng.pick(family) ?: "Visitor"

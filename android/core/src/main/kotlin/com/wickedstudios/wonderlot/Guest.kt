@@ -305,6 +305,8 @@ class Guest(
     var popcornRemaining: Double = 0.0,
     /** A balloon a balloon artist gave them, carried for the rest of the visit. */
     var balloon: ParkColour? = null,
+    /** Sim-time until which Santa's cheer makes them readier to buy. */
+    var cheerUntil: Double = 0.0,
     var thoughts: MutableList<GuestThought> = mutableListOf(),
     /** Set when the guest decides to go home; recorded on departure. */
     var departureReason: String? = null,
@@ -321,6 +323,9 @@ class Guest(
             repeat(excess) { thoughts.removeAt(0) }
         }
     }
+
+    /** Readier to buy while Santa's cheer lasts. */
+    fun cheerFactor(simTime: Double): Double = if (cheerUntil > simTime) 1 + Balance.santaCheerSpendBoost else 1.0
 
     fun adjustHappiness(delta: Double) {
         happiness = SimMath.clamp(happiness + delta)

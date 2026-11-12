@@ -56,7 +56,8 @@ class DemandSystem {
 
         // A post about the park, or a warm review, is a short sharp rush.
         val word = 1 + state.activePromotionBoost + state.activeReviewArrivals +
-            state.adBoosts.extraArrivals + state.perks.extraArrivals
+            state.adBoosts.extraArrivals + state.perks.extraArrivals +
+            (if (state.snowing) Balance.snowArrivalLift else 0.0)
 
         return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * word, 0.0, Balance.maxArrivalsPerMinute)
     }
@@ -74,25 +75,36 @@ class DemandSystem {
         // Booked first, so every way out of this method still re-books.
         TourBusSystem.scheduleNext(state)
 
-        val wanted = state.rng.int(Balance.tourBusSize)
+        // In season a bus is often a company holiday party: bigger, mostly adults, and flush with cash.
+        // A holiday trial's first one is certain, so a trial that asks for a party can always be finished.
+        val isParty = HolidaySeason.isActive(state) &&
+            state.attractions.size >= Balance.holidayPartyMinimumRides &&
+            (state.rng.chance(Balance.holidayPartyChance) ||
+                (state.trial?.isHoliday == true && state.statistics.holidayPartiesTotal == 0))
+
+        val wanted = state.rng.int(if (isParty) Balance.holidayPartySize else Balance.tourBusSize)
         val room = Balance.maxGuests - state.guestCount
         val count = minOf(wanted, room)
         // A park with no room left turns the bus round at the gate.
-        if (count < Balance.tourBusMinimumSize) return
+        if (count < (if (isParty) Balance.holidayPartyMinimumSize else Balance.tourBusMinimumSize)) return
 
         val groupID = UUID.randomUUID()
         var childCount = 0
         for (i in 0 until count) {
-            val isChild = state.rng.chance(Balance.tourBusChildShare)
+            val isChild = state.rng.chance(if (isParty) Balance.holidayPartyChildShare else Balance.tourBusChildShare)
             if (isChild) childCount += 1
             admitGuest(state, if (isChild) AgeCategory.child else AgeCategory.adult,
-                Balance.tourBusSpendScale, groupID)
+                if (isParty) Balance.holidayPartySpendScale else Balance.tourBusSpendScale, groupID)
         }
 
-        val name = GuestNames.tourGroup(state.rng)
-        state.pendingTourBuses.add(TourBusReport(groupName = name, count = count, childCount = childCount))
+        val name = if (isParty) GuestNames.holidayParty(state.rng) else GuestNames.tourGroup(state.rng)
+        state.pendingTourBuses.add(TourBusReport(groupName = name, count = count, childCount = childCount, isHolidayParty = isParty))
         state.statistics.tourBusesTotal += 1
-        state.postAlert("$name has arrived, $count of them at once.", AlertSeverity.info, "tourBus", cooldown = 60.0)
+        if (isParty) state.statistics.holidayPartiesTotal += 1
+        state.postAlert(
+            if (isParty) "The $name holiday party has arrived, $count of them at once, with money to burn."
+            else "$name has arrived, $count of them at once.",
+            AlertSeverity.info, "tourBus", cooldown = 60.0)
     }
 
     // endregion

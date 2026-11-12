@@ -64,6 +64,7 @@ class GameController(
         val perkStore: PerkStore,
         val trialProgress: TrialProgressStore,
         val tutorial: TutorialDirector,
+        val holiday: HolidayStore = HolidayStore(MemoryStore()),
         val now: () -> Long = { System.currentTimeMillis() },
     )
 
@@ -241,8 +242,13 @@ class GameController(
     }
 
     /** The rides on show, once the chosen shelf is taken into account. */
+    /** Whether the holiday event is on for this park. */
+    val isHolidaySeason: Boolean get() = HolidaySeason.isActive(state)
+
     fun buildables(category: BuildCategory): List<BuildableDefinition> {
+        val season = isHolidaySeason
         val all = GameContent.buildables(category, state.unlockLevel)
+            .filter { HolidayContent.canBuild(it, season, services.holiday) }
         val group = build.rideGroup
         if (category != BuildCategory.attraction || group == null) return all
         return all.filter { (it as? AttractionDefinition)?.group == group }
@@ -433,10 +439,26 @@ class GameController(
     fun confirmPending(): Boolean {
         val pending = build.pending ?: return false
         val definition = pendingDefinition ?: return false
-        if (!state.place(definition, pending.origin, pending.rotation, build.variant, build.colour)) return false
+        if (!place(definition, pending.origin, pending.rotation)) return false
         build.pending = null
         refreshUI()
         return true
+    }
+
+    /**
+     * Places something, giving a ride the holiday makeover from the start when the player has earned it for that
+     * kind of ride. The makeover is the default look, so there is nothing to switch on.
+     */
+    private fun place(definition: BuildableDefinition, origin: GridCoord, rotation: Int): Boolean =
+        state.place(definition, origin, rotation, build.variant, build.colour, makeover = makeoverIsDefault(definition))
+
+    private fun makeoverIsDefault(definition: BuildableDefinition): Boolean = definition is AttractionDefinition && makeoverAvailable(definition)
+
+    /** Whether the holiday makeover is on offer for this kind of ride right now: in season, earned, and not a holiday ride already. */
+    fun makeoverAvailable(definition: AttractionDefinition): Boolean {
+        if (definition.seasonal || !isHolidaySeason) return false
+        val reward = HolidayMakeovers.rewardFor(definition.id) ?: return false
+        return services.holiday.isUnlocked(reward)
     }
 
     fun cancelPending() {
@@ -463,7 +485,7 @@ class GameController(
                         // Lines up the placement and waits. Nothing is charged until confirmed.
                         build.pending = PendingPlacement(definition.id, coord, build.rotation)
                     } else {
-                        state.place(definition, coord, build.rotation, build.variant, build.colour)
+                        place(definition, coord, build.rotation)
                     }
                 }
             }
@@ -755,6 +777,10 @@ class GameController(
 
     // region Staff
 
+    /** The acts on offer for an entertainer: the everyday ones, plus Santa and Mrs. Claus while the event is on. */
+    fun availableActs(): List<EntertainerAct> =
+        EntertainerAct.entries.filter { HolidayContent.canHire(it, isHolidaySeason, services.holiday) }
+
     fun canHire(role: StaffRole): Boolean {
         val definition = StaffContent.definition(role) ?: return false
         return state.ledger.canAfford(definition.hiringCost) && state.staff.size < Balance.maxStaff
@@ -763,6 +789,8 @@ class GameController(
     fun hireStaff(role: StaffRole, style: StaffStyle = StaffStyle.standard): Boolean {
         val definition = StaffContent.definition(role) ?: return false
         if (!canHire(role)) return false
+        val act = style.act
+        if (role == StaffRole.entertainer && act != null && act !in availableActs()) return false
 
         state.ledger.spend(definition.hiringCost, ExpenseCategory.wages)
 
@@ -774,6 +802,9 @@ class GameController(
             StaffRole.entertainer -> {
                 member.act = style.act
                 member.primaryColour = style.primary
+                // The two holiday acts are characters, so they are named like them.
+                if (style.act == EntertainerAct.santa) member.name = "Santa"
+                if (style.act == EntertainerAct.missus) member.name = "Mrs. Claus"
             }
             StaffRole.mascot -> {
                 // A mascot is a character, so it is named like one.
@@ -855,6 +886,8 @@ class GameController(
     /** Changes how an entertainer or a mascot looks. */
     fun setStaffStyle(id: UUID, style: StaffStyle) {
         val member = state.staffMember(id) ?: return
+        // A holiday act can be taken off but not put on once the event is over, or before it has been earned.
+        if (member.role == StaffRole.entertainer && style.act != member.act && style.act != null && style.act !in availableActs()) return
         when (member.role) {
             StaffRole.entertainer -> {
                 member.act = style.act
@@ -887,6 +920,7 @@ class GameController(
         val attraction = state.attraction(attractionID) ?: return null
         val definition = UpgradeContent.rideUpgrade(kind) ?: return null
         val base = attraction.baseDefinition ?: return null
+        if (kind == RideUpgradeKind.holiday && !makeoverAvailable(base)) return null
         val next = attraction.upgradeLevel(kind) + 1
         if (next > definition.maxLevel) return null
         return definition.cost(next, base.purchasePrice)
@@ -907,7 +941,7 @@ class GameController(
         state.statistics.upgradesBoughtTotal += 1
 
         // Theming decorates the ground around the ride.
-        if (kind == RideUpgradeKind.theming) state.refreshBeauty()
+        if (kind == RideUpgradeKind.theming || kind == RideUpgradeKind.holiday) state.refreshBeauty()
 
         refreshUI()
         return true
@@ -1097,10 +1131,19 @@ class GameController(
         state.pendingTrialResult = null
 
         var isFirstWin = false
+        var rewards: List<HolidayReward> = emptyList()
         val trial = result.trial
-        if (result.won && trial != null) isFirstWin = services.trialProgress.recordWin(trial, result.day)
-        val next = trial?.let { current -> TrialContent.all.firstOrNull { it.number == current.number + 1 } }
-        trialResult = TrialResultReport(result, isFirstWin, next)
+        if (result.won && trial != null) {
+            if (trial.isHoliday) {
+                isFirstWin = !services.holiday.isCompleted(trial)
+                rewards = services.holiday.recordWin(trial)
+            } else {
+                isFirstWin = services.trialProgress.recordWin(trial, result.day)
+            }
+        }
+        val ladder = if (trial?.isHoliday == true) TrialContent.holiday else TrialContent.all
+        val next = trial?.let { current -> ladder.firstOrNull { it.number == current.number + 1 } }
+        trialResult = TrialResultReport(result, isFirstWin, next, rewards)
         // Saved at once, so a win is never lost to the app closing on the card that announced it.
         autosave()
     }
@@ -1194,7 +1237,7 @@ class GameController(
 
     private fun makeSelection(identity: SelectionIdentity): SelectionDetail? = when (identity) {
         is SelectionIdentity.Guest -> state.guest(identity.id)?.let { SelectionDetail.OfGuest(GuestDetail(it, state)) }
-        is SelectionIdentity.Attraction -> state.attraction(identity.id)?.let { SelectionDetail.OfAttraction(AttractionDetail(it)) }
+        is SelectionIdentity.Attraction -> state.attraction(identity.id)?.let { SelectionDetail.OfAttraction(AttractionDetail(it, makeoverOffered = it.baseDefinition?.let(::makeoverAvailable) == true)) }
         is SelectionIdentity.Facility -> state.facility(identity.id)?.let { SelectionDetail.OfFacility(FacilityDetail(it)) }
         is SelectionIdentity.Staff -> state.staffMember(identity.id)?.let { SelectionDetail.OfStaff(StaffDetail(it, state)) }
         is SelectionIdentity.Scenery ->

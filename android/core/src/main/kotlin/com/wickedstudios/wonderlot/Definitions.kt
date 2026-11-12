@@ -32,6 +32,9 @@ interface BuildableDefinition {
     val footprint: GridSize
     val unlockLevel: Int
 
+    /** Holiday content: on offer only while the event is on. */
+    val seasonal: Boolean get() = false
+
     /** Whether the placed object must touch a walkable tile to function. */
     val requiresPathAccess: Boolean get() = true
     val requiresTrackAccess: Boolean get() = false
@@ -131,7 +134,12 @@ enum class BuildingMotif {
     strengthTester, ringTossGame, burgerStall, pizzaStall, drinkKiosk, iceCreamStall,
     souvenirShop, shopFront, restroom, bench, bin, tree, conifer, flowerBed, fountain, lamp,
     topiary, statue, lilyPads, reeds, waterRock, luxuryRestroom, popcornCart, floatingLanterns,
-    pondFountain;
+    pondFountain,
+
+    // The holiday event. Rides first, then the decorations.
+    reindeerCarousel, sleighRide, candyCoaster, snowGlobe, polarExpress, gingerbreadManor, starTopper,
+    countdownWheel, confettiSwing, ballDrop, starburstCoaster,
+    xmasTree, snowman, wreathArch, giftStack, lightPole, candyCanePost, fireworkStand, countdownClock;
 
     /** Colours the player can pick for this shape. Empty for everything fixed by design. */
     val colourChoices: List<ParkColour>
@@ -146,6 +154,7 @@ enum class BuildingMotif {
         get() = when (this) {
             tree -> 4
             conifer -> 3
+            xmasTree -> 3
             flowerBed -> 3
             topiary -> 3
             statue -> 3
@@ -174,11 +183,12 @@ enum class BuildingMotif {
     /** What moves once the building is running. */
     val motion: BuildingMotion
         get() = when (this) {
-            carousel, ferrisWheel, teacups -> BuildingMotion.spin
+            carousel, ferrisWheel, teacups, reindeerCarousel, snowGlobe, countdownWheel -> BuildingMotion.spin
             swingBoat -> BuildingMotion.swing
-            dropTower -> BuildingMotion.rise
-            coaster, megaCoaster, logFlume, fishingBoats, skyGliders, lanternCruise -> BuildingMotion.circuit
-            swingChairs -> BuildingMotion.orbit
+            dropTower, starTopper, ballDrop -> BuildingMotion.rise
+            coaster, megaCoaster, logFlume, fishingBoats, skyGliders, lanternCruise,
+            sleighRide, candyCoaster, polarExpress, starburstCoaster -> BuildingMotion.circuit
+            swingChairs, confettiSwing -> BuildingMotion.orbit
             pendulumArm -> BuildingMotion.invert
             riverRapids -> BuildingMotion.drift
             zipLine -> BuildingMotion.zip
@@ -186,7 +196,7 @@ enum class BuildingMotif {
             bumperCars, bumperBoats -> BuildingMotion.bumper
             slingshot -> BuildingMotion.launch
             carpetSlide -> BuildingMotion.slide
-            hauntedHouse -> BuildingMotion.hover
+            hauntedHouse, gingerbreadManor -> BuildingMotion.hover
             wavePool -> BuildingMotion.surf
             fountain, pondFountain -> BuildingMotion.bob
             moleGame -> BuildingMotion.pop
@@ -206,7 +216,11 @@ data class BuildingAppearance(
     var secondary: ParkColour,
     var accent: ParkColour,
     var variant: Int = 0,
+    /** Dressed for the holidays: snow on the roof, ribbon, fairy lights. Only ever set during the event. */
+    var holiday: Boolean = false,
 ) {
+    fun dressed(on: Boolean): BuildingAppearance = if (holiday == on) this else copy(holiday = on)
+
     fun withVariant(variant: Int): BuildingAppearance =
         copy(variant = if (motif.variantCount > 1) variant % motif.variantCount else 0)
 
@@ -255,6 +269,10 @@ enum class RideGroup(val displayName: String, val symbolName: String) {
     family("Family", "figure.2.and.child.holdinghands"),
     thrill("Thrill", "bolt.fill"),
     water("Water", "drop.fill"),
+    /** The event's own shelf. Only on show while the event is on. */
+    holiday("Holiday", "gift.fill");
+
+    val isSeasonal: Boolean get() = this == holiday
 }
 
 /** What a boardable building actually does with the guests it takes on. */
@@ -287,6 +305,8 @@ data class AttractionDefinition(
     val kind: AttractionKind = AttractionKind.ride,
     val group: RideGroup = RideGroup.family,
     val needsWater: Boolean = false,
+    /** Part of the holiday event: built only while it is on, and some only once a trial has opened them. */
+    override val seasonal: Boolean = false,
 ) : BuildableDefinition {
 
     override val category: BuildCategory
@@ -324,7 +344,8 @@ data class AttractionDefinition(
             rideDuration = rideDuration + trackDuration,
             loadDuration = loadDuration * UpgradeContent.loadingFactor(level(RideUpgradeKind.loading)),
             excitement = SimMath.clamp(excitement + trackExcitement +
-                UpgradeContent.themingExcitement(level(RideUpgradeKind.theming))),
+                UpgradeContent.themingExcitement(level(RideUpgradeKind.theming)) +
+                (if (level(RideUpgradeKind.holiday) > 0) Balance.holidayMakeoverExcitement else 0.0)),
             nausea = minOf(100.0, nausea + (coaster?.nauseaBonus ?: 0.0)),
             maintenanceRate = maintenanceRate * UpgradeContent.wearFactor(level(RideUpgradeKind.reliability)) *
                 (coaster?.wearFactor ?: 1.0),
@@ -481,6 +502,7 @@ data class SceneryDefinition(
     val spansWalkway: Boolean = false,
     /** Whether this belongs on the water rather than the ground. */
     val onWater: Boolean = false,
+    override val seasonal: Boolean = false,
 ) : BuildableDefinition {
     override val category: BuildCategory get() = BuildCategory.scenery
     override val bedTerrain: TerrainType? get() = if (onWater) TerrainType.water else null

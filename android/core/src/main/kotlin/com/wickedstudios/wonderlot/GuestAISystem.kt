@@ -167,7 +167,8 @@ class GuestAISystem(private val pathfinder: PathfindingSystem) {
             val distance = if (access.isEmpty()) null else pathfinder.distance(guest.tile, access, map)
 
             val verdict = FacilityAppeal.evaluate(
-                facility, definition, guest, access.isNotEmpty(), distance, state.adBoosts.spendFactor,
+                facility, definition, guest, access.isNotEmpty(), distance,
+                state.adBoosts.spendFactor * guest.cheerFactor(state.clock.simTime),
             )
             if (verdict !is FacilityAppeal.Verdict.Wants) continue
             options.add(Option(ParkTarget.Shop(facility.id), verdict.score, null))

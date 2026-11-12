@@ -1,11 +1,17 @@
 package com.wickedstudios.wonderlot
 
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class WorldTests {
+    @BeforeTest
+    fun noSeason() {
+        HolidaySeason.override = false
+    }
+
     private fun newMap(): ParkMap {
         val map = ParkMap()
         map.applyStartingLayout(Balance.startingPathLength)

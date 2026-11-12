@@ -29,7 +29,7 @@ object Balance {
     // reaches is arrivals times how long they stay, so this is the ceiling
     // and `maxArrivalsPerMinute` is what sets the usual size: at 24 a minute
     // and a ten minute visit, a park at its best sits near this number.
-    const val maxGuests = 250
+    const val maxGuests = 300
     // Tiles per sim-second.
     const val guestWalkSpeed = 1.6
     const val guestWalkSpeedVariance = 0.25
@@ -398,6 +398,43 @@ object Balance {
     // spend against an ordinary guest.
     const val tourBusChildShare = 0.62
     const val tourBusSpendScale = 0.55
+
+    // MARK: - Holiday event
+
+    // A holiday party is a tour bus that books itself in season: a company
+    // outing, so mostly adults, in greater numbers, with a lot more money.
+    const val holidayPartyMinimumRides = 2
+    val holidayPartyGapDays = 3.0..5.0
+    val holidayPartySize = 26..38
+    const val holidayPartyMinimumSize = 14
+    const val holidayPartyChildShare = 0.06
+    // Five times what an ordinary guest arrives with.
+    const val holidayPartySpendScale = 5.0
+    // Chance that a bus which falls due in season is a company party.
+    const val holidayPartyChance = 0.65
+
+    // Snow. Spells of falling snow come and go through the event.
+    val snowSpellDays = 0.8..1.8
+    val clearSpellDays = 0.5..1.4
+    // Festive weather brings a few more people through the gate.
+    const val snowArrivalLift = 0.04
+
+    // Santa: guests nearby spend more for a while after he has been past.
+    const val santaRadiusFactor = 1.25
+    const val santaHappinessFactor = 1.35
+    const val santaChildFactor = 2.4
+    const val santaCheerSpendBoost = 0.30
+    const val santaCheerSeconds = 90.0
+    // Mrs. Claus: cookies, so guests nearby get less hungry.
+    const val missusRadiusFactor = 1.1
+    const val missusHappinessFactor = 1.1
+    const val missusQueueFactor = 1.8
+    const val missusHungerRelief = 2.6
+
+    // What a holiday makeover adds to a ride.
+    const val holidayMakeoverExcitement = 5.0
+    const val holidayMakeoverBeauty = 14.0
+    const val holidayMakeoverCostShare = 0.16
 
     // MARK: - Achievements
 

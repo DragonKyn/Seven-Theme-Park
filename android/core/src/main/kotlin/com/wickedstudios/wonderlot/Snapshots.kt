@@ -15,6 +15,7 @@ import java.util.UUID
 
 /** A trial park's progress, worked out once per refresh for the interface. */
 class TrialSnapshot private constructor(
+    val isHoliday: Boolean,
     val number: Int,
     val title: String,
     val day: Int,
@@ -42,7 +43,7 @@ class TrialSnapshot private constructor(
         fun of(state: GameState): TrialSnapshot? {
             val trial = state.trial ?: return null
             return TrialSnapshot(
-                trial.number, trial.title, state.clock.day, trial.dayLimit, state.trialOutcome, state.trialDecidedDay,
+                trial.isHoliday, trial.number, trial.title, state.clock.day, trial.dayLimit, state.trialOutcome, state.trialDecidedDay,
                 trial.goals.mapIndexed { index, goal ->
                     val current = goal.current(state)
                     Goal(index, goal.title, goal.shortTitle, goal.symbolName, goal.format(current),
@@ -130,7 +131,7 @@ class GuestDetail(guest: Guest, state: GameState) {
 
 // region Attraction inspector
 
-class AttractionDetail(attraction: Attraction) {
+class AttractionDetail(attraction: Attraction, makeoverOffered: Boolean = false) {
     /** One upgrade track on one ride. A null cost means it is already at its maximum. */
     class UpgradeLine(
         val id: String,
@@ -178,7 +179,10 @@ class AttractionDetail(attraction: Attraction) {
 
     init {
         val ridePrice = attraction.baseDefinition?.purchasePrice ?: 0.0
-        upgrades = UpgradeContent.rideUpgrades.map { upgrade ->
+        // The holiday makeover joins the list only while it can be bought, or once it has been.
+        val offered = UpgradeContent.rideUpgrades +
+            (if (makeoverOffered || attraction.upgradeLevel(RideUpgradeKind.holiday) > 0) listOf(UpgradeContent.holidayMakeover) else emptyList())
+        upgrades = offered.map { upgrade ->
             val level = attraction.upgradeLevel(upgrade.kind)
             val next = level + 1
             UpgradeLine(upgrade.kind.name, upgrade.kind, upgrade.displayName, upgrade.summary, upgrade.symbolName,

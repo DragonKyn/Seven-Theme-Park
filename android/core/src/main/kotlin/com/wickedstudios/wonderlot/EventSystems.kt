@@ -97,10 +97,14 @@ data class TourBusReport(
     val groupName: String = "A group",
     val count: Int = 0,
     val childCount: Int = 0,
+    /** A company holiday party, which arrives bigger and with far more to spend. */
+    val isHolidayParty: Boolean = false,
 ) {
-    val headline: String get() = "$count arrivals in one go"
+    val headline: String get() = if (isHolidayParty) "$count revellers in one go" else "$count arrivals in one go"
     val detail: String
-        get() = if (childCount * 2 >= count) {
+        get() = if (isHolidayParty) {
+            "The office party is through the gate with a company card and a point to prove. They are spending five times what a visitor usually does."
+        } else if (childCount * 2 >= count) {
             "A school party is through the gate. Your queues are about to find out."
         } else {
             "A day trip is through the gate. Your queues are about to find out."
@@ -331,7 +335,9 @@ object TourBusSystem {
     }
 
     fun scheduleNext(state: GameState) {
-        val days = state.rng.double(Balance.tourBusGapDays)
+        // In season the buses come a little closer together, since some of them are parties.
+        val gap = if (HolidaySeason.isActive(state)) Balance.holidayPartyGapDays else Balance.tourBusGapDays
+        val days = state.rng.double(gap)
         state.nextTourBusAt = state.clock.simTime + days * Balance.dayLength
     }
 }

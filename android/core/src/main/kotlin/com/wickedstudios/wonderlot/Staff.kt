@@ -90,6 +90,9 @@ class Staff(
 
     val resolvedAct: EntertainerAct get() = act ?: EntertainerAct.classic
 
+    /** Santa or Mrs. Claus. */
+    val isHolidayPerformer: Boolean get() = role == StaffRole.entertainer && resolvedAct.isSeasonal
+
     /** What to call them: the job, and for the two jobs that come in kinds, which kind. */
     val roleTitle: String
         get() {

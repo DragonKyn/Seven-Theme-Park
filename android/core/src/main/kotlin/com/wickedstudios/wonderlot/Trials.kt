@@ -25,6 +25,14 @@ sealed class TrialGoal {
     data class Improvements(val count: Int) : TrialGoal()
     data class Prizes(val count: Int) : TrialGoal()
 
+    // The holiday event's own goals.
+    data class HolidayRides(val count: Int) : TrialGoal()
+    data class HolidayScenery(val count: Int) : TrialGoal()
+    data class HolidayStaff(val count: Int) : TrialGoal()
+    data class TrainedHolidayStaff(val count: Int) : TrialGoal()
+    data class Makeovers(val count: Int) : TrialGoal()
+    data class HolidayParties(val count: Int) : TrialGoal()
+
     val target: Double
         get() = when (this) {
             is GuestsInPark -> count.toDouble()
@@ -37,6 +45,12 @@ sealed class TrialGoal {
             is Improvements -> count.toDouble()
             is Prizes -> count.toDouble()
             is Build -> count.toDouble()
+            is HolidayRides -> count.toDouble()
+            is HolidayScenery -> count.toDouble()
+            is HolidayStaff -> count.toDouble()
+            is TrainedHolidayStaff -> count.toDouble()
+            is Makeovers -> count.toDouble()
+            is HolidayParties -> count.toDouble()
             is ParkRating -> value
             is Cash -> value
             is Happiness -> value
@@ -58,6 +72,12 @@ sealed class TrialGoal {
         is Staff -> state.staff.size.toDouble()
         is Improvements -> state.statistics.upgradesBoughtTotal.toDouble()
         is Prizes -> state.statistics.prizesWonTotal.toDouble()
+        is HolidayRides -> state.attractions.count { it.baseDefinition?.seasonal == true }.toDouble()
+        is HolidayScenery -> state.scenery.count { it.definition?.seasonal == true }.toDouble()
+        is HolidayStaff -> state.staff.count { it.isHolidayPerformer }.toDouble()
+        is TrainedHolidayStaff -> state.staff.count { it.isHolidayPerformer && it.trainingLevel > 0 }.toDouble()
+        is Makeovers -> state.attractions.count { it.upgradeLevel(RideUpgradeKind.holiday) > 0 }.toDouble()
+        is HolidayParties -> state.statistics.holidayPartiesTotal.toDouble()
     }
 
     fun isMet(state: GameState): Boolean = current(state) >= target
@@ -82,6 +102,12 @@ sealed class TrialGoal {
             is Staff -> "$count staff on the payroll"
             is Improvements -> "$count upgrades and improvements bought"
             is Prizes -> "$count prizes won at your booths"
+            is HolidayRides -> if (count == 1) "A holiday ride built" else "$count holiday rides built"
+            is HolidayScenery -> "$count seasonal decorations placed"
+            is HolidayStaff -> if (count == 1) "Santa or Mrs. Claus hired" else "$count holiday performers hired"
+            is TrainedHolidayStaff -> if (count == 1) "A holiday performer trained" else "$count holiday performers trained"
+            is Makeovers -> if (count == 1) "A ride given a holiday makeover" else "$count rides given a holiday makeover"
+            is HolidayParties -> if (count == 1) "A company holiday party hosted" else "$count company holiday parties hosted"
         }
 
     /** A short label for a chip. */
@@ -101,6 +127,12 @@ sealed class TrialGoal {
             is Staff -> "Staff"
             is Improvements -> "Upgrades"
             is Prizes -> "Prizes"
+            is HolidayRides -> "Rides"
+            is HolidayScenery -> "Decor"
+            is HolidayStaff -> "Cast"
+            is TrainedHolidayStaff -> "Trained"
+            is Makeovers -> "Makeovers"
+            is HolidayParties -> "Parties"
         }
 
     val symbolName: String
@@ -119,6 +151,12 @@ sealed class TrialGoal {
             is Staff -> "person.2.badge.gearshape.fill"
             is Improvements -> "star.circle.fill"
             is Prizes -> "gift.fill"
+            is HolidayRides -> "snowflake"
+            is HolidayScenery -> "tree.fill"
+            is HolidayStaff -> "person.fill"
+            is TrainedHolidayStaff -> "graduationcap.fill"
+            is Makeovers -> "paintbrush.fill"
+            is HolidayParties -> "party.popper.fill"
         }
 
     fun format(value: Double): String = when (this) {
@@ -155,6 +193,9 @@ sealed class TrialGoal {
 /** What finishing a trial earns. */
 data class TrialMedal(val name: String, val symbolName: String)
 
+/** Which ladder a trial belongs to. */
+enum class TrialSeries { standard, holiday }
+
 /** One rung of the ladder. */
 data class TrialDefinition(
     val id: String,
@@ -170,14 +211,21 @@ data class TrialDefinition(
     /** The most the gate may charge, when the trial caps it. */
     val maxAdmission: Double? = null,
     val medal: TrialMedal,
+    val series: TrialSeries = TrialSeries.standard,
+    /** Holiday trials: what finishing hands over (see [HolidayRewards]). */
+    val rewardIDs: List<String> = emptyList(),
+    /** Holiday trials: a reward that has to be held before this one can be started, because its goals use it. */
+    val needsRewardID: String? = null,
 ) {
+    val isHoliday: Boolean get() = series == TrialSeries.holiday
+
     val map: MapBlueprint get() = MapCatalogue.blueprint(mapID) ?: MapCatalogue.openMeadow
 }
 
 /** The ladder. Numbers here are a first pass at difficulty and the one place to retune it. */
 object TrialContent {
 
-    fun definition(id: String): TrialDefinition? = all.firstOrNull { it.id == id }
+    fun definition(id: String): TrialDefinition? = all.firstOrNull { it.id == id } ?: holiday.firstOrNull { it.id == id }
 
     val all: List<TrialDefinition> = listOf(
         TrialDefinition("trial.01", 1, "Opening Day",
@@ -282,6 +330,98 @@ object TrialContent {
             maxAdmission = 20.0,
             medal = TrialMedal("Legend of the Lot", "trophy.fill")),
     )
+
+    /**
+     * The twelve days of the holiday event. All open from the first day, apart from the few that use something an
+     * earlier one hands over. Nothing here asks for an item the player might not have: a goal that needs a reward
+     * names it in [TrialDefinition.needsRewardID], and the trial stays shut until it is held.
+     */
+    val holiday: List<TrialDefinition> = listOf(
+        TrialDefinition("holiday.01", 1, "A Partridge in a Pear Tree",
+            "Deck the lot. Open two holiday rides and put up eight decorations before the week is out.",
+            MapCatalogue.openMeadowID, 18_000.0, 6,
+            listOf(TrialGoal.HolidayRides(2), TrialGoal.HolidayScenery(8)),
+            medal = TrialMedal("Tree Trimmer", "tree.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.makeover.gentle")),
+
+        TrialDefinition("holiday.02", 2, "Two Turtle Doves",
+            "A cast for the season. Hire Santa Claus, train him up, and keep the crowd coming.",
+            MapCatalogue.openMeadowID, 18_000.0, 7,
+            listOf(TrialGoal.HolidayStaff(2), TrialGoal.TrainedHolidayStaff(1), TrialGoal.GuestsInPark(30)),
+            medal = TrialMedal("Cast Director", "person.2.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.giftstack")),
+
+        TrialDefinition("holiday.03", 3, "Three French Hens",
+            "Pine trees, snow and a crowd to keep warm. Three holiday rides and happy guests.",
+            "map.pinewood", 20_000.0, 8,
+            listOf(TrialGoal.HolidayRides(3), TrialGoal.GuestsInPark(40), TrialGoal.Happiness(65.0)),
+            medal = TrialMedal("Hen Keeper", "snowflake"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.lightpole")),
+
+        TrialDefinition("holiday.04", 4, "Four Calling Birds",
+            "The office parties are coming. Fill the park with rides, host a company holiday party and let them spend.",
+            MapCatalogue.openMeadowID, 20_000.0, 10,
+            listOf(TrialGoal.HolidayParties(1), TrialGoal.GuestsAdmitted(150), TrialGoal.Cash(25_000.0)),
+            medal = TrialMedal("Party Host", "party.popper.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.performer.missus")),
+
+        TrialDefinition("holiday.05", 5, "Five Golden Rings",
+            "A wheel for the new year. Build the Countdown Wheel, add holiday rides around it and earn three stars.",
+            "map.willowlake", 24_000.0, 10,
+            listOf(TrialGoal.Build("ride.newyear.countdownwheel", 1), TrialGoal.HolidayRides(5), TrialGoal.ParkRating(45.0)),
+            medal = TrialMedal("Ring Master", "circle.dotted"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.makeover.water")),
+
+        TrialDefinition("holiday.06", 6, "Six Geese a-Laying",
+            "Stalls, games and prizes. Sell the season: four shops, thirty prizes won and twelve decorations up.",
+            "map.pinewood", 16_000.0, 9,
+            listOf(TrialGoal.Shops(4), TrialGoal.Prizes(30), TrialGoal.HolidayScenery(12)),
+            medal = TrialMedal("Goose Girl", "gift.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.ride.candycoaster", "reward.candycane")),
+
+        TrialDefinition("holiday.07", 7, "Seven Swans a-Swimming",
+            "Dress the old favourites for the season. Give two rides a holiday makeover and keep six rides running.",
+            "map.willowlake", 22_000.0, 10,
+            listOf(TrialGoal.Makeovers(2), TrialGoal.Rides(6), TrialGoal.HolidayRides(4)),
+            medal = TrialMedal("Swan Keeper", "sparkles"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.makeover.family"), needsRewardID = "reward.makeover.gentle"),
+
+        TrialDefinition("holiday.08", 8, "Eight Maids a-Milking",
+            "A big, cheerful crowd. Sixty guests in the park, seventy percent happy and six shops to serve them.",
+            MapCatalogue.openMeadowID, 20_000.0, 10,
+            listOf(TrialGoal.GuestsInPark(60), TrialGoal.Happiness(70.0), TrialGoal.Shops(6)),
+            medal = TrialMedal("Milkmaid", "face.smiling"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.ride.startopper")),
+
+        TrialDefinition("holiday.09", 9, "Nine Ladies Dancing",
+            "The whole company on the payroll. Three holiday performers, two of them trained, among six staff.",
+            "map.pinewood", 22_000.0, 10,
+            listOf(TrialGoal.HolidayStaff(3), TrialGoal.TrainedHolidayStaff(2), TrialGoal.Staff(6), TrialGoal.ParkRating(55.0)),
+            medal = TrialMedal("Stage Manager", "theatermasks.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.makeover.thrill")),
+
+        TrialDefinition("holiday.10", 10, "Ten Lords a-Leaping",
+            "Thrills for the party season: a ride rated seventy-five for excitement, six holiday rides and forty thousand in the bank.",
+            "map.willowlake", 24_000.0, 12,
+            listOf(TrialGoal.ThrillRide(75.0), TrialGoal.HolidayRides(6), TrialGoal.Cash(40_000.0)),
+            medal = TrialMedal("High Leaper", "bolt.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.fireworks")),
+
+        TrialDefinition("holiday.11", 11, "Eleven Pipers Piping",
+            "Four rides in their holiday best, two company parties and eighty guests in the park at once.",
+            "map.pinewood", 26_000.0, 12,
+            listOf(TrialGoal.Makeovers(4), TrialGoal.HolidayParties(2), TrialGoal.GuestsInPark(80)),
+            medal = TrialMedal("Piper", "music.note"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.countdown"), needsRewardID = "reward.makeover.gentle"),
+
+        TrialDefinition("holiday.12", 12, "Twelve Drummers Drumming",
+            "The grand finale. Eight holiday rides, a hundred guests, a packed bank and a park worth four stars to ring in the year.",
+            "map.willowlake", 28_000.0, 14,
+            listOf(TrialGoal.HolidayRides(8), TrialGoal.GuestsInPark(100), TrialGoal.ParkRating(70.0),
+                TrialGoal.Cash(60_000.0), TrialGoal.HolidayParties(2)),
+            medal = TrialMedal("Wonder of the Season", "crown.fill"), series = TrialSeries.holiday,
+            rewardIDs = listOf("reward.ride.starburst")),
+    )
 }
 
 /** How a trial stands. */
@@ -301,7 +441,13 @@ data class TrialResult(
 }
 
 /** A result together with what it means for the ladder, which only the controller knows. */
-data class TrialResultReport(val result: TrialResult, val isFirstWin: Boolean, val nextTrial: TrialDefinition?) {
+data class TrialResultReport(
+    val result: TrialResult,
+    val isFirstWin: Boolean,
+    val nextTrial: TrialDefinition?,
+    /** Holiday trials: what was earned for the first time. */
+    val rewards: List<HolidayReward> = emptyList(),
+) {
     val id: UUID get() = result.id
 }
 

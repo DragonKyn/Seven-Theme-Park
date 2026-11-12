@@ -83,6 +83,8 @@ class ParkStatistics(
     var safetyInspectionsPassedTotal: Int = 0,
     var safetyInspectionsFailedTotal: Int = 0,
     var tourBusesTotal: Int = 0,
+    /** Company holiday parties hosted, over the life of the park. */
+    var holidayPartiesTotal: Int = 0,
     /** Counts of the reason guests gave for leaving, used for "common complaint". */
     val departureReasons: MutableMap<String, Int> = mutableMapOf(),
 ) {
@@ -224,6 +226,9 @@ class GameState(
     val pendingPromotions: MutableList<PromotionPost> = mutableListOf(),
     var nextTourBusAt: Double = Balance.dayLength * 0.6,
     val pendingTourBuses: MutableList<TourBusReport> = mutableListOf(),
+    /** Whether snow is falling now, and when the weather next turns. Only ever set during the event. */
+    var snowing: Boolean = false,
+    var nextWeatherChangeAt: Double = 0.0,
     var nextSafetyInspectionAt: Double = Balance.dayLength * 2.0,
     var inspectingRideID: UUID? = null,
     var inspectionVerdictAt: Double = 0.0,
@@ -451,6 +456,8 @@ class GameState(
         rotation: Int = 0,
         variant: Int? = null,
         colour: ParkColour? = null,
+        /** Built already wearing the holiday makeover. */
+        makeover: Boolean = false,
     ): Boolean {
         if (!placementCheck(definition, origin, rotation).isValid) return false
 
@@ -470,9 +477,11 @@ class GameState(
                     size = definition.footprint(rotation),
                     rotation = rotation,
                 )
+                if (makeover) attraction.upgrades[RideUpgradeKind.holiday.name] = 1
                 attractions.add(attraction)
                 map.setBuilding(attraction.id, attraction.rect.coords)
                 clearGround(attraction.rect)
+                if (makeover) refreshBeauty()
             }
 
             is FacilityDefinition -> {
@@ -585,8 +594,9 @@ class GameState(
         // A themed ride decorates the ground around it.
         for (attraction in attractions) {
             val level = attraction.upgradeLevel(RideUpgradeKind.theming)
-            if (level <= 0) continue
-            sources.add(ParkMap.BeautySource(attraction.rect, UpgradeContent.themingBeauty(level), UpgradeContent.themingBeautyRadius))
+            val festive = if (attraction.upgradeLevel(RideUpgradeKind.holiday) > 0) Balance.holidayMakeoverBeauty else 0.0
+            if (level <= 0 && festive <= 0) continue
+            sources.add(ParkMap.BeautySource(attraction.rect, UpgradeContent.themingBeauty(level) + festive, UpgradeContent.themingBeautyRadius))
         }
 
         // Water is terrain rather than an object, so it is folded in a tile at a time.
@@ -651,7 +661,7 @@ class GameState(
                     map.setBuilding(null, attraction.rect.coords)
                     attractions.removeAt(index)
                     // A themed ride decorated the ground around it.
-                    if (attraction.upgradeLevel(RideUpgradeKind.theming) > 0) refreshBeauty()
+                    if (attraction.upgradeLevel(RideUpgradeKind.theming) > 0 || attraction.upgradeLevel(RideUpgradeKind.holiday) > 0) refreshBeauty()
                     ledger.receive(refundValue(attraction.definition), RevenueCategory.other)
                     return true
                 }

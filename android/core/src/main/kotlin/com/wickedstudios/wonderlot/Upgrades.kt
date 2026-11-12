@@ -3,7 +3,7 @@ package com.wickedstudios.wonderlot
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class RideUpgradeKind { capacity, reliability, theming, loading }
+enum class RideUpgradeKind { capacity, reliability, theming, loading, holiday }
 
 class RideUpgradeDefinition(
     val kind: RideUpgradeKind,
@@ -96,11 +96,16 @@ object UpgradeContent {
             "sparkles", 3, 0.34),
     )
 
+    /** The seasonal makeover. Kept off the ordinary list: it is only offered in season, and only once unlocked. */
+    val holidayMakeover = RideUpgradeDefinition(RideUpgradeKind.holiday, "Holiday Makeover",
+        "Snow on the roof, ribbon on the rails and fairy lights all round. A little more exciting, and prettier nearby.",
+        "snowflake", 1, Balance.holidayMakeoverCostShare)
+
     val staffTraining = StaffTrainingDefinition(
         maxLevel = 3, costShare = 0.55, walkSpeedPerLevel = 0.16, workRatePerLevel = 0.32, wagePerLevel = 0.24,
     )
 
-    private val byKind = rideUpgrades.associateBy { it.kind }
+    private val byKind = (rideUpgrades + holidayMakeover).associateBy { it.kind }
     fun rideUpgrade(kind: RideUpgradeKind): RideUpgradeDefinition? = byKind[kind]
 
     fun capacityFactor(level: Int): Double = 1 + 0.30 * level

@@ -62,6 +62,7 @@ class SimulationEngine {
         val dt = Balance.tickDuration
         state.clock.simTime += dt
 
+        WeatherSystem.update(state)
         demand.update(state, dt)
         guestAI.update(state, dt)
         movement.update(state, dt)

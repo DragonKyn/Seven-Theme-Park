@@ -32,19 +32,39 @@ enum class EntertainerAct(
         "Costume", ParkColour.green, 1.15, 1.2),
     magician("Magician",
         "A modest lift all round, and now and then somebody is amazed enough to remember the whole day.",
-        "Cape", ParkColour.violet, 1.0, 0.7);
+        "Cape", ParkColour.violet, 1.0, 0.7),
+
+    // The holiday event's two performers. Only hired while it is on.
+    santa("Santa Claus",
+        "Christmas Cheer: a wide circle and a big lift, children adore him, and guests who have been near him spend a third more for a while.",
+        "Suit", ParkColour.red, Balance.santaRadiusFactor, Balance.santaHappinessFactor),
+    missus("Mrs. Claus",
+        "Fresh Cookies: hands round warm cookies, so guests nearby get less hungry, and the queue is cheered most of all.",
+        "Dress", ParkColour.green, Balance.missusRadiusFactor, Balance.missusHappinessFactor);
+
+    /** Part of the holiday event. */
+    val isSeasonal: Boolean get() = this == santa || this == missus
+
+    /** The catalogue id a trial reward has to open, if any. */
+    val unlockKey: String? get() = if (this == missus) "act.missus" else null
 
     /** Whether the act has a colour of its own to choose. */
     val usesColour: Boolean get() = this != classic
 
     /** Multiplies the lift for a child. A clown is for them. */
-    val childFactor: Double get() = if (this == clown) 2.0 else 1.0
+    val childFactor: Double get() = when (this) { clown -> 2.0; santa -> Balance.santaChildFactor; else -> 1.0 }
 
     /** Multiplies the lift for somebody standing in a queue. */
-    val queueFactor: Double get() = if (this == mime) 2.4 else 1.0
+    val queueFactor: Double get() = when (this) { mime -> 2.4; missus -> Balance.missusQueueFactor; else -> 1.0 }
 
     val handsOutBalloons: Boolean get() = this == balloonArtist
     val doesTricks: Boolean get() = this == magician
+
+    /** Guests nearby spend more for a while. */
+    val spreadsCheer: Boolean get() = this == santa
+
+    /** Guests nearby get less hungry. */
+    val bakesCookies: Boolean get() = this == missus
 }
 
 /** The costumes a park mascot can be hired in. */
@@ -131,6 +151,8 @@ class PerformerProfile(
     val childFactor: Double,
     val handsOutBalloons: Boolean,
     val doesTricks: Boolean,
+    val spreadsCheer: Boolean = false,
+    val bakesCookies: Boolean = false,
 ) {
     companion object {
         fun of(member: Staff): PerformerProfile {
@@ -141,7 +163,8 @@ class PerformerProfile(
             }
             val act = member.resolvedAct
             return PerformerProfile(Balance.entertainerRadius * act.radiusFactor, act.happinessFactor,
-                act.queueFactor, act.childFactor, act.handsOutBalloons, act.doesTricks)
+                act.queueFactor, act.childFactor, act.handsOutBalloons, act.doesTricks,
+                act.spreadsCheer, act.bakesCookies)
         }
     }
 }
