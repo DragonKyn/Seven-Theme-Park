@@ -28,7 +28,7 @@ enum Balance {
     /// reaches is arrivals times how long they stay, so this is the ceiling
     /// and `maxArrivalsPerMinute` is what sets the usual size: at 24 a minute
     /// and a ten minute visit, a park at its best sits near this number.
-    static let maxGuests = 250
+    static let maxGuests = 300
     /// Tiles per sim-second.
     static let guestWalkSpeed: Double = 1.6
     static let guestWalkSpeedVariance: Double = 0.25
@@ -397,6 +397,43 @@ enum Balance {
     /// spend against an ordinary guest.
     static let tourBusChildShare: Double = 0.62
     static let tourBusSpendScale: Double = 0.55
+
+    // MARK: - Holiday event
+
+    /// A holiday party is a tour bus that books itself in season: a company
+    /// outing, so mostly adults, in greater numbers, with a lot more money.
+    static let holidayPartyMinimumRides = 2
+    static let holidayPartyGapDays: ClosedRange<Double> = 3.0...5.0
+    static let holidayPartySize: ClosedRange<Int> = 26...38
+    static let holidayPartyMinimumSize = 14
+    static let holidayPartyChildShare: Double = 0.06
+    /// Five times what an ordinary guest arrives with.
+    static let holidayPartySpendScale: Double = 5.0
+    /// Chance that a bus which falls due in season is a company party.
+    static let holidayPartyChance: Double = 0.65
+
+    /// Snow. Spells of falling snow come and go through the event.
+    static let snowSpellDays: ClosedRange<Double> = 0.8...1.8
+    static let clearSpellDays: ClosedRange<Double> = 0.5...1.4
+    /// Festive weather brings a few more people through the gate.
+    static let snowArrivalLift: Double = 0.04
+
+    /// Santa: guests nearby spend more for a while after he has been past.
+    static let santaRadiusFactor: Double = 1.25
+    static let santaHappinessFactor: Double = 1.35
+    static let santaChildFactor: Double = 2.4
+    static let santaCheerSpendBoost: Double = 0.30
+    static let santaCheerSeconds: Double = 90
+    /// Mrs. Claus: cookies, so guests nearby get less hungry.
+    static let missusRadiusFactor: Double = 1.1
+    static let missusHappinessFactor: Double = 1.1
+    static let missusQueueFactor: Double = 1.8
+    static let missusHungerRelief: Double = 2.6
+
+    /// What a holiday makeover adds to a ride.
+    static let holidayMakeoverExcitement: Double = 5
+    static let holidayMakeoverBeauty: Double = 14
+    static let holidayMakeoverCostShare: Double = 0.16
 
     // MARK: - Achievements
 

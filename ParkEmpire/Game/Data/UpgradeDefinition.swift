@@ -11,6 +11,7 @@ enum RideUpgradeKind: String, Codable, CaseIterable, Identifiable {
     case reliability
     case theming
     case loading
+    case holiday
 
     var id: String { rawValue }
 }
@@ -167,6 +168,17 @@ enum UpgradeContent {
         )
     ]
 
+    /// The seasonal makeover. Kept off the ordinary list: it is only offered
+    /// in season, and only once a trial has unlocked it for that kind of ride.
+    static let holidayMakeover = RideUpgradeDefinition(
+        kind: .holiday,
+        displayName: "Holiday Makeover",
+        summary: "Snow on the roof, ribbon on the rails and fairy lights all round. A little more exciting, and prettier nearby.",
+        symbolName: "snowflake",
+        maxLevel: 1,
+        costShare: Balance.holidayMakeoverCostShare
+    )
+
     static let staffTraining = StaffTrainingDefinition(
         maxLevel: 3,
         costShare: 0.55,
@@ -176,7 +188,7 @@ enum UpgradeContent {
     )
 
     private static let byKind: [RideUpgradeKind: RideUpgradeDefinition] =
-        Dictionary(uniqueKeysWithValues: rideUpgrades.map { ($0.kind, $0) })
+        Dictionary(uniqueKeysWithValues: (rideUpgrades + [holidayMakeover]).map { ($0.kind, $0) })
 
     static func rideUpgrade(_ kind: RideUpgradeKind) -> RideUpgradeDefinition? {
         byKind[kind]

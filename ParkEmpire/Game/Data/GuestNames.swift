@@ -27,6 +27,17 @@ enum GuestNames {
         generator.pick(tourGroups) ?? "A day out"
     }
 
+    /// Companies that book the park for the holiday party.
+    private static let holidayParties = [
+        "Alderbrook Accounting", "Hollis & Pike Legal", "Marsh Lane Logistics", "Thorne Valley Insurance",
+        "Kerr Road Dental", "Wilde Brothers Plumbing", "Vance Software", "Sable Park Estate Agents",
+        "Frost Hill Bank", "Ingram Engineering", "Rowe & Daughters", "Quist Marketing"
+    ]
+
+    static func holidayParty(using generator: inout SeededGenerator) -> String {
+        generator.pick(holidayParties) ?? "The Office"
+    }
+
     static func random(using generator: inout SeededGenerator) -> String {
         let first = generator.pick(given) ?? "Guest"
         let last = generator.pick(family) ?? "Visitor"

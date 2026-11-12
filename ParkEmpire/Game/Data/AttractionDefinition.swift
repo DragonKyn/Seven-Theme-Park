@@ -41,8 +41,12 @@ enum RideGroup: String, Codable, CaseIterable, Identifiable {
     case family
     case thrill
     case water
+    /// The event's own shelf. Only on show while the event is on.
+    case holiday
 
     var id: String { rawValue }
+
+    var isSeasonal: Bool { self == .holiday }
 
     var displayName: String {
         switch self {
@@ -50,6 +54,7 @@ enum RideGroup: String, Codable, CaseIterable, Identifiable {
         case .family: return "Family"
         case .thrill: return "Thrill"
         case .water: return "Water"
+        case .holiday: return "Holiday"
         }
     }
 
@@ -59,6 +64,7 @@ enum RideGroup: String, Codable, CaseIterable, Identifiable {
         case .family: return "figure.2.and.child.holdinghands"
         case .thrill: return "bolt.fill"
         case .water: return "drop.fill"
+        case .holiday: return "gift.fill"
         }
     }
 }
@@ -104,6 +110,9 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
     var group: RideGroup = .family
     /// Whether it has to sit against water to work.
     var needsWater = false
+    /// Part of the holiday event: built only while it is on, and some only
+    /// once a trial has opened them.
+    var seasonal = false
 
     var category: BuildCategory {
         switch kind {
@@ -152,7 +161,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             rideDuration: rideDuration + trackDuration,
             loadDuration: loadDuration * UpgradeContent.loadingFactor(level: level(.loading)),
             excitement: SimMath.clamp(excitement + trackExcitement
-                                      + UpgradeContent.themingExcitement(level: level(.theming))),
+                                      + UpgradeContent.themingExcitement(level: level(.theming))
+                                      + (level(.holiday) > 0 ? Balance.holidayMakeoverExcitement : 0)),
             nausea: min(100, nausea + (coaster?.nauseaBonus ?? 0)),
             maintenanceRate: maintenanceRate * UpgradeContent.wearFactor(level: level(.reliability))
                 * (coaster?.wearFactor ?? 1),
@@ -162,7 +172,8 @@ struct AttractionDefinition: BuildableDefinition, Codable, Identifiable {
             appearance: appearance,
             kind: kind,
             group: group,
-            needsWater: needsWater
+            needsWater: needsWater,
+            seasonal: seasonal
         )
     }
 

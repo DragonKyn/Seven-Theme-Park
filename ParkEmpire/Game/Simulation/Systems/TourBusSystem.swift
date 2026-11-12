@@ -8,14 +8,19 @@ struct TourBusReport: Codable, Identifiable, Equatable {
     let count: Int
     /// How many of those were children.
     let childCount: Int
+    /// A company holiday party, which arrives bigger and with far more to spend.
+    var isHolidayParty = false
 
     /// The line on the card, and the line under it.
     var headline: String {
-        "\(count) arrivals in one go"
+        isHolidayParty ? "\(count) revellers in one go" : "\(count) arrivals in one go"
     }
 
     var detail: String {
-        childCount * 2 >= count
+        if isHolidayParty {
+            return "The office party is through the gate with a company card and a point to prove. They are spending five times what a visitor usually does."
+        }
+        return childCount * 2 >= count
             ? "A school party is through the gate. Your queues are about to find out."
             : "A day trip is through the gate. Your queues are about to find out."
     }
@@ -29,6 +34,7 @@ extension TourBusReport {
         groupName = container.value(.groupName, or: "A group")
         count = container.value(.count, or: 0)
         childCount = container.value(.childCount, or: 0)
+        isHolidayParty = container.value(.isHolidayParty, or: false)
     }
 }
 
@@ -49,7 +55,10 @@ enum TourBusSystem {
 
     /// Books the next one.
     static func scheduleNext(state: GameState) {
-        let days = state.rng.double(Balance.tourBusGapDays)
+        // In season the buses come a little closer together, since some of
+        // them are parties.
+        let gap = HolidaySeason.isActive(for: state) ? Balance.holidayPartyGapDays : Balance.tourBusGapDays
+        let days = state.rng.double(gap)
         state.nextTourBusAt = state.clock.simTime + days * Balance.dayLength
     }
 }

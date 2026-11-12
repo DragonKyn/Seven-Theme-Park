@@ -1053,7 +1053,10 @@ final class ParkScene: SKScene {
                                     rotation: attraction.rotation,
                                     appearance: (attraction.definition?.appearance ?? .unknown)
                                         .tinted(attraction.tint)
-                                        .applying(state.scheme),
+                                        .applying(state.scheme)
+                                        // After a holiday makeover, while the event is on.
+                                        .dressed(attraction.upgradeLevel(.holiday) > 0
+                                                 && HolidaySeason.isActive(for: state)),
                                     title: attraction.name)
             node.setMotionRunning(attraction.isOperational)
             if attraction.isBroken {

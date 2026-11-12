@@ -63,6 +63,7 @@ final class SimulationEngine {
         let dt = Balance.tickDuration
         state.clock.simTime += dt
 
+        WeatherSystem.update(state: state)
         demand.update(state: state, dt: dt)
         guestAI.update(state: state, dt: dt)
         movement.update(state: state, dt: dt)

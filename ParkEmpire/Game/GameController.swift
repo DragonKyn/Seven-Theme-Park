@@ -67,6 +67,7 @@ final class GameController: ObservableObject {
     private let tutorial = TutorialDirector()
     private let boosts = BoostCenter.shared
     private let perkStore = PerkStore()
+    private let holidayStore = HolidayStore()
     private let saveService: SaveGameService
     /// Where this park is saved: one of the player's slots, or its trial's
     /// own file.
@@ -218,8 +219,13 @@ final class GameController: ObservableObject {
     /// Filed here rather than in the view because picking a shelf can empty
     /// the list, and the view should not be the thing that decides what to do
     /// about that.
+    /// Whether the holiday event is on for this park.
+    var isHolidaySeason: Bool { HolidaySeason.isActive(for: state) }
+
     func buildables(in category: BuildCategory) -> [BuildableDefinition] {
+        let season = isHolidaySeason
         let all = GameContent.buildables(in: category, unlockLevel: state.unlockLevel)
+            .filter { HolidayContent.canBuild($0, season: season, store: holidayStore) }
         guard category == .attraction, let group = build.rideGroup else { return all }
         return all.filter { ($0 as? AttractionDefinition)?.group == group }
     }
@@ -436,14 +442,32 @@ final class GameController: ObservableObject {
         build.pending = pending
     }
 
+    /// Places something, giving a ride the holiday makeover from the start
+    /// when the player has earned it for that kind of ride. The makeover is
+    /// the default look, so there is nothing to switch on.
+    private func place(_ definition: BuildableDefinition, at origin: GridCoord, rotation: Int) -> Bool {
+        var makeover = false
+        if let ride = definition as? AttractionDefinition { makeover = makeoverAvailable(for: ride) }
+        return state.place(definition,
+                           at: origin,
+                           rotation: rotation,
+                           variant: build.variant,
+                           colour: build.colour,
+                           makeover: makeover)
+    }
+
+    /// Whether the holiday makeover is on offer for this kind of ride right
+    /// now: in season, earned, and not a holiday ride already.
+    func makeoverAvailable(for definition: AttractionDefinition) -> Bool {
+        guard !definition.seasonal, isHolidaySeason,
+              let reward = HolidayMakeovers.rewardFor(rideID: definition.id) else { return false }
+        return holidayStore.isUnlocked(reward)
+    }
+
     @discardableResult
     func confirmPending() -> Bool {
         guard let pending = build.pending, let definition = pendingDefinition else { return false }
-        guard state.place(definition,
-                          at: pending.origin,
-                          rotation: pending.rotation,
-                          variant: build.variant,
-                          colour: build.colour) else {
+        guard place(definition, at: pending.origin, rotation: pending.rotation) else {
             return false
         }
         build.pending = nil
@@ -476,11 +500,7 @@ final class GameController: ObservableObject {
                                                      origin: coord,
                                                      rotation: build.rotation)
                 } else {
-                    _ = state.place(definition,
-                                    at: coord,
-                                    rotation: build.rotation,
-                                    variant: build.variant,
-                                    colour: build.colour)
+                    _ = place(definition, at: coord, rotation: build.rotation)
                     refreshUI()
                 }
             }
@@ -817,6 +837,13 @@ final class GameController: ObservableObject {
 
     // MARK: - Staff
 
+    /// The acts on offer for an entertainer: the everyday ones, plus Santa and
+    /// Mrs. Claus while the event is on.
+    var availableActs: [EntertainerAct] {
+        let season = isHolidaySeason
+        return EntertainerAct.allCases.filter { HolidayContent.canHire($0, season: season, store: holidayStore) }
+    }
+
     func canHire(role: StaffRole) -> Bool {
         guard let definition = StaffContent.definition(for: role) else { return false }
         return state.ledger.canAfford(definition.hiringCost) && state.staff.count < Balance.maxStaff
@@ -825,6 +852,7 @@ final class GameController: ObservableObject {
     @discardableResult
     func hireStaff(role: StaffRole, style: StaffStyle = .standard) -> Bool {
         guard let definition = StaffContent.definition(for: role), canHire(role: role) else { return false }
+        if role == .entertainer, let act = style.act, !availableActs.contains(act) { return false }
 
         state.ledger.spend(definition.hiringCost, on: .wages)
 
@@ -839,6 +867,9 @@ final class GameController: ObservableObject {
         case .entertainer:
             member.act = style.act
             member.primaryColour = style.primary
+            // The two holiday acts are characters, so they are named like them.
+            if style.act == .santa { member.name = "Santa" }
+            if style.act == .missus { member.name = "Mrs. Claus" }
         case .mascot:
             // A mascot is a character, so it is named like one.
             let costume = style.costume ?? .bear
@@ -919,6 +950,10 @@ final class GameController: ObservableObject {
     /// Changes how an entertainer or a mascot looks.
     func setStaffStyle(id: UUID, style: StaffStyle) {
         guard let index = state.staff.firstIndex(where: { $0.id == id }) else { return }
+        // A holiday act can be taken off but not put on once the event is
+        // over, or before it has been earned.
+        if state.staff[index].role == .entertainer, let act = style.act,
+           act != state.staff[index].act, !availableActs.contains(act) { return }
         switch state.staff[index].role {
         case .entertainer:
             state.staff[index].act = style.act
@@ -951,6 +986,7 @@ final class GameController: ObservableObject {
         guard let attraction = state.attraction(id: attractionID),
               let definition = UpgradeContent.rideUpgrade(kind),
               let base = attraction.baseDefinition else { return nil }
+        if kind == .holiday && !makeoverAvailable(for: base) { return nil }
         let next = attraction.upgradeLevel(kind) + 1
         guard next <= definition.maxLevel else { return nil }
         return definition.cost(forLevel: next, ridePrice: base.purchasePrice)
@@ -974,7 +1010,7 @@ final class GameController: ObservableObject {
 
         // Theming decorates the ground around the ride, so the beauty field
         // has to be rebuilt the same way placing scenery rebuilds it.
-        if kind == .theming { state.refreshBeauty() }
+        if kind == .theming || kind == .holiday { state.refreshBeauty() }
 
         refreshUI()
         return true
@@ -1182,13 +1218,20 @@ final class GameController: ObservableObject {
         state.pendingTrialResult = nil
 
         var isFirstWin = false
+        var rewards: [HolidayReward] = []
         if result.won, let trial = result.trial {
-            isFirstWin = TrialProgressStore().recordWin(trial, day: result.day)
+            if trial.isHoliday {
+                isFirstWin = !holidayStore.isCompleted(trial)
+                rewards = holidayStore.recordWin(trial)
+            } else {
+                isFirstWin = TrialProgressStore().recordWin(trial, day: result.day)
+            }
         }
+        let ladder = result.trial?.isHoliday == true ? TrialContent.holiday : TrialContent.all
         let next = result.trial.flatMap { trial in
-            TrialContent.all.first { $0.number == trial.number + 1 }
+            ladder.first { $0.number == trial.number + 1 }
         }
-        trialResult = TrialResultReport(result: result, isFirstWin: isFirstWin, nextTrial: next)
+        trialResult = TrialResultReport(result: result, isFirstWin: isFirstWin, nextTrial: next, rewards: rewards)
         // Saved at once, so a win is never lost to the app closing on the
         // card that announced it.
         autosave()
@@ -1293,7 +1336,8 @@ final class GameController: ObservableObject {
             return .guest(GuestDetail(guest: guest, state: state))
         case .attraction(let id):
             guard let attraction = state.attraction(id: id) else { return nil }
-            return .attraction(AttractionDetail(attraction: attraction))
+            let offered = attraction.baseDefinition.map { makeoverAvailable(for: $0) } ?? false
+            return .attraction(AttractionDetail(attraction: attraction, makeoverOffered: offered))
         case .facility(let id):
             guard let facility = state.facility(id: id) else { return nil }
             return .facility(FacilityDetail(facility: facility))

@@ -24,6 +24,8 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     /// Whether this belongs on the water rather than the ground: lily pads,
     /// reeds and the rest of what makes a pond look lived in.
     var onWater: Bool = false
+    /// Part of the holiday event.
+    var seasonal = false
 
     var category: BuildCategory { .scenery }
 

@@ -73,6 +73,9 @@ struct Staff: Codable, Identifiable {
 
     var resolvedAct: EntertainerAct { act ?? .classic }
 
+    /// Santa or Mrs. Claus.
+    var isHolidayPerformer: Bool { role == .entertainer && resolvedAct.isSeasonal }
+
     /// What to call them: the job, and for the two jobs that come in kinds,
     /// which kind. "Entertainer · Magician", "Park Mascot · Frog".
     var roleTitle: String {

@@ -13,6 +13,9 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     case mime
     case juggler
     case magician
+    /// The holiday event's two performers. Only hired while it is on.
+    case santa
+    case missus
 
     var id: String { rawValue }
 
@@ -24,6 +27,8 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .mime: return "Mime"
         case .juggler: return "Juggler"
         case .magician: return "Magician"
+        case .santa: return "Santa Claus"
+        case .missus: return "Mrs. Claus"
         }
     }
 
@@ -41,6 +46,10 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
             return "A wider circle and a bigger lift than the all-rounder. Hard to walk past."
         case .magician:
             return "A modest lift all round, and now and then somebody is amazed enough to remember the whole day."
+        case .santa:
+            return "Christmas Cheer: a wide circle and a big lift, children adore him, and guests who have been near him spend a third more for a while."
+        case .missus:
+            return "Fresh Cookies: hands round warm cookies, so guests nearby get less hungry, and the queue is cheered most of all."
         }
     }
 
@@ -57,6 +66,8 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .mime: return "Stripes"
         case .juggler: return "Costume"
         case .magician: return "Cape"
+        case .santa: return "Suit"
+        case .missus: return "Dress"
         }
     }
 
@@ -68,6 +79,8 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .mime: return .charcoal
         case .juggler: return .green
         case .magician: return .violet
+        case .santa: return .red
+        case .missus: return .green
         }
     }
 
@@ -82,6 +95,8 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .mime: return 0.8
         case .juggler: return 1.15
         case .magician: return 1.0
+        case .santa: return Balance.santaRadiusFactor
+        case .missus: return Balance.missusRadiusFactor
         }
     }
 
@@ -94,21 +109,43 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .mime: return 0.9
         case .juggler: return 1.2
         case .magician: return 0.7
+        case .santa: return Balance.santaHappinessFactor
+        case .missus: return Balance.missusHappinessFactor
         }
     }
 
     /// Multiplies the lift for a child. A clown is for them.
     var childFactor: Double {
-        self == .clown ? 2.0 : 1.0
+        switch self {
+        case .clown: return 2.0
+        case .santa: return Balance.santaChildFactor
+        default: return 1.0
+        }
     }
 
     /// Multiplies the lift for somebody standing in a queue.
     var queueFactor: Double {
-        self == .mime ? 2.4 : 1.0
+        switch self {
+        case .mime: return 2.4
+        case .missus: return Balance.missusQueueFactor
+        default: return 1.0
+        }
     }
 
     var handsOutBalloons: Bool { self == .balloonArtist }
     var doesTricks: Bool { self == .magician }
+
+    /// Part of the holiday event.
+    var isSeasonal: Bool { self == .santa || self == .missus }
+
+    /// The catalogue id a trial reward has to open, if any.
+    var unlockKey: String? { self == .missus ? "act.missus" : nil }
+
+    /// Guests nearby spend more for a while.
+    var spreadsCheer: Bool { self == .santa }
+
+    /// Guests nearby get less hungry.
+    var bakesCookies: Bool { self == .missus }
 }
 
 /// The costumes a park mascot can be hired in.
@@ -279,6 +316,8 @@ struct PerformerProfile {
     let childFactor: Double
     let handsOutBalloons: Bool
     let doesTricks: Bool
+    var spreadsCheer = false
+    var bakesCookies = false
 
     static func of(_ member: Staff) -> PerformerProfile {
         if member.role == .mascot {
@@ -295,6 +334,8 @@ struct PerformerProfile {
                                 queueFactor: act.queueFactor,
                                 childFactor: act.childFactor,
                                 handsOutBalloons: act.handsOutBalloons,
-                                doesTricks: act.doesTricks)
+                                doesTricks: act.doesTricks,
+                                spreadsCheer: act.spreadsCheer,
+                                bakesCookies: act.bakesCookies)
     }
 }

@@ -748,6 +748,15 @@ final class StaffSystem {
             if state.guests[index].ageCategory == .child { lift *= profile.childFactor }
             if case .queueing = state.guests[index].activity { lift *= profile.queueFactor }
             state.guests[index].adjustHappiness(lift)
+            // Mrs. Claus's cookies: anybody in her circle gets a little less hungry.
+            if profile.bakesCookies {
+                state.guests[index].hunger = max(0, state.guests[index].hunger
+                                                 - Balance.missusHungerRelief * member.workRate * dt)
+            }
+            // Santa's cheer: those who have been near him buy more for a while.
+            if profile.spreadsCheer {
+                state.guests[index].cheerUntil = now + Balance.santaCheerSeconds
+            }
             audience.append(index)
         }
         guard !audience.isEmpty else { return }

@@ -110,6 +110,8 @@ enum StaffArtwork {
             // they can be thrown. See `JugglerRig`.
             case .juggler: break
             case .magician: drawWand(layout: layout)
+            case .santa: drawSantaExtras(layout: layout)
+            case .missus: drawMrsClausExtras(layout: layout)
             }
         case .security:
             drawSecurityMarkings(layout: layout)
@@ -125,7 +127,7 @@ enum StaffArtwork {
         switch look.act {
         case .classic: return ParkPalette.colour(uniform)
         case .magician: return ParkPalette.colour(.cream)
-        case .clown, .balloonArtist, .mime, .juggler: return ParkPalette.colour(look.primary)
+        case .clown, .balloonArtist, .mime, .juggler, .santa, .missus: return ParkPalette.colour(look.primary)
         }
     }
 
@@ -176,6 +178,15 @@ enum StaffArtwork {
             case .magician:
                 headwear = .topHat
                 headwearColour = ParkPalette.colour(.charcoal)
+            case .santa:
+                // The red hat and its pompom; the white band is added over it.
+                headwear = .partyHat
+                headwearColour = ParkPalette.colour(look.primary)
+                bottoms = ParkPalette.colour(look.primary)
+            case .missus:
+                headwear = .none
+                headwearColour = shirt
+                bottoms = ParkPalette.colour(look.primary)
             }
         case .security:
             // A dark peaked cap whatever the park's colours are. A guard in a
@@ -189,7 +200,7 @@ enum StaffArtwork {
 
         return PersonArtwork.Look(
             skin: .tan,
-            hair: .dark,
+            hair: (role == .entertainer && look.act.isSeasonal) ? .grey : .dark,
             shirt: shirt,
             headwear: headwear,
             headwearColour: headwearColour,

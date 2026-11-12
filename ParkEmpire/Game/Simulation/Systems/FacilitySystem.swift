@@ -200,6 +200,7 @@ final class FacilitySystem {
             reference: definition.referencePrice,
             spending: guest.personality.spending)
         let willingness = fairness * state.adBoosts.spendFactor
+            * guest.cheerFactor(at: state.clock.simTime)
 
         state.facilities[facilityIndex].sentimentSum += fairness
         state.facilities[facilityIndex].sentimentCount += 1

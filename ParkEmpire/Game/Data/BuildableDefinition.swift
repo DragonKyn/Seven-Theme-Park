@@ -71,6 +71,8 @@ protocol BuildableDefinition {
     var purchasePrice: Double { get }
     var footprint: GridSize { get }
     var unlockLevel: Int { get }
+    /// Holiday content: on offer only while the event is on.
+    var seasonal: Bool { get }
     /// Whether the placed object must touch a walkable tile to function.
     var requiresPathAccess: Bool { get }
     /// Whether it also has to sit against a railway to be any use.
@@ -101,6 +103,8 @@ protocol BuildableDefinition {
 }
 
 extension BuildableDefinition {
+    var seasonal: Bool { false }
+
     /// The ground this takes up once turned. Occupancy, access tiles and the
     /// placement preview all work from this rather than from the raw
     /// footprint, so rotation needs no special cases anywhere else.

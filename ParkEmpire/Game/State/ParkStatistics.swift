@@ -33,6 +33,8 @@ struct ParkStatistics: Codable {
     var safetyInspectionsFailedTotal: Int = 0
     /// Tour buses that have pulled up at the gate.
     var tourBusesTotal: Int = 0
+    /// Company holiday parties hosted, over the life of the park.
+    var holidayPartiesTotal: Int = 0
 
     /// Counts of the reason guests gave for leaving, used for "common complaint".
     var departureReasons: [String: Int] = [:]
@@ -82,6 +84,7 @@ extension ParkStatistics {
         safetyInspectionsPassedTotal = container.value(.safetyInspectionsPassedTotal, or: 0)
         safetyInspectionsFailedTotal = container.value(.safetyInspectionsFailedTotal, or: 0)
         tourBusesTotal = container.value(.tourBusesTotal, or: 0)
+        holidayPartiesTotal = container.value(.holidayPartiesTotal, or: 0)
         transportTripsTotal = container.value(.transportTripsTotal, or: 0)
         departureReasons = container.value(.departureReasons, or: [:])
     }

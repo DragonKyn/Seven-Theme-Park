@@ -15,6 +15,14 @@ struct BuildingAppearance: Codable, Equatable {
     /// different trees, so a row of them is a row of trees rather than one
     /// tree stamped four times.
     var variant: Int = 0
+    /// Dressed for the holidays: snow on the roof, ribbon, fairy lights. Only
+    /// ever set during the event, and never saved: it is worked out each time
+    /// from the season and what the ride has had done to it.
+    var holiday: Bool = false
+
+    private enum CodingKeys: String, CodingKey {
+        case motif, primary, secondary, accent, variant
+    }
 
     init(_ motif: BuildingMotif,
          _ primary: ParkColour,
@@ -26,6 +34,13 @@ struct BuildingAppearance: Codable, Equatable {
         self.secondary = secondary
         self.accent = accent
         self.variant = variant
+    }
+
+    func dressed(_ on: Bool) -> BuildingAppearance {
+        guard holiday != on else { return self }
+        var copy = self
+        copy.holiday = on
+        return copy
     }
 
     func withVariant(_ variant: Int) -> BuildingAppearance {
@@ -187,6 +202,38 @@ enum BuildingMotif: String, Codable {
     /// A stone ring in the water with a jet at its heart.
     case pondFountain
 
+    // The holiday event. Rides first, then the decorations.
+    /// A carousel of reindeer with antlers and bells.
+    case reindeerCarousel
+    /// A sleigh on a snowy hill track.
+    case sleighRide
+    /// A coaster on candy-striped track.
+    case candyCoaster
+    /// Spinning cabins under a glass dome.
+    case snowGlobe
+    /// A little train round a very big tree.
+    case polarExpress
+    /// A house made of cake and icing.
+    case gingerbreadManor
+    /// A drop tower dressed as a tree with a star on top.
+    case starTopper
+    /// A wheel with a clock at its hub.
+    case countdownWheel
+    /// Swing chairs with a confetti cannon.
+    case confettiSwing
+    /// A tower with a glittering ball that drops at midnight.
+    case ballDrop
+    /// A coaster that finishes every lap in a burst of sparks.
+    case starburstCoaster
+    case xmasTree
+    case snowman
+    case wreathArch
+    case giftStack
+    case lightPole
+    case candyCanePost
+    case fireworkStand
+    case countdownClock
+
     /// Colours the player can pick for this shape when placing it or
     /// afterwards. Empty for everything that is meant to look the way it was
     /// designed.
@@ -202,6 +249,7 @@ enum BuildingMotif: String, Codable {
     var variantCount: Int {
         switch self {
         case .tree: return 4
+        case .xmasTree: return 3
         case .conifer: return 3
         case .flowerBed: return 3
         case .topiary: return 3
@@ -241,12 +289,12 @@ enum BuildingMotif: String, Codable {
     /// alive; a stopped animation is how a broken ride announces itself.
     var motion: BuildingMotion {
         switch self {
-        case .carousel, .ferrisWheel, .teacups: return .spin
+        case .carousel, .ferrisWheel, .teacups, .reindeerCarousel, .snowGlobe, .countdownWheel: return .spin
         case .swingBoat: return .swing
-        case .dropTower: return .rise
+        case .dropTower, .starTopper, .ballDrop: return .rise
         case .coaster, .megaCoaster, .logFlume, .fishingBoats, .skyGliders,
-             .lanternCruise: return .circuit
-        case .swingChairs: return .orbit
+             .lanternCruise, .sleighRide, .candyCoaster, .polarExpress, .starburstCoaster: return .circuit
+        case .swingChairs, .confettiSwing: return .orbit
         case .pendulumArm: return .invert
         case .riverRapids: return .drift
         case .zipLine: return .zip
@@ -254,7 +302,7 @@ enum BuildingMotif: String, Codable {
         case .bumperCars, .bumperBoats: return .bumper
         case .slingshot: return .launch
         case .carpetSlide: return .slide
-        case .hauntedHouse: return .hover
+        case .hauntedHouse, .gingerbreadManor: return .hover
         case .wavePool: return .surf
         case .fountain, .pondFountain: return .bob
         // The two booths with something to watch. The rest are a backdrop for
@@ -268,6 +316,9 @@ enum BuildingMotif: String, Codable {
         // the guests, and they are drawn separately.
         case .mirrorMaze, .coasterStation, .miniGolf: return .none
         case .hedge, .picnicTable, .flagPole, .gardenArch, .clockTower:
+            return .none
+        case .xmasTree, .snowman, .wreathArch, .giftStack, .lightPole, .candyCanePost,
+             .fireworkStand, .countdownClock:
             return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,

@@ -29,7 +29,8 @@ extension GameState {
                at origin: GridCoord,
                rotation: Int = 0,
                variant: Int? = nil,
-               colour: ParkColour? = nil) -> Bool {
+               colour: ParkColour? = nil,
+               makeover: Bool = false) -> Bool {
         guard placementCheck(for: definition, at: origin, rotation: rotation).isValid else {
             return false
         }
@@ -43,7 +44,7 @@ extension GameState {
             if terrainDefinition.beauty > 0 { refreshBeauty() }
 
         case let attractionDefinition as AttractionDefinition:
-            let attraction = Attraction(
+            var attraction = Attraction(
                 id: UUID(),
                 definitionID: attractionDefinition.id,
                 name: uniqueName(for: attractionDefinition.displayName),
@@ -51,9 +52,12 @@ extension GameState {
                 size: attractionDefinition.footprint(rotatedBy: rotation),
                 rotation: rotation
             )
+            // Built already wearing the holiday makeover.
+            if makeover { attraction.upgrades[RideUpgradeKind.holiday.rawValue] = 1 }
             attractions.append(attraction)
             map.setBuilding(attraction.id, on: attraction.rect.coords)
             clearGround(of: attraction.rect)
+            if makeover { refreshBeauty() }
 
         case let facilityDefinition as FacilityDefinition:
             let styles = facilityDefinition.appearance.motif.variantCount
@@ -173,9 +177,10 @@ extension GameState {
         // theming is worth buying.
         for attraction in attractions {
             let level = attraction.upgradeLevel(.theming)
-            guard level > 0 else { continue }
+            let festive = attraction.upgradeLevel(.holiday) > 0 ? Balance.holidayMakeoverBeauty : 0
+            guard level > 0 || festive > 0 else { continue }
             sources.append(ParkMap.BeautySource(rect: attraction.rect,
-                                                beauty: UpgradeContent.themingBeauty(level: level),
+                                                beauty: UpgradeContent.themingBeauty(level: level) + festive,
                                                 radius: UpgradeContent.themingBeautyRadius))
         }
 
@@ -256,7 +261,7 @@ extension GameState {
                 attractions.remove(at: index)
                 // A themed ride decorated the ground around it, so taking it
                 // away has to take that with it.
-                if attraction.upgradeLevel(.theming) > 0 { refreshBeauty() }
+                if attraction.upgradeLevel(.theming) > 0 || attraction.upgradeLevel(.holiday) > 0 { refreshBeauty() }
                 ledger.receive(demolitionRefundValue(for: attraction.definition), as: .other)
                 return true
 

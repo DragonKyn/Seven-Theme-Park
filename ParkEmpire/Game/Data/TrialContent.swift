@@ -34,11 +34,21 @@ enum TrialGoal: Equatable {
     /// Prizes handed over the counter of a carnival booth.
     case prizes(Int)
 
+    // The holiday event's own goals.
+    case holidayRides(Int)
+    case holidayScenery(Int)
+    case holidayStaff(Int)
+    case trainedHolidayStaff(Int)
+    case makeovers(Int)
+    case holidayParties(Int)
+
     var target: Double {
         switch self {
         case .guestsInPark(let count), .guestsAdmitted(let count), .rides(let count),
              .coasterLength(let count), .shops(let count), .scenery(let count),
-             .staff(let count), .improvements(let count), .prizes(let count):
+             .staff(let count), .improvements(let count), .prizes(let count),
+             .holidayRides(let count), .holidayScenery(let count), .holidayStaff(let count),
+             .trainedHolidayStaff(let count), .makeovers(let count), .holidayParties(let count):
             return Double(count)
         case .parkRating(let value), .cash(let value), .happiness(let value),
              .thrillRide(let value):
@@ -68,6 +78,13 @@ enum TrialGoal: Equatable {
         case .staff: return Double(state.staff.count)
         case .improvements: return Double(state.statistics.upgradesBoughtTotal)
         case .prizes: return Double(state.statistics.prizesWonTotal)
+        case .holidayRides: return Double(state.attractions.filter { $0.baseDefinition?.seasonal == true }.count)
+        case .holidayScenery: return Double(state.scenery.filter { $0.definition?.seasonal == true }.count)
+        case .holidayStaff: return Double(state.staff.filter(\.isHolidayPerformer).count)
+        case .trainedHolidayStaff:
+            return Double(state.staff.filter { $0.isHolidayPerformer && $0.trainingLevel > 0 }.count)
+        case .makeovers: return Double(state.attractions.filter { $0.upgradeLevel(.holiday) > 0 }.count)
+        case .holidayParties: return Double(state.statistics.holidayPartiesTotal)
         }
     }
 
@@ -109,6 +126,16 @@ enum TrialGoal: Equatable {
         case .staff(let count): return "\(count) staff on the payroll"
         case .improvements(let count): return "\(count) upgrades and improvements bought"
         case .prizes(let count): return "\(count) prizes won at your booths"
+        case .holidayRides(let count): return count == 1 ? "A holiday ride built" : "\(count) holiday rides built"
+        case .holidayScenery(let count): return "\(count) seasonal decorations placed"
+        case .holidayStaff(let count):
+            return count == 1 ? "Santa or Mrs. Claus hired" : "\(count) holiday performers hired"
+        case .trainedHolidayStaff(let count):
+            return count == 1 ? "A holiday performer trained" : "\(count) holiday performers trained"
+        case .makeovers(let count):
+            return count == 1 ? "A ride given a holiday makeover" : "\(count) rides given a holiday makeover"
+        case .holidayParties(let count):
+            return count == 1 ? "A company holiday party hosted" : "\(count) company holiday parties hosted"
         }
     }
 
@@ -129,6 +156,12 @@ enum TrialGoal: Equatable {
         case .staff: return "Staff"
         case .improvements: return "Upgrades"
         case .prizes: return "Prizes"
+        case .holidayRides: return "Rides"
+        case .holidayScenery: return "Decor"
+        case .holidayStaff: return "Cast"
+        case .trainedHolidayStaff: return "Trained"
+        case .makeovers: return "Makeovers"
+        case .holidayParties: return "Parties"
         }
     }
 
@@ -148,6 +181,12 @@ enum TrialGoal: Equatable {
         case .staff: return "person.2.badge.gearshape.fill"
         case .improvements: return "star.circle.fill"
         case .prizes: return "gift.fill"
+        case .holidayRides: return "snowflake"
+        case .holidayScenery: return "tree.fill"
+        case .holidayStaff: return "person.fill"
+        case .trainedHolidayStaff: return "graduationcap.fill"
+        case .makeovers: return "paintbrush.fill"
+        case .holidayParties: return "party.popper.fill"
         }
     }
 
@@ -177,6 +216,12 @@ struct TrialMedal: Equatable {
     let symbolName: String
 }
 
+/// Which ladder a trial belongs to.
+enum TrialSeries: Equatable {
+    case standard
+    case holiday
+}
+
 /// One rung of the ladder.
 struct TrialDefinition: Identifiable, Equatable {
     let id: String
@@ -193,6 +238,14 @@ struct TrialDefinition: Identifiable, Equatable {
     /// The most the gate may charge, when the trial caps it.
     var maxAdmission: Double?
     let medal: TrialMedal
+    var series: TrialSeries = .standard
+    /// Holiday trials: what finishing hands over (see `HolidayRewards`).
+    var rewardIDs: [String] = []
+    /// Holiday trials: a reward that has to be held before this one can be
+    /// started, because its goals use it.
+    var needsRewardID: String?
+
+    var isHoliday: Bool { series == .holiday }
 
     var map: MapBlueprint {
         MapCatalogue.blueprint(id: mapID) ?? MapCatalogue.openMeadow
@@ -208,7 +261,7 @@ struct TrialDefinition: Identifiable, Equatable {
 enum TrialContent {
 
     static func definition(id: String) -> TrialDefinition? {
-        all.first { $0.id == id }
+        all.first { $0.id == id } ?? holiday.first { $0.id == id }
     }
 
     static let all: [TrialDefinition] = [

@@ -36,6 +36,8 @@ struct TrialResultReport: Identifiable, Equatable {
     /// the medal is earned and the next rung opens.
     let isFirstWin: Bool
     let nextTrial: TrialDefinition?
+    /// Holiday trials: what was earned for the first time.
+    var rewards: [HolidayReward] = []
 
     var id: UUID { result.id }
 }

@@ -162,9 +162,16 @@ struct Guest: Codable, Identifiable {
     var popcornRemaining: Double = 0
     /// A balloon a balloon artist gave them, carried for the rest of the visit.
     var balloon: ParkColour?
+    /// Sim-time until which Santa's cheer makes them readier to buy.
+    var cheerUntil: Double = 0
     var thoughts: [GuestThought] = []
     /// Set when the guest decides to go home; recorded on departure.
     var departureReason: String?
+
+    /// Readier to buy while Santa's cheer lasts.
+    func cheerFactor(at simTime: Double) -> Double {
+        cheerUntil > simTime ? 1 + Balance.santaCheerSpendBoost : 1
+    }
 
     var isActive: Bool {
         if case .departed = activity { return false }
@@ -237,6 +244,7 @@ extension Guest {
         prizesWon = container.value(.prizesWon, or: 0)
         popcornRemaining = container.value(.popcornRemaining, or: 0)
         balloon = container.optionalValue(.balloon)
+        cheerUntil = container.value(.cheerUntil, or: 0)
         thoughts = container.value(.thoughts, or: [])
         departureReason = container.optionalValue(.departureReason)
     }

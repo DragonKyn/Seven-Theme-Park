@@ -169,7 +169,7 @@ struct AttractionDetail: Identifiable {
     let coaster: CoasterRating?
     let intensityText: String
 
-    init(attraction: Attraction) {
+    init(attraction: Attraction, makeoverOffered: Bool = false) {
         coaster = attraction.coaster
         intensityText = AttractionDetail.intensityLabel(attraction.coaster?.intensity ?? 0)
         isCustomCoaster = attraction.baseDefinition?.kind == .custom
@@ -178,7 +178,11 @@ struct AttractionDetail: Identifiable {
         tint = attraction.tint
         trackLength = attraction.trackLength
         let ridePrice = attraction.baseDefinition?.purchasePrice ?? 0
-        upgrades = UpgradeContent.rideUpgrades.map { upgrade in
+        // The holiday makeover joins the list only while it can be bought, or
+        // once it has been.
+        let offered = UpgradeContent.rideUpgrades
+            + ((makeoverOffered || attraction.upgradeLevel(.holiday) > 0) ? [UpgradeContent.holidayMakeover] : [])
+        upgrades = offered.map { upgrade in
             let level = attraction.upgradeLevel(upgrade.kind)
             let next = level + 1
             return UpgradeLine(

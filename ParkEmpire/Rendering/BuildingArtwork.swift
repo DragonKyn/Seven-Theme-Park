@@ -39,6 +39,7 @@ enum BuildingArtwork {
         "\(prefix)-\(appearance.motif.rawValue)-\(appearance.primary.rawValue)"
             + "-\(appearance.secondary.rawValue)-\(appearance.accent.rawValue)"
             + "-v\(appearance.variant)-\(Int(size.width))x\(Int(size.height))"
+            + (appearance.holiday ? "-holiday" : "")
     }
 
     /// Shared by the map texture and the menu preview, so the two can never
@@ -115,7 +116,29 @@ enum BuildingArtwork {
         case .flagPole:  drawFlagPole(context, size, primary, secondary, accent, variant)
         case .gardenArch: drawGardenArch(context, size, primary, secondary, accent, variant)
         case .clockTower: drawClockTower(context, size, primary, secondary, accent, variant)
+        case .reindeerCarousel: drawReindeerCarouselBase(context, size, primary, secondary, accent)
+        case .sleighRide: drawSleighRideBase(context, size, primary, secondary, accent)
+        case .candyCoaster: drawCandyCoasterBase(context, size, primary, secondary, accent)
+        case .snowGlobe: drawSnowGlobeBase(context, size, primary, secondary, accent)
+        case .polarExpress: drawPolarExpressBase(context, size, primary, secondary, accent)
+        case .gingerbreadManor: drawGingerbreadManorBase(context, size, primary, secondary, accent)
+        case .starTopper: drawStarTopperBase(context, size, primary, secondary, accent)
+        case .countdownWheel: drawCountdownWheelBase(context, size, primary, secondary, accent)
+        case .confettiSwing: drawConfettiSwingBase(context, size, primary, secondary, accent)
+        case .ballDrop: drawBallDropBase(context, size, primary, secondary, accent)
+        case .starburstCoaster: drawStarburstCoasterBase(context, size, primary, secondary, accent)
+        case .xmasTree: drawXmasTree(context, size, primary, secondary, accent, variant)
+        case .snowman: drawSnowman(context, size, primary, secondary, accent)
+        case .wreathArch: drawWreathArch(context, size, primary, secondary, accent)
+        case .giftStack: drawGiftStack(context, size, primary, secondary, accent)
+        case .lightPole: drawLightPole(context, size, primary, secondary, accent)
+        case .candyCanePost: drawCandyCanePost(context, size, primary, secondary, accent)
+        case .fireworkStand: drawFireworkStand(context, size, primary, secondary, accent)
+        case .countdownClock: drawCountdownClock(context, size, primary, secondary, accent)
         }
+
+        // A ride that has had its holiday makeover is dressed on top.
+        if appearance.holiday { drawHolidayDressing(context, size) }
     }
 
     /// The moving part, drawn in its own texture so it can be animated
@@ -123,6 +146,7 @@ enum BuildingArtwork {
     /// How many moving parts a motif has. A track with one vehicle on it is a
     /// test track; a bumper car arena with one car in it has nothing to bump.
     static func motionPartCount(for motif: BuildingMotif) -> Int {
+        if let count = holidayMotionPartCount(for: motif) { return count }
         switch motif {
         case .goKarts: return 4
         case .bumperCars: return 5
@@ -196,6 +220,16 @@ enum BuildingArtwork {
             case .fountain, .pondFountain: drawFountainJet(context, size, primary, secondary, accent)
             case .moleGame:  drawMole(context, size, variant)
             case .strengthTester: drawStrikerPuck(context, size, accent)
+            case .reindeerCarousel: drawReindeerCanopy(context, size, primary, secondary, accent)
+            case .sleighRide: drawSleigh(context, size, primary, secondary, accent)
+            case .candyCoaster, .starburstCoaster: drawCoasterCar(context, size, primary, variant)
+            case .snowGlobe: drawSnowGlobePods(context, size, primary, secondary, accent)
+            case .polarExpress: drawTrainCar(context, size, primary, secondary, variant)
+            case .gingerbreadManor: drawGingerbreadMan(context, size, primary, secondary, accent)
+            case .starTopper: drawTowerCar(context, size, accent, secondary, primary)
+            case .countdownWheel: drawWheel(context, size, primary, secondary, accent)
+            case .confettiSwing: drawSwingChair(context, size, primary, secondary, accent)
+            case .ballDrop: drawDropBall(context, size, primary, secondary, accent)
             default:         break
             }
         }
@@ -203,6 +237,7 @@ enum BuildingArtwork {
 
     /// Size of the moving part relative to the building it sits on.
     static func motionPartSize(for motif: BuildingMotif, buildingSize: CGSize) -> CGSize {
+        if let part = holidayMotionPartSize(for: motif, buildingSize: buildingSize) { return part }
         let shortest = min(buildingSize.width, buildingSize.height)
         switch motif {
         case .carousel:
@@ -445,7 +480,7 @@ enum BuildingArtwork {
         fill(UIBezierPath(roundedRect: cap, cornerRadius: cap.height * 0.4), primary)
     }
 
-    private static func drawTowerCar(_ context: CGContext,
+    static func drawTowerCar(_ context: CGContext,
                                      _ size: CGSize,
                                      _ primary: UIColor,
                                      _ secondary: UIColor,
@@ -492,7 +527,7 @@ enum BuildingArtwork {
     /// One car of a coaster train, nose to the right. The lead car gets a
     /// pointed nose; the rest are plain, which is what makes a string of them
     /// read as a train rather than as four identical blocks.
-    private static func drawCoasterCar(_ context: CGContext,
+    static func drawCoasterCar(_ context: CGContext,
                                        _ size: CGSize,
                                        _ primary: UIColor,
                                        _ variant: Int) {
@@ -584,7 +619,7 @@ enum BuildingArtwork {
 
     // MARK: - Wheel and spinners
 
-    private static func drawFerrisWheelBase(_ context: CGContext,
+    static func drawFerrisWheelBase(_ context: CGContext,
                                             _ size: CGSize,
                                             _ primary: UIColor,
                                             _ secondary: UIColor,
@@ -612,7 +647,7 @@ enum BuildingArtwork {
     }
 
     /// The rim, its spokes and the cabins hanging off it.
-    private static func drawWheel(_ context: CGContext,
+    static func drawWheel(_ context: CGContext,
                                   _ size: CGSize,
                                   _ primary: UIColor,
                                   _ secondary: UIColor,

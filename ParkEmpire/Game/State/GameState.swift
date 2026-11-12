@@ -70,6 +70,10 @@ final class GameState: Codable {
     /// but not yet been shown to the player.
     var nextTourBusAt: Double = Balance.dayLength * 0.6
     var pendingTourBuses: [TourBusReport] = []
+    /// Whether snow is falling now, and when the weather next turns. Only
+    /// ever set during the holiday event.
+    var snowing = false
+    var nextWeatherChangeAt: Double = 0
     /// Sim time the next regulator calls. While one is on site the ride they
     /// are looking at is named here, along with when they will say their piece.
     var nextSafetyInspectionAt: Double = Balance.dayLength * 2.0
@@ -183,6 +187,8 @@ final class GameState: Codable {
         nextTourBusAt = container.value(.nextTourBusAt,
                                            or: clock.simTime + Balance.dayLength * 0.3)
         pendingTourBuses = container.value(.pendingTourBuses, or: [])
+        snowing = container.value(.snowing, or: false)
+        nextWeatherChangeAt = container.value(.nextWeatherChangeAt, or: 0)
         nextSafetyInspectionAt = container.value(.nextSafetyInspectionAt,
                                                  or: clock.simTime + Balance.dayLength * 1.6)
         inspectingRideID = container.optionalValue(.inspectingRideID)

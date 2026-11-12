@@ -14,6 +14,7 @@ struct TrialSnapshot: Equatable {
         let isMet: Bool
     }
 
+    let isHoliday: Bool
     let number: Int
     let title: String
     let day: Int
@@ -27,6 +28,7 @@ struct TrialSnapshot: Equatable {
 
     init?(state: GameState) {
         guard let trial = state.trial else { return nil }
+        isHoliday = trial.isHoliday
         number = trial.number
         title = trial.title
         day = state.clock.day

@@ -65,6 +65,7 @@ final class DemandSystem {
         // top of whatever the park had already earned.
         let word = 1 + state.activePromotionBoost + state.activeReviewArrivals
             + state.adBoosts.extraArrivals + state.perks.extraArrivals
+            + (state.snowing ? Balance.snowArrivalLift : 0)
 
         return SimMath.clamp(appeal * ratingFactor * priceFactor * parking * word,
                              0,
@@ -90,29 +91,43 @@ final class DemandSystem {
         // Booked first, so every way out of this method still re-books.
         TourBusSystem.scheduleNext(state: state)
 
-        let wanted = state.rng.int(Balance.tourBusSize)
+        // In season a bus is often a company holiday party: bigger, mostly
+        // adults, and flush with cash. A holiday trial's first one is certain,
+        // so a trial that asks for a party can always be finished.
+        var isParty = false
+        if HolidaySeason.isActive(for: state), state.attractions.count >= Balance.holidayPartyMinimumRides {
+            let guaranteed = state.trial?.isHoliday == true && state.statistics.holidayPartiesTotal == 0
+            isParty = state.rng.chance(Balance.holidayPartyChance) || guaranteed
+        }
+
+        let wanted = state.rng.int(isParty ? Balance.holidayPartySize : Balance.tourBusSize)
         let room = Balance.maxGuests - state.guestCount
         let count = min(wanted, room)
         // A park with no room left turns the bus round at the gate rather
         // than squeezing a handful of them in and calling it an event.
-        guard count >= Balance.tourBusMinimumSize else { return }
+        guard count >= (isParty ? Balance.holidayPartyMinimumSize : Balance.tourBusMinimumSize) else { return }
 
         let groupID = UUID()
         var childCount = 0
         for _ in 0..<count {
-            let isChild = state.rng.chance(Balance.tourBusChildShare)
+            let isChild = state.rng.chance(isParty ? Balance.holidayPartyChildShare : Balance.tourBusChildShare)
             if isChild { childCount += 1 }
             admitGuest(state: state,
                        ageOverride: isChild ? .child : .adult,
-                       cashScale: Balance.tourBusSpendScale,
+                       cashScale: isParty ? Balance.holidayPartySpendScale : Balance.tourBusSpendScale,
                        groupID: groupID)
         }
 
-        let name = GuestNames.tourGroup(using: &state.rng)
+        let name = isParty
+            ? GuestNames.holidayParty(using: &state.rng)
+            : GuestNames.tourGroup(using: &state.rng)
         state.pendingTourBuses.append(
-            TourBusReport(groupName: name, count: count, childCount: childCount))
+            TourBusReport(groupName: name, count: count, childCount: childCount, isHolidayParty: isParty))
         state.statistics.tourBusesTotal += 1
-        state.postAlert("\(name) has arrived, \(count) of them at once.",
+        if isParty { state.statistics.holidayPartiesTotal += 1 }
+        state.postAlert(isParty
+                        ? "The \(name) holiday party has arrived, \(count) of them at once, with money to burn."
+                        : "\(name) has arrived, \(count) of them at once.",
                         severity: .info,
                         key: "tourBus",
                         cooldown: 60)

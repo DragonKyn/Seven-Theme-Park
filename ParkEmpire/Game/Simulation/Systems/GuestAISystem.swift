@@ -208,7 +208,8 @@ final class GuestAISystem {
                                                                    guest: guest,
                                                                    hasAccess: !access.isEmpty,
                                                                    distance: distance,
-                                                                   spendBoost: state.adBoosts.spendFactor)
+                                                                   spendBoost: state.adBoosts.spendFactor
+                                                                       * guest.cheerFactor(at: state.clock.simTime))
             else { continue }
             options.append(Option(target: .facility(facility.id), score: score, departureReason: nil))
         }
