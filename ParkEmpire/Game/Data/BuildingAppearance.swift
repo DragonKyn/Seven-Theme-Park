@@ -233,6 +233,12 @@ enum BuildingMotif: String, Codable {
     case candyCanePost
     case fireworkStand
     case countdownClock
+    /// A sheet of ice with a rail round it and skaters on it.
+    case skatingRink
+    /// A cocoa stall with a big cup on the front.
+    case hotCocoaStand
+    /// A candy stall with jars of sweets and a striped awning.
+    case candyStand
 
     /// Colours the player can pick for this shape when placing it or
     /// afterwards. Empty for everything that is meant to look the way it was
@@ -293,7 +299,7 @@ enum BuildingMotif: String, Codable {
         case .swingBoat: return .swing
         case .dropTower, .starTopper, .ballDrop: return .rise
         case .coaster, .megaCoaster, .logFlume, .fishingBoats, .skyGliders,
-             .lanternCruise, .sleighRide, .candyCoaster, .polarExpress, .starburstCoaster: return .circuit
+             .lanternCruise, .sleighRide, .candyCoaster, .polarExpress, .starburstCoaster, .skatingRink: return .circuit
         case .swingChairs, .confettiSwing: return .orbit
         case .pendulumArm: return .invert
         case .riverRapids: return .drift
@@ -318,7 +324,7 @@ enum BuildingMotif: String, Codable {
         case .hedge, .picnicTable, .flagPole, .gardenArch, .clockTower:
             return .none
         case .xmasTree, .snowman, .wreathArch, .giftStack, .lightPole, .candyCanePost,
-             .fireworkStand, .countdownClock:
+             .fireworkStand, .countdownClock, .hotCocoaStand, .candyStand:
             return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,

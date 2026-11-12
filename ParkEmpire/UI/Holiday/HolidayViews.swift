@@ -298,8 +298,9 @@ struct HolidayAnnouncementView: View {
                         .padding(10)
                         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.10)))
 
-                        row("snowflake", "11 new rides", "Seven Christmas rides and four for New Year's, from the Reindeer Carousel to the Ball Drop Tower.")
-                        row("person.fill", "Santa and Mrs. Claus", "Two new entertainers, each with a bonus of their own.")
+                        row("snowflake", "12 new rides", "Eight Christmas rides, including a skating rink, and four for New Year's, from the Reindeer Carousel to the Ball Drop Tower.")
+                        row("person.fill", "Santa, Mrs. Claus and an elf", "Three new entertainers, each with a bonus of their own.")
+                        row("cart.fill", "Hot chocolate and candy", "Two seasonal food stands that take the usual upgrades.")
                         row("gift.fill", "12 Days of Holiday Wonder", "Twelve festive trials with a tab of their own in Park Trials.")
                         row("paintbrush.fill", "Exclusive rewards", "Earn decorations, ride makeovers and new rides, and keep them for every future holiday.")
                         row("party.popper.fill", "Company holiday parties", "Big office outings arrive by the busload with five times the spending money.")

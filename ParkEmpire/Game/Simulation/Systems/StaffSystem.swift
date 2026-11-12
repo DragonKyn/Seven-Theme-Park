@@ -768,6 +768,14 @@ final class StaffSystem {
         if profile.doesTricks, state.rng.chance(dt / Balance.magicTrickInterval) {
             amaze(among: audience, state: state, now: now)
         }
+        // The elf's presents: a child if there is one, and a lift for the whole day.
+        if profile.givesGifts, state.rng.chance(Balance.elfGiftPerSecond * member.workRate * dt) {
+            let children = audience.filter { state.guests[$0].ageCategory == .child }
+            let pool = children.isEmpty ? audience : children
+            let guest = pool[state.rng.int(0...(pool.count - 1))]
+            state.guests[guest].adjustHappiness(Balance.elfGiftHappiness)
+            state.guests[guest].think("A present from an elf!", mood: .positive, at: now)
+        }
     }
 
     /// A balloon for somebody who has not got one, a child if there is one.

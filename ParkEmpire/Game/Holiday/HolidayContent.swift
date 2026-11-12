@@ -5,7 +5,9 @@ import Foundation
 /// place. A few are locked behind a trial reward; see `HolidayRewards`.
 enum HolidayContent {
 
-    static let attractions: [AttractionDefinition] = [
+    static let attractions: [AttractionDefinition] = rides + [skatingRink]
+
+    private static let rides: [AttractionDefinition] = [
         // Christmas
         AttractionDefinition(
             id: "ride.xmas.reindeercarousel",
@@ -209,6 +211,66 @@ enum HolidayContent {
         )
     ]
 
+    /// The ice rink: a skating ride on the holiday shelf, with its skaters going round it.
+    static let skatingRink = AttractionDefinition(
+        id: "ride.xmas.skatingrink",
+        displayName: "Skating Rink",
+        summary: "A sheet of ice with a rail round it and a crowd going the same way. Gentle, cheap to run, and everybody wants a go.",
+        purchasePrice: 4_200,
+        capacity: 18,
+        rideDuration: 75,
+        loadDuration: 14,
+        excitement: 36,
+        nausea: 4,
+        maintenanceRate: 0.008,
+        operatingCostPerCycle: 5,
+        footprint: GridSize(5, 4),
+        unlockLevel: 1,
+        appearance: BuildingAppearance(.skatingRink, .cyan, .white, .red),
+        group: .holiday,
+        seasonal: true
+    )
+
+    /// The two seasonal food venues. Both take the usual shop upgrades.
+    static let facilities: [FacilityDefinition] = [
+        FacilityDefinition(
+            id: "shop.xmas.hotcocoa",
+            displayName: "Hot Chocolate Stand",
+            summary: "A steaming cup with marshmallows on top. Cheap, quick, and guests come back for a second.",
+            kind: .drink,
+            purchasePrice: 1_100,
+            defaultPrice: 3.5,
+            unitCost: 1,
+            referencePrice: 4.5,
+            serviceDuration: 5,
+            simultaneousCapacity: 1,
+            queueCapacity: 10,
+            relief: NeedRelief(hunger: 6, thirst: 60, bathroom: -16, happiness: 9),
+            footprint: GridSize(2, 2),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.hotCocoaStand, .brown, .cream, .red),
+            seasonal: true
+        ),
+        FacilityDefinition(
+            id: "shop.xmas.candy",
+            displayName: "Candy Stand",
+            summary: "Candy canes, gumdrops and humbugs by the bag. A sweet tooth is a good customer.",
+            kind: .food,
+            purchasePrice: 1_000,
+            defaultPrice: 3,
+            unitCost: 0.9,
+            referencePrice: 3.5,
+            serviceDuration: 4,
+            simultaneousCapacity: 1,
+            queueCapacity: 10,
+            relief: NeedRelief(hunger: 16, thirst: -6, bathroom: -4, happiness: 12),
+            footprint: GridSize(2, 2),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.candyStand, .red, .white, .green),
+            seasonal: true
+        )
+    ]
+
     static let scenery: [SceneryDefinition] = [
         SceneryDefinition(
             id: "scenery.xmas.tree",
@@ -349,7 +411,7 @@ extension TrialContent {
             id: "holiday.02",
             number: 2,
             title: "Two Turtle Doves",
-            briefing: "A cast for the season. Hire Santa Claus, train him up, and keep the crowd coming.",
+            briefing: "A cast for the season. Hire Santa Claus and an elf, train one of them up, and keep the crowd coming.",
             mapID: MapCatalogue.openMeadowID,
             startingCash: 18_000,
             dayLimit: 7,

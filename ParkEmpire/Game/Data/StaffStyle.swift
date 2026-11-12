@@ -16,6 +16,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     /// The holiday event's two performers. Only hired while it is on.
     case santa
     case missus
+    case elf
 
     var id: String { rawValue }
 
@@ -29,6 +30,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .magician: return "Magician"
         case .santa: return "Santa Claus"
         case .missus: return "Mrs. Claus"
+        case .elf: return "Holiday Elf"
         }
     }
 
@@ -50,6 +52,8 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
             return "Christmas Cheer: a wide circle and a big lift, children adore him, and guests who have been near him spend a third more for a while."
         case .missus:
             return "Fresh Cookies: hands round warm cookies, so guests nearby get less hungry, and the queue is cheered most of all."
+        case .elf:
+            return "Little Helper: hands out wrapped presents to anybody in reach, children first, and every one is a lift for the whole day."
         }
     }
 
@@ -68,6 +72,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .magician: return "Cape"
         case .santa: return "Suit"
         case .missus: return "Dress"
+        case .elf: return "Tunic"
         }
     }
 
@@ -81,6 +86,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .magician: return .violet
         case .santa: return .red
         case .missus: return .green
+        case .elf: return .green
         }
     }
 
@@ -97,6 +103,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .magician: return 1.0
         case .santa: return Balance.santaRadiusFactor
         case .missus: return Balance.missusRadiusFactor
+        case .elf: return Balance.elfRadiusFactor
         }
     }
 
@@ -111,6 +118,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         case .magician: return 0.7
         case .santa: return Balance.santaHappinessFactor
         case .missus: return Balance.missusHappinessFactor
+        case .elf: return Balance.elfHappinessFactor
         }
     }
 
@@ -119,6 +127,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .clown: return 2.0
         case .santa: return Balance.santaChildFactor
+        case .elf: return Balance.elfChildFactor
         default: return 1.0
         }
     }
@@ -136,7 +145,7 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
     var doesTricks: Bool { self == .magician }
 
     /// Part of the holiday event.
-    var isSeasonal: Bool { self == .santa || self == .missus }
+    var isSeasonal: Bool { self == .santa || self == .missus || self == .elf }
 
     /// The catalogue id a trial reward has to open, if any.
     var unlockKey: String? { self == .missus ? "act.missus" : nil }
@@ -146,6 +155,9 @@ enum EntertainerAct: String, Codable, CaseIterable, Identifiable {
 
     /// Guests nearby get less hungry.
     var bakesCookies: Bool { self == .missus }
+
+    /// Hands presents to guests nearby.
+    var givesGifts: Bool { self == .elf }
 }
 
 /// The costumes a park mascot can be hired in.
@@ -318,6 +330,7 @@ struct PerformerProfile {
     let doesTricks: Bool
     var spreadsCheer = false
     var bakesCookies = false
+    var givesGifts = false
 
     static func of(_ member: Staff) -> PerformerProfile {
         if member.role == .mascot {
@@ -336,6 +349,7 @@ struct PerformerProfile {
                                 handsOutBalloons: act.handsOutBalloons,
                                 doesTricks: act.doesTricks,
                                 spreadsCheer: act.spreadsCheer,
-                                bakesCookies: act.bakesCookies)
+                                bakesCookies: act.bakesCookies,
+                                givesGifts: act.givesGifts)
     }
 }

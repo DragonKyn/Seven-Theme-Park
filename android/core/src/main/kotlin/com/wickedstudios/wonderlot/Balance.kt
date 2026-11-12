@@ -431,6 +431,13 @@ object Balance {
     const val missusQueueFactor = 1.8
     const val missusHungerRelief = 2.6
 
+    // The elf: a little helper who hands presents to anybody in reach, children first.
+    const val elfRadiusFactor = 0.95
+    const val elfHappinessFactor = 0.7
+    const val elfChildFactor = 1.8
+    const val elfGiftPerSecond = 0.30
+    const val elfGiftHappiness = 12.0
+
     // What a holiday makeover adds to a ride.
     const val holidayMakeoverExcitement = 5.0
     const val holidayMakeoverBeauty = 14.0

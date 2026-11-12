@@ -53,6 +53,33 @@ extension StaffArtwork {
                                   height: belt.minY - body.minY)).fill()
     }
 
+    /// The elf: pointed ears, a bell on the hat, and a candy-striped collar and belt.
+    static func drawElfExtras(layout: PersonArtwork.Layout) {
+        let head = layout.head
+        let body = layout.body
+        let red = UIColor(red: 0.86, green: 0.16, blue: 0.20, alpha: 1)
+        UIColor(red: 0.93, green: 0.76, blue: 0.60, alpha: 1).setFill()
+        for side in [CGFloat(-1), CGFloat(1)] {
+            let ear = UIBezierPath()
+            ear.move(to: CGPoint(x: head.midX + side * head.width * 0.46, y: head.midY - head.height * 0.10))
+            ear.addLine(to: CGPoint(x: head.midX + side * head.width * 0.78, y: head.midY - head.height * 0.34))
+            ear.addLine(to: CGPoint(x: head.midX + side * head.width * 0.46, y: head.midY + head.height * 0.14))
+            ear.close()
+            ear.fill()
+        }
+        UIColor(red: 1.0, green: 0.82, blue: 0.28, alpha: 1).setFill()
+        UIBezierPath(ovalIn: CGRect(x: head.midX + head.width * 0.18, y: head.minY - head.height * 0.74,
+                                    width: head.width * 0.22, height: head.width * 0.22)).fill()
+        let collar = CGRect(x: body.minX, y: body.minY, width: body.width, height: body.height * 0.16)
+        for index in 0..<6 {
+            (index % 2 == 0 ? red : UIColor.white).setFill()
+            UIBezierPath(rect: CGRect(x: collar.minX + collar.width * CGFloat(index) / 6, y: collar.minY,
+                                      width: collar.width / 6 + 0.5, height: collar.height)).fill()
+        }
+        red.setFill()
+        UIBezierPath(rect: CGRect(x: body.minX, y: body.midY + body.height * 0.10, width: body.width, height: body.height * 0.12)).fill()
+    }
+
     /// Mrs. Claus: white hair in a bun with a red bow, small round glasses, a
     /// white apron over the green dress, and a tray of cookies.
     static func drawMrsClausExtras(layout: PersonArtwork.Layout) {

@@ -244,8 +244,9 @@ fun HolidayAnnouncement(services: AppServices, onDismiss: () -> Unit, onSeeTrial
                         Label("${HolidaySeason.datesLabel}  ·  ${HolidaySeason.daysLeft()} days left", size = 13.sp, weight = FontWeight.ExtraBold, color = Festive.gold)
                     }
 
-                    announcementRow("snowflake", "11 new rides", "Seven Christmas rides and four for New Year's, from the Reindeer Carousel to the Ball Drop Tower.")
-                    announcementRow("person.fill", "Santa and Mrs. Claus", "Two new entertainers, each with a bonus of their own.")
+                    announcementRow("snowflake", "12 new rides", "Eight Christmas rides, including a skating rink, and four for New Year's, from the Reindeer Carousel to the Ball Drop Tower.")
+                    announcementRow("person.fill", "Santa, Mrs. Claus and an elf", "Three new entertainers, each with a bonus of their own.")
+                    announcementRow("cart.fill", "Hot chocolate and candy", "Two seasonal food stands that take the usual upgrades.")
                     announcementRow("gift.fill", "12 Days of Holiday Wonder", "Twelve festive trials with a tab of their own in Park Trials.")
                     announcementRow("paintbrush.fill", "Exclusive rewards", "Earn decorations, ride makeovers and new rides, and keep them for every future holiday.")
                     announcementRow("party.popper.fill", "Company holiday parties", "Big office outings arrive by the busload with five times the spending money.")
@@ -328,13 +329,19 @@ fun HolidayGallery(onClose: () -> Unit) {
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (item in com.wickedstudios.wonderlot.HolidayContent.facilities) {
+                val size = com.wickedstudios.wonderlot.gfx.CGSize(item.footprint.width * 40.0, item.footprint.height * 40.0)
+                tile(item.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(item.appearance, size), 90)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (item in com.wickedstudios.wonderlot.HolidayContent.scenery) {
                 val size = com.wickedstudios.wonderlot.gfx.CGSize(item.footprint.width * 40.0, item.footprint.height * 40.0)
                 tile(item.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(item.appearance, size), 44)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (act in listOf(com.wickedstudios.wonderlot.EntertainerAct.santa, com.wickedstudios.wonderlot.EntertainerAct.missus)) {
+            for (act in listOf(com.wickedstudios.wonderlot.EntertainerAct.santa, com.wickedstudios.wonderlot.EntertainerAct.missus, com.wickedstudios.wonderlot.EntertainerAct.elf)) {
                 val look = com.wickedstudios.wonderlot.StaffStyle(act = act).look(com.wickedstudios.wonderlot.StaffRole.entertainer)
                 tile(act.displayName, com.wickedstudios.wonderlot.gfx.StaffArtwork.previewImage(look, com.wickedstudios.wonderlot.ParkColour.teal,
                     com.wickedstudios.wonderlot.gfx.CGSize(252.0, 264.0)), 120)

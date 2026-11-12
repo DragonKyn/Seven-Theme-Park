@@ -430,6 +430,13 @@ enum Balance {
     static let missusQueueFactor: Double = 1.8
     static let missusHungerRelief: Double = 2.6
 
+    /// The elf: a little helper who hands presents to anybody in reach, children first.
+    static let elfRadiusFactor: Double = 0.95
+    static let elfHappinessFactor: Double = 0.7
+    static let elfChildFactor: Double = 1.8
+    static let elfGiftPerSecond: Double = 0.30
+    static let elfGiftHappiness: Double = 12
+
     /// What a holiday makeover adds to a ride.
     static let holidayMakeoverExcitement: Double = 5
     static let holidayMakeoverBeauty: Double = 14

@@ -113,8 +113,9 @@ class HolidayTests {
 
     @Test
     fun theEventHasTheContentItPromised() {
-        assertEquals(11, HolidayContent.attractions.size)
-        assertEquals(7, HolidayContent.attractions.count { it.id.startsWith("ride.xmas.") })
+        assertEquals(12, HolidayContent.attractions.size)
+        assertEquals(8, HolidayContent.attractions.count { it.id.startsWith("ride.xmas.") })
+        assertEquals(2, HolidayContent.facilities.size)
         assertEquals(4, HolidayContent.attractions.count { it.id.startsWith("ride.newyear.") })
         assertEquals(12, TrialContent.holiday.size)
         assertEquals(300, Balance.maxGuests)
@@ -368,6 +369,43 @@ class HolidayTests {
         assertTrue(loaded.snowing)
         assertEquals(3, loaded.statistics.holidayPartiesTotal)
         dir.deleteRecursively()
+    }
+
+    @Test
+    fun theElfIsSeasonalAndFreeAndHandsOutPresents() {
+        val store = HolidayStore(MemoryStore())
+        assertTrue(HolidayContent.canHire(EntertainerAct.elf, true, store))
+        assertFalse(HolidayContent.canHire(EntertainerAct.elf, false, store))
+        HolidaySeason.override = true
+        val state = parkWithRides()
+        val engine = SimulationEngine()
+        state.guests.clear()
+        DemandSystem().seed(25, state)
+        val elf = Staff(name = "Test", role = StaffRole.entertainer, act = EntertainerAct.elf,
+            position = state.map.entranceCoord.centre, tile = state.map.entranceCoord)
+        state.staff.add(elf)
+        for (guest in state.guests) { guest.position = elf.position; guest.tile = elf.tile; guest.happiness = 40.0 }
+        state.clock.speed = GameSpeed.fast
+        repeat(30 * 20) { engine.advance(state, 1.0 / 30) }
+        assertTrue(state.guests.any { g -> g.thoughts.any { it.text.contains("present") } }, "somebody was given a present")
+        assertEquals(1.0, TrialGoal.HolidayStaff(1).current(state))
+    }
+
+    @Test
+    fun theNewStandsTakeShopUpgradesAndTheRinkIsOnTheHolidayShelf() {
+        for (id in listOf("shop.xmas.hotcocoa", "shop.xmas.candy")) {
+            val stand = GameContent.facility(id)!!
+            assertTrue(stand.seasonal)
+            assertTrue(stand.acceptsUpgrades, "$id takes upgrades")
+            assertTrue(stand.kind.sellsGoods)
+            assertFalse(HolidayContent.canBuild(stand, false, null), "$id is hidden out of season")
+            assertTrue(HolidayContent.canBuild(stand, true, null), "$id is on offer in season")
+        }
+        val rink = GameContent.attraction("ride.xmas.skatingrink")!!
+        assertEquals(RideGroup.holiday, rink.group)
+        assertTrue(rink.seasonal)
+        assertNull(HolidayMakeovers.rewardFor(rink.id))
+        assertTrue(GameContent.allBuildables.any { it.id == "shop.xmas.candy" })
     }
 
     // endregion

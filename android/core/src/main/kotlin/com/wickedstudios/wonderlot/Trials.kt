@@ -104,7 +104,7 @@ sealed class TrialGoal {
             is Prizes -> "$count prizes won at your booths"
             is HolidayRides -> if (count == 1) "A holiday ride built" else "$count holiday rides built"
             is HolidayScenery -> "$count seasonal decorations placed"
-            is HolidayStaff -> if (count == 1) "Santa or Mrs. Claus hired" else "$count holiday performers hired"
+            is HolidayStaff -> if (count == 1) "Santa, Mrs. Claus or an elf hired" else "$count holiday performers hired"
             is TrainedHolidayStaff -> if (count == 1) "A holiday performer trained" else "$count holiday performers trained"
             is Makeovers -> if (count == 1) "A ride given a holiday makeover" else "$count rides given a holiday makeover"
             is HolidayParties -> if (count == 1) "A company holiday party hosted" else "$count company holiday parties hosted"
@@ -345,7 +345,7 @@ object TrialContent {
             rewardIDs = listOf("reward.makeover.gentle")),
 
         TrialDefinition("holiday.02", 2, "Two Turtle Doves",
-            "A cast for the season. Hire Santa Claus, train him up, and keep the crowd coming.",
+            "A cast for the season. Hire Santa Claus and an elf, train one of them up, and keep the crowd coming.",
             MapCatalogue.openMeadowID, 18_000.0, 7,
             listOf(TrialGoal.HolidayStaff(2), TrialGoal.TrainedHolidayStaff(1), TrialGoal.GuestsInPark(30)),
             medal = TrialMedal("Cast Director", "person.2.fill"), series = TrialSeries.holiday,

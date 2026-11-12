@@ -619,6 +619,14 @@ class StaffSystem(private val pathfinder: PathfindingSystem) {
         if (profile.doesTricks && state.rng.chance(dt / Balance.magicTrickInterval)) {
             amaze(audience, state, now)
         }
+        // The elf's presents: a child if there is one, and a lift for the whole day.
+        if (profile.givesGifts && state.rng.chance(Balance.elfGiftPerSecond * member.workRate * dt)) {
+            val children = audience.filter { it.ageCategory == AgeCategory.child }
+            val pool = if (children.isEmpty()) audience else children
+            val guest = pool[state.rng.int(0..(pool.size - 1))]
+            guest.adjustHappiness(Balance.elfGiftHappiness)
+            guest.think("A present from an elf!", ThoughtMood.positive, now)
+        }
     }
 
     /** A balloon for somebody who has not got one, a child if there is one. */

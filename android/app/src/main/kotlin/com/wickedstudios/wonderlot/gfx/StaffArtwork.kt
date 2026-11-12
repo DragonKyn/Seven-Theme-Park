@@ -105,6 +105,7 @@ object StaffArtwork {
                 EntertainerAct.magician -> drawWand(layout)
                 EntertainerAct.santa -> StaffArtHoliday.drawSantaExtras(layout)
                 EntertainerAct.missus -> StaffArtHoliday.drawMrsClausExtras(layout)
+                EntertainerAct.elf -> StaffArtHoliday.drawElfExtras(layout)
             }
             StaffRole.security -> drawSecurityMarkings(layout)
             StaffRole.mascot -> {}
@@ -118,7 +119,7 @@ object StaffArtwork {
             EntertainerAct.classic -> ParkPalette.colour(uniform)
             EntertainerAct.magician -> ParkPalette.colour(ParkColour.cream)
             EntertainerAct.clown, EntertainerAct.balloonArtist, EntertainerAct.mime, EntertainerAct.juggler,
-            EntertainerAct.santa, EntertainerAct.missus -> ParkPalette.colour(look.primary)
+            EntertainerAct.santa, EntertainerAct.missus, EntertainerAct.elf -> ParkPalette.colour(look.primary)
         }
     }
 
@@ -180,6 +181,12 @@ object StaffArtwork {
                     headwearColour = ParkPalette.colour(look.primary)
                     bottoms = ParkPalette.colour(look.primary)
                 }
+                EntertainerAct.elf -> {
+                    // A pointed green hat: the party cone, in green.
+                    headwear = PersonArtwork.Headwear.partyHat
+                    headwearColour = ParkPalette.colour(look.primary)
+                    bottoms = ParkPalette.colour(ParkColour.red)
+                }
                 EntertainerAct.missus -> {
                     headwear = PersonArtwork.Headwear.none
                     headwearColour = shirt
@@ -199,7 +206,7 @@ object StaffArtwork {
 
         return PersonArtwork.Look(
             skin = GuestAppearance.SkinTone.tan,
-            hair = if (look.role == StaffRole.entertainer && look.act.isSeasonal) GuestAppearance.HairColour.grey else GuestAppearance.HairColour.dark,
+            hair = if (look.role == StaffRole.entertainer && (look.act == EntertainerAct.santa || look.act == EntertainerAct.missus)) GuestAppearance.HairColour.grey else GuestAppearance.HairColour.dark,
             shirt = shirt,
             headwear = headwear,
             headwearColour = headwearColour,

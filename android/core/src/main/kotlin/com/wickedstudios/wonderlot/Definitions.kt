@@ -139,7 +139,8 @@ enum class BuildingMotif {
     // The holiday event. Rides first, then the decorations.
     reindeerCarousel, sleighRide, candyCoaster, snowGlobe, polarExpress, gingerbreadManor, starTopper,
     countdownWheel, confettiSwing, ballDrop, starburstCoaster,
-    xmasTree, snowman, wreathArch, giftStack, lightPole, candyCanePost, fireworkStand, countdownClock;
+    xmasTree, snowman, wreathArch, giftStack, lightPole, candyCanePost, fireworkStand, countdownClock,
+    skatingRink, hotCocoaStand, candyStand;
 
     /** Colours the player can pick for this shape. Empty for everything fixed by design. */
     val colourChoices: List<ParkColour>
@@ -187,7 +188,7 @@ enum class BuildingMotif {
             swingBoat -> BuildingMotion.swing
             dropTower, starTopper, ballDrop -> BuildingMotion.rise
             coaster, megaCoaster, logFlume, fishingBoats, skyGliders, lanternCruise,
-            sleighRide, candyCoaster, polarExpress, starburstCoaster -> BuildingMotion.circuit
+            sleighRide, candyCoaster, polarExpress, starburstCoaster, skatingRink -> BuildingMotion.circuit
             swingChairs, confettiSwing -> BuildingMotion.orbit
             pendulumArm -> BuildingMotion.invert
             riverRapids -> BuildingMotion.drift
@@ -439,6 +440,8 @@ data class FacilityDefinition(
     val soilingPerUse: Double = Balance.bathroomSoilPerUse,
     val ratingWeight: Double = 1.0,
     val carriesSnack: Boolean = false,
+    /** Part of the holiday event. */
+    override val seasonal: Boolean = false,
 ) : BuildableDefinition {
 
     val acceptsUpgrades: Boolean get() = kind.sellsGoods

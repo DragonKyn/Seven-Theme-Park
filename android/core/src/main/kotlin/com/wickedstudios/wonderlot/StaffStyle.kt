@@ -38,12 +38,15 @@ enum class EntertainerAct(
     santa("Santa Claus",
         "Christmas Cheer: a wide circle and a big lift, children adore him, and guests who have been near him spend a third more for a while.",
         "Suit", ParkColour.red, Balance.santaRadiusFactor, Balance.santaHappinessFactor),
+    elf("Holiday Elf",
+        "Little Helper: hands out wrapped presents to anybody in reach, children first, and every one is a lift for the whole day.",
+        "Tunic", ParkColour.green, Balance.elfRadiusFactor, Balance.elfHappinessFactor),
     missus("Mrs. Claus",
         "Fresh Cookies: hands round warm cookies, so guests nearby get less hungry, and the queue is cheered most of all.",
         "Dress", ParkColour.green, Balance.missusRadiusFactor, Balance.missusHappinessFactor);
 
     /** Part of the holiday event. */
-    val isSeasonal: Boolean get() = this == santa || this == missus
+    val isSeasonal: Boolean get() = this == santa || this == missus || this == elf
 
     /** The catalogue id a trial reward has to open, if any. */
     val unlockKey: String? get() = if (this == missus) "act.missus" else null
@@ -52,7 +55,7 @@ enum class EntertainerAct(
     val usesColour: Boolean get() = this != classic
 
     /** Multiplies the lift for a child. A clown is for them. */
-    val childFactor: Double get() = when (this) { clown -> 2.0; santa -> Balance.santaChildFactor; else -> 1.0 }
+    val childFactor: Double get() = when (this) { clown -> 2.0; santa -> Balance.santaChildFactor; elf -> Balance.elfChildFactor; else -> 1.0 }
 
     /** Multiplies the lift for somebody standing in a queue. */
     val queueFactor: Double get() = when (this) { mime -> 2.4; missus -> Balance.missusQueueFactor; else -> 1.0 }
@@ -65,6 +68,9 @@ enum class EntertainerAct(
 
     /** Guests nearby get less hungry. */
     val bakesCookies: Boolean get() = this == missus
+
+    /** Hands presents to guests nearby. */
+    val givesGifts: Boolean get() = this == elf
 }
 
 /** The costumes a park mascot can be hired in. */
@@ -153,6 +159,7 @@ class PerformerProfile(
     val doesTricks: Boolean,
     val spreadsCheer: Boolean = false,
     val bakesCookies: Boolean = false,
+    val givesGifts: Boolean = false,
 ) {
     companion object {
         fun of(member: Staff): PerformerProfile {
@@ -164,7 +171,7 @@ class PerformerProfile(
             val act = member.resolvedAct
             return PerformerProfile(Balance.entertainerRadius * act.radiusFactor, act.happinessFactor,
                 act.queueFactor, act.childFactor, act.handsOutBalloons, act.doesTricks,
-                act.spreadsCheer, act.bakesCookies)
+                act.spreadsCheer, act.bakesCookies, act.givesGifts)
         }
     }
 }

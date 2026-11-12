@@ -256,6 +256,9 @@ object BuildingArtwork {
         BuildingMotif.candyCanePost -> BuildingArtHoliday.drawCandyCanePost(context, size, primary, secondary, accent)
         BuildingMotif.fireworkStand -> BuildingArtHoliday.drawFireworkStand(context, size, primary, secondary, accent)
         BuildingMotif.countdownClock -> BuildingArtHoliday.drawCountdownClock(context, size, primary, secondary, accent)
+        BuildingMotif.skatingRink -> BuildingArtHoliday.drawSkatingRinkBase(context, size, primary, secondary, accent)
+        BuildingMotif.hotCocoaStand -> BuildingArtHoliday.drawHotCocoaStand(context, size, primary, secondary, accent)
+        BuildingMotif.candyStand -> BuildingArtHoliday.drawCandyStand(context, size, primary, secondary, accent)
         }
 
         // A ride that has had its holiday makeover is dressed on top.
@@ -428,6 +431,7 @@ object BuildingArtwork {
             BuildingMotif.countdownWheel -> drawWheel(context, size, primary, secondary, accent)
             BuildingMotif.confettiSwing -> BuildingArtStructures.drawSwingChair(context, size, primary, secondary, accent)
             BuildingMotif.ballDrop -> BuildingArtHoliday.drawDropBall(context, size, primary, secondary, accent)
+            BuildingMotif.skatingRink -> BuildingArtHoliday.drawSkater(context, size, variant)
             else -> {}
             }
         }

@@ -6,7 +6,7 @@ package com.wickedstudios.wonderlot
  */
 object HolidayContent {
 
-    val attractions: List<AttractionDefinition> = listOf(
+    private val rides: List<AttractionDefinition> = listOf(
         // Christmas
         AttractionDefinition(
             id = "ride.xmas.reindeercarousel",
@@ -119,6 +119,60 @@ object HolidayContent {
             footprint = GridSize(6, 4), unlockLevel = 1,
             appearance = BuildingAppearance(BuildingMotif.starburstCoaster, ParkColour.indigo, ParkColour.amber, ParkColour.pink),
             group = RideGroup.holiday, seasonal = true,
+        ),
+    )
+
+    val attractions: List<AttractionDefinition> by lazy { rides + skatingRink }
+
+    /** The ice rink: a skating ride on the holiday shelf, with its skaters going round it. */
+    val skatingRink = AttractionDefinition(
+        id = "ride.xmas.skatingrink",
+        displayName = "Skating Rink",
+        summary = "A sheet of ice with a rail round it and a crowd going the same way. Gentle, cheap to run, and everybody wants a go.",
+        purchasePrice = 4_200.0, capacity = 18, rideDuration = 75.0, loadDuration = 14.0,
+        excitement = 36.0, nausea = 4.0, maintenanceRate = 0.008, operatingCostPerCycle = 5.0,
+        footprint = GridSize(5, 4), unlockLevel = 1,
+        appearance = BuildingAppearance(BuildingMotif.skatingRink, ParkColour.cyan, ParkColour.white, ParkColour.red),
+        group = RideGroup.holiday, seasonal = true,
+    )
+
+    /** The two seasonal food venues. Both take the usual shop upgrades. */
+    val facilities: List<FacilityDefinition> = listOf(
+        FacilityDefinition(
+            id = "shop.xmas.hotcocoa",
+            displayName = "Hot Chocolate Stand",
+            summary = "A steaming cup with marshmallows on top. Cheap, quick, and guests come back for a second.",
+            kind = FacilityKind.drink,
+            purchasePrice = 1_100.0,
+            defaultPrice = 3.5,
+            unitCost = 1.0,
+            referencePrice = 4.5,
+            serviceDuration = 5.0,
+            simultaneousCapacity = 1,
+            queueCapacity = 10,
+            relief = NeedRelief(hunger = 6.0, thirst = 60.0, bathroom = -16.0, happiness = 9.0),
+            footprint = GridSize(2, 2),
+            unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.hotCocoaStand, ParkColour.brown, ParkColour.cream, ParkColour.red),
+            seasonal = true,
+        ),
+        FacilityDefinition(
+            id = "shop.xmas.candy",
+            displayName = "Candy Stand",
+            summary = "Candy canes, gumdrops and humbugs by the bag. A sweet tooth is a good customer.",
+            kind = FacilityKind.food,
+            purchasePrice = 1_000.0,
+            defaultPrice = 3.0,
+            unitCost = 0.9,
+            referencePrice = 3.5,
+            serviceDuration = 4.0,
+            simultaneousCapacity = 1,
+            queueCapacity = 10,
+            relief = NeedRelief(hunger = 16.0, thirst = -6.0, bathroom = -4.0, happiness = 12.0),
+            footprint = GridSize(2, 2),
+            unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.candyStand, ParkColour.red, ParkColour.white, ParkColour.green),
+            seasonal = true,
         ),
     )
 

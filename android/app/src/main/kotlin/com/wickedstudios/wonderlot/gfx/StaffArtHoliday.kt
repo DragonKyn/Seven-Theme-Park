@@ -52,6 +52,32 @@ object StaffArtHoliday {
         UIBezierPath(rect = CGRect(body.midX - body.width * 0.05, body.minY, body.width * 0.10, belt.minY - body.minY)).fill()
     }
 
+    /** The elf: pointed ears, a bell on the hat, and a candy-striped collar and belt. */
+    fun drawElfExtras(layout: PersonArtwork.Layout) {
+        val head = layout.head
+        val body = layout.body
+        val red = UIColor(0.86, 0.16, 0.20, 1.0)
+        val skin = UIColor(0.93, 0.76, 0.60, 1.0)
+        skin.setFill()
+        for (side in listOf(-1.0, 1.0)) {
+            val ear = UIBezierPath()
+            ear.move(CGPoint(head.midX + side * head.width * 0.46, head.midY - head.height * 0.10))
+            ear.addLine(CGPoint(head.midX + side * head.width * 0.78, head.midY - head.height * 0.34))
+            ear.addLine(CGPoint(head.midX + side * head.width * 0.46, head.midY + head.height * 0.14))
+            ear.close()
+            ear.fill()
+        }
+        UIColor(1.0, 0.82, 0.28, 1.0).setFill()
+        oval(head.midX + head.width * 0.18, head.minY - head.height * 0.74, head.width * 0.22, head.width * 0.22).fill()
+        val collar = CGRect(body.minX, body.minY, body.width, body.height * 0.16)
+        for (index in 0 until 6) {
+            (if (index % 2 == 0) red else UIColor.white).setFill()
+            UIBezierPath(rect = CGRect(collar.minX + collar.width * index / 6, collar.minY, collar.width / 6 + 0.5, collar.height)).fill()
+        }
+        red.setFill()
+        UIBezierPath(rect = CGRect(body.minX, body.midY + body.height * 0.10, body.width, body.height * 0.12)).fill()
+    }
+
     /** Mrs. Claus: white hair in a bun with a red bow, small round glasses, a white apron and a tray of cookies. */
     fun drawMrsClausExtras(layout: PersonArtwork.Layout) {
         val head = layout.head

@@ -135,6 +135,9 @@ enum BuildingArtwork {
         case .candyCanePost: drawCandyCanePost(context, size, primary, secondary, accent)
         case .fireworkStand: drawFireworkStand(context, size, primary, secondary, accent)
         case .countdownClock: drawCountdownClock(context, size, primary, secondary, accent)
+        case .skatingRink: drawSkatingRinkBase(context, size, primary, secondary, accent)
+        case .hotCocoaStand: drawHotCocoaStand(context, size, primary, secondary, accent)
+        case .candyStand: drawCandyStand(context, size, primary, secondary, accent)
         }
 
         // A ride that has had its holiday makeover is dressed on top.
@@ -230,6 +233,7 @@ enum BuildingArtwork {
             case .countdownWheel: drawWheel(context, size, primary, secondary, accent)
             case .confettiSwing: drawSwingChair(context, size, primary, secondary, accent)
             case .ballDrop: drawDropBall(context, size, primary, secondary, accent)
+            case .skatingRink: drawSkater(context, size, variant)
             default:         break
             }
         }

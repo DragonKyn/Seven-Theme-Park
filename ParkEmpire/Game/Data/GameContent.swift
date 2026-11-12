@@ -1166,7 +1166,7 @@ enum GameContent {
         Dictionary(uniqueKeysWithValues: (attractions + HolidayContent.attractions).map { ($0.id, $0) })
 
     private static let facilitiesByID: [String: FacilityDefinition] =
-        Dictionary(uniqueKeysWithValues: facilities.map { ($0.id, $0) })
+        Dictionary(uniqueKeysWithValues: (facilities + HolidayContent.facilities).map { ($0.id, $0) })
 
     private static let sceneryByID: [String: SceneryDefinition] =
         Dictionary(uniqueKeysWithValues: (scenery + HolidayContent.scenery).map { ($0.id, $0) })
@@ -1181,6 +1181,7 @@ enum GameContent {
         result.append(contentsOf: attractions as [BuildableDefinition])
         result.append(contentsOf: HolidayContent.attractions as [BuildableDefinition])
         result.append(contentsOf: facilities as [BuildableDefinition])
+        result.append(contentsOf: HolidayContent.facilities as [BuildableDefinition])
         result.append(contentsOf: CoasterElementContent.all as [BuildableDefinition])
         result.append(contentsOf: scenery as [BuildableDefinition])
         result.append(contentsOf: HolidayContent.scenery as [BuildableDefinition])

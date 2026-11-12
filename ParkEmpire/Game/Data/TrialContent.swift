@@ -129,7 +129,7 @@ enum TrialGoal: Equatable {
         case .holidayRides(let count): return count == 1 ? "A holiday ride built" : "\(count) holiday rides built"
         case .holidayScenery(let count): return "\(count) seasonal decorations placed"
         case .holidayStaff(let count):
-            return count == 1 ? "Santa or Mrs. Claus hired" : "\(count) holiday performers hired"
+            return count == 1 ? "Santa, Mrs. Claus or an elf hired" : "\(count) holiday performers hired"
         case .trainedHolidayStaff(let count):
             return count == 1 ? "A holiday performer trained" : "\(count) holiday performers trained"
         case .makeovers(let count):

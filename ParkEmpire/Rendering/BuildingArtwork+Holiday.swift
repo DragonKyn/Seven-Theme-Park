@@ -894,6 +894,139 @@ extension BuildingArtwork {
         }
     }
 
+    // MARK: - Skating rink and the two seasonal stalls
+
+    static func drawSkatingRinkBase(_ context: CGContext, _ size: CGSize,
+                                    _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        let sheet = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.08, dy: size.height * 0.10)
+        let corner = min(sheet.width, sheet.height) * 0.40
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: sheet, cornerRadius: corner), secondary)
+        }
+        stroke(UIBezierPath(roundedRect: sheet, cornerRadius: corner), accent, width: max(2, size.height * 0.045))
+        let ice = sheet.insetBy(dx: sheet.width * 0.04, dy: sheet.height * 0.06)
+        fill(UIBezierPath(roundedRect: ice, cornerRadius: min(ice.width, ice.height) * 0.38),
+             UIColor(red: 0.74, green: 0.90, blue: 0.95, alpha: 1))
+        // Scratches in the ice: a few long curves.
+        let marks = UIBezierPath()
+        marks.move(to: CGPoint(x: ice.minX + ice.width * 0.15, y: ice.midY - ice.height * 0.18))
+        marks.addQuadCurve(to: CGPoint(x: ice.maxX - ice.width * 0.15, y: ice.midY - ice.height * 0.10),
+                           controlPoint: CGPoint(x: ice.midX, y: ice.minY + ice.height * 0.10))
+        marks.move(to: CGPoint(x: ice.minX + ice.width * 0.20, y: ice.midY + ice.height * 0.20))
+        marks.addQuadCurve(to: CGPoint(x: ice.maxX - ice.width * 0.10, y: ice.midY + ice.height * 0.16),
+                           controlPoint: CGPoint(x: ice.midX, y: ice.maxY - ice.height * 0.04))
+        stroke(marks, UIColor.white.withAlphaComponent(0.85), width: max(0.8, size.height * 0.012))
+        // The centre mark and snow banked at the corners.
+        stroke(UIBezierPath(ovalIn: CGRect(x: ice.midX - ice.width * 0.08, y: ice.midY - ice.height * 0.12,
+                                           width: ice.width * 0.16, height: ice.height * 0.24)),
+               accent.withAlphaComponent(0.7), width: max(1, size.height * 0.014))
+        snowMound(CGRect(x: size.width * 0.02, y: size.height * 0.74, width: size.width * 0.20, height: size.height * 0.20))
+        snowMound(CGRect(x: size.width * 0.78, y: size.height * 0.04, width: size.width * 0.20, height: size.height * 0.18))
+        lightString(from: CGPoint(x: size.width * 0.14, y: size.height * 0.94),
+                    to: CGPoint(x: size.width * 0.86, y: size.height * 0.94),
+                    sag: size.height * 0.03, bulbs: 9, size: max(2, size.width * 0.022))
+    }
+
+    /// One skater, in a coloured jacket and a bobble hat; the variant picks the colours.
+    static func drawSkater(_ context: CGContext, _ size: CGSize, _ variant: Int) {
+        let coat = bulbColours[variant % bulbColours.count]
+        let hat = bulbColours[(variant + 2) % bulbColours.count]
+        let skin = UIColor(red: 0.93, green: 0.76, blue: 0.60, alpha: 1)
+        let trousers = UIColor(red: 0.20, green: 0.22, blue: 0.30, alpha: 1)
+        fill(UIBezierPath(rect: CGRect(x: size.width * 0.34, y: size.height * 0.62, width: size.width * 0.14, height: size.height * 0.34)), trousers)
+        fill(UIBezierPath(rect: CGRect(x: size.width * 0.54, y: size.height * 0.62, width: size.width * 0.14, height: size.height * 0.34)), trousers)
+        fill(UIBezierPath(roundedRect: CGRect(x: size.width * 0.26, y: size.height * 0.30, width: size.width * 0.52, height: size.height * 0.40),
+                          cornerRadius: size.width * 0.12), coat)
+        let arms = UIBezierPath()
+        arms.move(to: CGPoint(x: size.width * 0.20, y: size.height * 0.46))
+        arms.addLine(to: CGPoint(x: size.width * 0.84, y: size.height * 0.40))
+        stroke(arms, coat, width: max(1.2, size.width * 0.12))
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.34, y: size.height * 0.04, width: size.width * 0.36, height: size.height * 0.30)), skin)
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.32, y: size.height * 0.00, width: size.width * 0.40, height: size.height * 0.18)), hat)
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.46, y: size.height * -0.04, width: size.width * 0.12, height: size.height * 0.12)), snowWhite)
+    }
+
+    static func drawHotCocoaStand(_ context: CGContext, _ size: CGSize,
+                                  _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        snowMound(CGRect(x: size.width * 0.04, y: size.height * 0.80, width: size.width * 0.92, height: size.height * 0.18))
+        let counter = CGRect(x: size.width * 0.12, y: size.height * 0.40, width: size.width * 0.76, height: size.height * 0.46)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: counter, cornerRadius: size.width * 0.04), primary)
+        }
+        // Striped awning with a snowy top.
+        let stripes = 6
+        let span = counter.width + size.width * 0.08
+        for index in 0..<stripes {
+            let x = counter.minX - size.width * 0.04 + span * CGFloat(index) / CGFloat(stripes)
+            fill(UIBezierPath(rect: CGRect(x: x, y: size.height * 0.20, width: span / CGFloat(stripes) + 0.5, height: size.height * 0.24)),
+                 index % 2 == 0 ? accent : snowWhite)
+        }
+        fill(UIBezierPath(roundedRect: CGRect(x: counter.minX - size.width * 0.05, y: size.height * 0.12,
+                                              width: counter.width + size.width * 0.10, height: size.height * 0.12),
+                          cornerRadius: size.height * 0.06), snowWhite)
+        // A big cup on the front with steam and marshmallows.
+        let cup = CGRect(x: size.width * 0.38, y: size.height * 0.54, width: size.width * 0.24, height: size.height * 0.26)
+        let body = UIBezierPath()
+        body.move(to: CGPoint(x: cup.minX, y: cup.minY)); body.addLine(to: CGPoint(x: cup.maxX, y: cup.minY))
+        body.addLine(to: CGPoint(x: cup.maxX - cup.width * 0.14, y: cup.maxY))
+        body.addLine(to: CGPoint(x: cup.minX + cup.width * 0.14, y: cup.maxY)); body.close()
+        fill(body, secondary)
+        fill(UIBezierPath(rect: CGRect(x: cup.minX, y: cup.minY, width: cup.width, height: cup.height * 0.22)),
+             UIColor(red: 0.36, green: 0.20, blue: 0.12, alpha: 1))
+        for dx in [CGFloat(0.22), 0.52, 0.76] {
+            fill(UIBezierPath(ovalIn: CGRect(x: cup.minX + cup.width * dx - 3, y: cup.minY - 3, width: 6, height: 5)), snowWhite)
+        }
+        for dx in [CGFloat(0.30), 0.55, 0.74] {
+            let steam = UIBezierPath()
+            steam.move(to: CGPoint(x: cup.minX + cup.width * dx, y: cup.minY - size.height * 0.04))
+            steam.addQuadCurve(to: CGPoint(x: cup.minX + cup.width * dx, y: cup.minY - size.height * 0.16),
+                               controlPoint: CGPoint(x: cup.minX + cup.width * (dx + 0.18), y: cup.minY - size.height * 0.10))
+            stroke(steam, UIColor.white.withAlphaComponent(0.75), width: max(0.8, size.width * 0.012))
+        }
+        for x in [CGFloat(0.18), 0.72] {
+            fill(UIBezierPath(roundedRect: CGRect(x: size.width * x, y: size.height * 0.60, width: size.width * 0.10, height: size.height * 0.12), cornerRadius: 2), accent)
+        }
+        lightString(from: CGPoint(x: size.width * 0.12, y: size.height * 0.16), to: CGPoint(x: size.width * 0.88, y: size.height * 0.16),
+                    sag: size.height * 0.04, bulbs: 8, size: max(2, size.width * 0.026))
+    }
+
+    static func drawCandyStand(_ context: CGContext, _ size: CGSize,
+                               _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        snowMound(CGRect(x: size.width * 0.04, y: size.height * 0.80, width: size.width * 0.92, height: size.height * 0.18))
+        let counter = CGRect(x: size.width * 0.12, y: size.height * 0.42, width: size.width * 0.76, height: size.height * 0.44)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: counter, cornerRadius: size.width * 0.04), accent)
+        }
+        // A big striped awning in red and white, with a scalloped edge.
+        let stripes = 8
+        let span = counter.width + size.width * 0.10
+        for index in 0..<stripes {
+            let x = counter.minX - size.width * 0.05 + span * CGFloat(index) / CGFloat(stripes)
+            let colour = index % 2 == 0 ? primary : secondary
+            fill(UIBezierPath(rect: CGRect(x: x, y: size.height * 0.18, width: span / CGFloat(stripes) + 0.5, height: size.height * 0.22)), colour)
+            fill(UIBezierPath(ovalIn: CGRect(x: x, y: size.height * 0.34, width: span / CGFloat(stripes) + 0.5, height: size.height * 0.10)), colour)
+        }
+        // Jars of sweets along the counter, a candy cane either side, and a lollipop sign on top.
+        let jars = [primary, bulbColours[1], accent, bulbColours[3]]
+        for (index, colour) in jars.enumerated() {
+            let x = counter.minX + counter.width * (0.08 + 0.22 * CGFloat(index))
+            fill(UIBezierPath(roundedRect: CGRect(x: x, y: size.height * 0.52, width: size.width * 0.14, height: size.height * 0.20),
+                              cornerRadius: size.width * 0.03), snowWhite.withAlphaComponent(0.85))
+            for dot in 0..<4 {
+                fill(UIBezierPath(ovalIn: CGRect(x: x + size.width * (0.02 + 0.03 * CGFloat(dot % 3)),
+                                                 y: size.height * (0.60 + 0.04 * CGFloat(dot / 3)), width: 4, height: 4)), colour)
+            }
+        }
+        candyCane(at: CGPoint(x: size.width * 0.06, y: size.height * 0.84), height: size.height * 0.34, red: primary)
+        candyCane(at: CGPoint(x: size.width * 0.94, y: size.height * 0.84), height: size.height * 0.34, red: primary)
+        let stick = UIBezierPath()
+        stick.move(to: CGPoint(x: size.width * 0.50, y: size.height * 0.20))
+        stick.addLine(to: CGPoint(x: size.width * 0.50, y: size.height * 0.08))
+        stroke(stick, snowWhite, width: max(1.2, size.width * 0.02))
+        stripedOval(CGRect(x: size.width * 0.44, y: size.height * -0.02, width: size.width * 0.12, height: size.height * 0.14),
+                    first: primary, second: snowWhite, segments: 14, width: max(1, size.width * 0.02))
+    }
+
     // MARK: - Sizes
 
     /// How big the moving part is for the holiday rides, or nil for a motif
@@ -911,6 +1044,7 @@ extension BuildingArtwork {
         case .countdownWheel: return CGSize(width: shortest * 0.82, height: shortest * 0.82)
         case .confettiSwing: return CGSize(width: shortest * 0.16, height: shortest * 0.22)
         case .ballDrop: return CGSize(width: shortest * 0.20, height: shortest * 0.20)
+        case .skatingRink: return CGSize(width: shortest * 0.11, height: shortest * 0.15)
         default: return nil
         }
     }
@@ -922,6 +1056,7 @@ extension BuildingArtwork {
         case .candyCoaster, .starburstCoaster: return 3
         case .polarExpress: return 4
         case .confettiSwing: return 6
+        case .skatingRink: return 5
         default: return nil
         }
     }

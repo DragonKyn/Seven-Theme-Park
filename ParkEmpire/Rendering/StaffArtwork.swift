@@ -112,6 +112,7 @@ enum StaffArtwork {
             case .magician: drawWand(layout: layout)
             case .santa: drawSantaExtras(layout: layout)
             case .missus: drawMrsClausExtras(layout: layout)
+            case .elf: drawElfExtras(layout: layout)
             }
         case .security:
             drawSecurityMarkings(layout: layout)
@@ -127,7 +128,7 @@ enum StaffArtwork {
         switch look.act {
         case .classic: return ParkPalette.colour(uniform)
         case .magician: return ParkPalette.colour(.cream)
-        case .clown, .balloonArtist, .mime, .juggler, .santa, .missus: return ParkPalette.colour(look.primary)
+        case .clown, .balloonArtist, .mime, .juggler, .santa, .missus, .elf: return ParkPalette.colour(look.primary)
         }
     }
 
@@ -183,6 +184,11 @@ enum StaffArtwork {
                 headwear = .partyHat
                 headwearColour = ParkPalette.colour(look.primary)
                 bottoms = ParkPalette.colour(look.primary)
+            case .elf:
+                // A pointed green hat: the party cone, in green.
+                headwear = .partyHat
+                headwearColour = ParkPalette.colour(look.primary)
+                bottoms = ParkPalette.colour(.red)
             case .missus:
                 headwear = .none
                 headwearColour = shirt
@@ -200,7 +206,7 @@ enum StaffArtwork {
 
         return PersonArtwork.Look(
             skin: .tan,
-            hair: (role == .entertainer && look.act.isSeasonal) ? .grey : .dark,
+            hair: (role == .entertainer && (look.act == .santa || look.act == .missus)) ? .grey : .dark,
             shirt: shirt,
             headwear: headwear,
             headwearColour: headwearColour,

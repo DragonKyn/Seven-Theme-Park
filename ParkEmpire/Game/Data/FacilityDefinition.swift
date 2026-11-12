@@ -103,6 +103,8 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     /// Whether a guest walks away carrying what they bought and eats it as
     /// they go.
     var carriesSnack: Bool = false
+    /// Part of the holiday event.
+    var seasonal = false
 
     /// Whether this is something the player can pour money into after it is
     /// built. Restrooms, benches and bins are not: there is nothing to sell
@@ -186,6 +188,7 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
             cleaningMinutes: cleaningMinutes,
             soilingPerUse: soilingPerUse,
             ratingWeight: ratingWeight,
-            carriesSnack: carriesSnack)
+            carriesSnack: carriesSnack,
+            seasonal: seasonal)
     }
 }

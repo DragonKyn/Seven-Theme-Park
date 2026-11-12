@@ -1162,7 +1162,7 @@ object GameContent {
     // MARK: - Lookup
 
     private val attractionsByID: Map<String, AttractionDefinition> by lazy { (attractions + HolidayContent.attractions).associateBy { it.id } }
-    private val facilitiesByID: Map<String, FacilityDefinition> by lazy { facilities.associateBy { it.id } }
+    private val facilitiesByID: Map<String, FacilityDefinition> by lazy { (facilities + HolidayContent.facilities).associateBy { it.id } }
     private val sceneryByID: Map<String, SceneryDefinition> by lazy { (scenery + HolidayContent.scenery).associateBy { it.id } }
 
     fun attraction(id: String): AttractionDefinition? = attractionsByID[id]
@@ -1175,7 +1175,9 @@ object GameContent {
         result.addAll(terrains)
         result.addAll(attractions)
         result.addAll(HolidayContent.attractions)
+        result.add(HolidayContent.skatingRink)
         result.addAll(facilities)
+        result.addAll(HolidayContent.facilities)
         result.addAll(CoasterElementContent.all)
         result.addAll(scenery)
         result.addAll(HolidayContent.scenery)

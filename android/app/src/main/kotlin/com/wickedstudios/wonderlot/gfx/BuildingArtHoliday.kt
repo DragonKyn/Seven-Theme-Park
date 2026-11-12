@@ -732,6 +732,106 @@ object BuildingArtHoliday {
 
     // endregion
 
+    // region Skating rink and the two seasonal stalls
+
+    fun drawSkatingRinkBase(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        val sheet = CGRect(CGPoint.zero, size).insetBy(size.width * 0.08, size.height * 0.10)
+        // Boards round the edge, with snow banked against them.
+        withShadow(context) { fill(rounded(sheet, min(sheet.width, sheet.height) * 0.40), secondary) }
+        stroke(rounded(sheet, min(sheet.width, sheet.height) * 0.40), accent, max(2.0, size.height * 0.045))
+        val ice = sheet.insetBy(sheet.width * 0.04, sheet.height * 0.06)
+        fill(rounded(ice, min(ice.width, ice.height) * 0.38), primary.withAlphaComponent(0.55).blended(snowWhite, 0.5))
+        // Scratches in the ice: a few long curves.
+        val marks = UIBezierPath()
+        marks.move(CGPoint(ice.minX + ice.width * 0.15, ice.midY - ice.height * 0.18))
+        marks.addQuadCurve(CGPoint(ice.maxX - ice.width * 0.15, ice.midY - ice.height * 0.10), CGPoint(ice.midX, ice.minY + ice.height * 0.10))
+        marks.move(CGPoint(ice.minX + ice.width * 0.20, ice.midY + ice.height * 0.20))
+        marks.addQuadCurve(CGPoint(ice.maxX - ice.width * 0.10, ice.midY + ice.height * 0.16), CGPoint(ice.midX, ice.maxY - ice.height * 0.04))
+        stroke(marks, UIColor.white.withAlphaComponent(0.85), max(0.8, size.height * 0.012))
+        // The centre mark and snow banked at the corners.
+        stroke(oval(ice.midX - ice.width * 0.08, ice.midY - ice.height * 0.12, ice.width * 0.16, ice.height * 0.24), accent.withAlphaComponent(0.7), max(1.0, size.height * 0.014))
+        snowMound(CGRect(size.width * 0.02, size.height * 0.74, size.width * 0.20, size.height * 0.20))
+        snowMound(CGRect(size.width * 0.78, size.height * 0.04, size.width * 0.20, size.height * 0.18))
+        // A string of bulbs along the near board.
+        lightString(CGPoint(size.width * 0.14, size.height * 0.94), CGPoint(size.width * 0.86, size.height * 0.94), size.height * 0.03, 9, max(2.0, size.width * 0.022))
+    }
+
+    /** One skater, in a coloured jacket and a bobble hat; the variant picks the colours. */
+    fun drawSkater(context: CGContext, size: CGSize, variant: Int) {
+        val coat = bulbColours[variant % bulbColours.size]
+        val hat = bulbColours[(variant + 2) % bulbColours.size]
+        val skin = UIColor(0.93, 0.76, 0.60, 1.0)
+        val trousers = UIColor(0.20, 0.22, 0.30, 1.0)
+        fill(box(size.width * 0.34, size.height * 0.62, size.width * 0.14, size.height * 0.34), trousers)
+        fill(box(size.width * 0.54, size.height * 0.62, size.width * 0.14, size.height * 0.34), trousers)
+        fill(rounded(CGRect(size.width * 0.26, size.height * 0.30, size.width * 0.52, size.height * 0.40), size.width * 0.12), coat)
+        val arms = UIBezierPath()
+        arms.move(CGPoint(size.width * 0.20, size.height * 0.46)); arms.addLine(CGPoint(size.width * 0.84, size.height * 0.40))
+        stroke(arms, coat, max(1.2, size.width * 0.12))
+        fill(oval(size.width * 0.34, size.height * 0.04, size.width * 0.36, size.height * 0.30), skin)
+        fill(oval(size.width * 0.32, size.height * 0.00, size.width * 0.40, size.height * 0.18), hat)
+        fill(oval(size.width * 0.46, size.height * -0.04, size.width * 0.12, size.height * 0.12), snowWhite)
+    }
+
+    fun drawHotCocoaStand(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        snowMound(CGRect(size.width * 0.04, size.height * 0.80, size.width * 0.92, size.height * 0.18))
+        val counter = CGRect(size.width * 0.12, size.height * 0.40, size.width * 0.76, size.height * 0.46)
+        withShadow(context) { fill(rounded(counter, size.width * 0.04), primary) }
+        // Striped awning with a snowy top.
+        val stripes = 6
+        for (index in 0 until stripes) {
+            val x = counter.minX - size.width * 0.04 + (counter.width + size.width * 0.08) * index / stripes
+            fill(box(x, size.height * 0.20, (counter.width + size.width * 0.08) / stripes + 0.5, size.height * 0.24), if (index % 2 == 0) accent else snowWhite)
+        }
+        fill(rounded(CGRect(counter.minX - size.width * 0.05, size.height * 0.12, counter.width + size.width * 0.10, size.height * 0.12), size.height * 0.06), snowWhite)
+        // A big cup on the front with steam and marshmallows.
+        val cup = CGRect(size.width * 0.38, size.height * 0.54, size.width * 0.24, size.height * 0.26)
+        val body = UIBezierPath()
+        body.move(CGPoint(cup.minX, cup.minY)); body.addLine(CGPoint(cup.maxX, cup.minY))
+        body.addLine(CGPoint(cup.maxX - cup.width * 0.14, cup.maxY)); body.addLine(CGPoint(cup.minX + cup.width * 0.14, cup.maxY)); body.close()
+        fill(body, secondary)
+        fill(box(cup.minX, cup.minY, cup.width, cup.height * 0.22), UIColor(0.36, 0.20, 0.12, 1.0))
+        for (dx in listOf(0.22, 0.52, 0.76)) fill(oval(cup.minX + cup.width * dx - 3, cup.minY - 3, 6.0, 5.0), snowWhite)
+        for (dx in listOf(0.30, 0.55, 0.74)) {
+            val steam = UIBezierPath()
+            steam.move(CGPoint(cup.minX + cup.width * dx, cup.minY - size.height * 0.04))
+            steam.addQuadCurve(CGPoint(cup.minX + cup.width * dx, cup.minY - size.height * 0.16), CGPoint(cup.minX + cup.width * (dx + 0.18), cup.minY - size.height * 0.10))
+            stroke(steam, UIColor.white.withAlphaComponent(0.75), max(0.8, size.width * 0.012))
+        }
+        // Two mugs on the shelf and a bulb string.
+        for (x in listOf(0.18, 0.72)) fill(rounded(CGRect(size.width * x, size.height * 0.60, size.width * 0.10, size.height * 0.12), 2.0), accent)
+        lightString(CGPoint(size.width * 0.12, size.height * 0.16), CGPoint(size.width * 0.88, size.height * 0.16), size.height * 0.04, 8, max(2.0, size.width * 0.026))
+    }
+
+    fun drawCandyStand(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        snowMound(CGRect(size.width * 0.04, size.height * 0.80, size.width * 0.92, size.height * 0.18))
+        val counter = CGRect(size.width * 0.12, size.height * 0.42, size.width * 0.76, size.height * 0.44)
+        withShadow(context) { fill(rounded(counter, size.width * 0.04), accent) }
+        // A big striped awning in red and white, with a scalloped edge.
+        val stripes = 8
+        val span = counter.width + size.width * 0.10
+        for (index in 0 until stripes) {
+            val x = counter.minX - size.width * 0.05 + span * index / stripes
+            val colour = if (index % 2 == 0) primary else secondary
+            fill(box(x, size.height * 0.18, span / stripes + 0.5, size.height * 0.22), colour)
+            fill(oval(x, size.height * 0.34, span / stripes + 0.5, size.height * 0.10), colour)
+        }
+        // Jars of sweets along the counter, a candy cane either side, and a lollipop sign on top.
+        val jars = listOf(primary, bulbColours[1], accent, bulbColours[3])
+        for ((index, colour) in jars.withIndex()) {
+            val x = counter.minX + counter.width * (0.08 + 0.22 * index)
+            fill(rounded(CGRect(x, size.height * 0.52, size.width * 0.14, size.height * 0.20), size.width * 0.03), snowWhite.withAlphaComponent(0.85))
+            for (dot in 0 until 4) fill(oval(x + size.width * (0.02 + 0.03 * (dot % 3)), size.height * (0.60 + 0.04 * (dot / 3)), 4.0, 4.0), colour)
+        }
+        candyCane(CGPoint(size.width * 0.06, size.height * 0.84), size.height * 0.34, primary)
+        candyCane(CGPoint(size.width * 0.94, size.height * 0.84), size.height * 0.34, primary)
+        val stick = UIBezierPath(); stick.move(CGPoint(size.width * 0.50, size.height * 0.20)); stick.addLine(CGPoint(size.width * 0.50, size.height * 0.08))
+        stroke(stick, snowWhite, max(1.2, size.width * 0.02))
+        stripedOval(CGRect(size.width * 0.44, size.height * -0.02, size.width * 0.12, size.height * 0.14), primary, snowWhite, 14, max(1.0, size.width * 0.02))
+    }
+
+    // endregion
+
     // region Sizes
 
     /** How big the moving part is for the holiday rides, or null for a motif that has none of its own. */
@@ -748,6 +848,7 @@ object BuildingArtHoliday {
             BuildingMotif.countdownWheel -> CGSize(shortest * 0.82, shortest * 0.82)
             BuildingMotif.confettiSwing -> CGSize(shortest * 0.16, shortest * 0.22)
             BuildingMotif.ballDrop -> CGSize(shortest * 0.20, shortest * 0.20)
+            BuildingMotif.skatingRink -> CGSize(shortest * 0.11, shortest * 0.15)
             else -> null
         }
     }
@@ -757,6 +858,7 @@ object BuildingArtHoliday {
         BuildingMotif.sleighRide, BuildingMotif.candyCoaster, BuildingMotif.starburstCoaster -> 3
         BuildingMotif.polarExpress -> 4
         BuildingMotif.confettiSwing -> 6
+        BuildingMotif.skatingRink -> 5
         else -> null
     }
 
