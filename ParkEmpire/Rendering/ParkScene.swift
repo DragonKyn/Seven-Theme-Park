@@ -740,7 +740,7 @@ final class ParkScene: SKScene {
         default: mask = walkwayConnections(at: coord, map: map)
         }
         return SnowArtwork.dust(plain, terrain: tile.terrain, seed: coord.x * 73 + coord.y * 179,
-                                mask: mask, style: tile.style, side: Self.tileSide)
+                                mask: mask, style: Int(tile.style), side: Self.tileSide)
     }
 
     private func plainTexture(for tile: Tile,

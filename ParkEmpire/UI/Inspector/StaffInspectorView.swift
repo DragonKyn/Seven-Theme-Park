@@ -37,7 +37,7 @@ struct StaffInspectorView: View {
                                         get: { member.style },
                                         set: { controller.setStaffStyle(id: member.id, style: $0) }),
                                      uniform: controller.state.uniformColour,
-                                     acts: controller.availableActs)
+                                     offered: controller.availableActs)
                 }
             }
 

@@ -111,7 +111,7 @@ struct CelebrationView: View {
 ///
 /// The pieces are fixed rather than random so the burst is the same every
 /// time and nothing has to be generated while the animation is running.
-private struct ConfettiBurst: View {
+struct ConfettiBurst: View {
     let active: Bool
 
     private static let pieces: [Piece] = (0..<44).map { index in
