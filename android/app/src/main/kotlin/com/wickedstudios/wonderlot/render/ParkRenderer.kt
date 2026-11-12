@@ -16,6 +16,8 @@ import com.wickedstudios.wonderlot.Guest
 import com.wickedstudios.wonderlot.GuestActivity
 import com.wickedstudios.wonderlot.GridCoord
 import com.wickedstudios.wonderlot.GridSize
+import com.wickedstudios.wonderlot.HolidaySeason
+import com.wickedstudios.wonderlot.RideUpgradeKind
 import com.wickedstudios.wonderlot.ParkColour
 import com.wickedstudios.wonderlot.ParkMap
 import com.wickedstudios.wonderlot.ParkScheme
@@ -34,6 +36,7 @@ import com.wickedstudios.wonderlot.gfx.CGSize
 import com.wickedstudios.wonderlot.gfx.GuestArtwork
 import com.wickedstudios.wonderlot.gfx.GuestMood
 import com.wickedstudios.wonderlot.gfx.ParkPalette
+import com.wickedstudios.wonderlot.gfx.SnowArtwork
 import com.wickedstudios.wonderlot.gfx.SpriteFactory
 import com.wickedstudios.wonderlot.gfx.StaffArtwork
 import com.wickedstudios.wonderlot.gfx.TerrainArtwork
@@ -42,6 +45,7 @@ import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 
 /**
  * Draws the park. The renderer owns no game state: every frame it advances the
@@ -269,6 +273,7 @@ class ParkRenderer(
         drawGuests(canvas, state)
         drawStaff(canvas, state)
         drawBubbles(canvas, state)
+        drawSnowfall(canvas, state)
         if (isInteractive) {
             drawSelection(canvas)
             drawMoveMarker(canvas)
@@ -334,6 +339,13 @@ class ParkRenderer(
         if (tileBitmaps.size != map.tileCount) {
             tileBitmaps = arrayOfNulls(map.tileCount)
             tileCodes = IntArray(map.tileCount) { -1 }
+            renderedMapGeneration = -1
+        }
+        // The season turning is not a change to the map either: the ground gains or loses its snow.
+        val season = HolidaySeason.isActive(state)
+        if (season != renderedSeason) {
+            renderedSeason = season
+            tileCodes.fill(-1)
             renderedMapGeneration = -1
         }
         // Repainting the track is not a change to the map, so it forces its own pass.
@@ -437,6 +449,12 @@ class ParkRenderer(
     }
 
     private fun tileBitmap(tile: Tile, coord: GridCoord, map: ParkMap, rail: ParkColour?): Bitmap {
+        val plain = plainTileBitmap(tile, coord, map, rail)
+        if (!renderedSeason) return plain
+        return SnowArtwork.dust(plain, tile.terrain, tileVariant(coord), neighbourMask(tile, coord, map), tile.style, tileSide)
+    }
+
+    private fun plainTileBitmap(tile: Tile, coord: GridCoord, map: ParkMap, rail: ParkColour?): Bitmap {
         val variant = tileVariant(coord)
         return when (tile.terrain) {
             TerrainType.grass -> SpriteFactory.grassTexture(variant, tileSide)
@@ -485,6 +503,41 @@ class ParkRenderer(
 
     // endregion
 
+    // region Snow
+
+    private var renderedSeason = false
+    /** How much snow is in the air, 0 to 1, eased so it comes and goes rather than switching. */
+    private var snowLevel = 0.0
+    private val snowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+
+    private fun hash01(n: Int): Double {
+        val x = sin(n * 12.9898) * 43758.5453
+        return x - floor(x)
+    }
+
+    /** Flakes drifting down over the whole view. Positions are worked out from the flake's number and the time. */
+    private fun drawSnowfall(canvas: Canvas, state: GameState) {
+        val target = if (state.snowing && HolidaySeason.isActive(state)) 1.0 else 0.0
+        snowLevel += (target - snowLevel) * min(1.0, frameDelta * 0.8)
+        if (snowLevel < 0.02) return
+
+        val count = ((if (GraphicsBudget.isReduced) 70 else 170) * snowLevel).toInt()
+        for (index in 0 until count) {
+            val a = hash01(index * 2 + 1)
+            val b = hash01(index * 2 + 2)
+            val c = hash01(index * 3 + 7)
+            val speed = (24 + c * 40) * density
+            val radius = (1.1 + c * 2.2) * density
+            val sway = sin(time * (0.5 + c) + index) * 14 * density
+            val x = (((a * width + sway) % width) + width) % width
+            val y = (b * height + time * speed) % height
+            snowPaint.alpha = (150 + c * 90).toInt()
+            canvas.drawCircle(x.toFloat(), y.toFloat(), radius.toFloat(), snowPaint)
+        }
+    }
+
+    // endregion
+
     // region Car park and sign
 
     private fun drawCarPark(canvas: Canvas, state: GameState) {
@@ -520,7 +573,7 @@ class ParkRenderer(
     private fun cachedBitmap(cache: HashMap<UUID, CachedBuilding>, id: UUID, appearance: BuildingAppearance,
                              widthTiles: Int, heightTiles: Int): Bitmap {
         val key = "${appearance.motif.name}${appearance.primary.name}${appearance.secondary.name}" +
-            "${appearance.accent.name}${appearance.variant}-${widthTiles}x$heightTiles"
+            "${appearance.accent.name}${appearance.variant}${appearance.holiday}-${widthTiles}x$heightTiles"
         cache[id]?.let { if (it.key == key) return it.bitmap }
         val bitmap = BuildingArtwork.bodyTexture(appearance, CGSize(widthTiles * tileSide, heightTiles * tileSide))
         cache[id] = CachedBuilding(key, bitmap)
@@ -553,7 +606,9 @@ class ParkRenderer(
         for (attraction in state.attractions) {
             live.add(attraction.id)
             drawBuilding(canvas, attraction.id, attraction.size, attraction.origin.x, attraction.origin.y, attraction.rotation,
-                (attraction.definition?.appearance ?: BuildingAppearance.unknown).tinted(attraction.tint).applying(state.scheme),
+                (attraction.definition?.appearance ?: BuildingAppearance.unknown).tinted(attraction.tint).applying(state.scheme)
+                    // After a holiday makeover, while the event is on.
+                    .dressed(attraction.upgradeLevel(RideUpgradeKind.holiday) > 0 && HolidaySeason.isActive(state)),
                 alpha = if (attraction.isOperational) 1f else 0.45f, running = attraction.isOperational)
         }
 

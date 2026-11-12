@@ -164,7 +164,7 @@ fun StaffHireSheet(role: StaffRole, controller: GameController, onDismiss: () ->
         PillButton("Hire", { if (controller.hireStaff(role, style)) onDismiss() }, enabled = controller.canHire(role))
         Box(Modifier.width(8.dp))
     }) {
-        StaffStyleEditor(role, style, controller.state.uniformColour) { style = it }
+        StaffStyleEditor(role, style, controller.state.uniformColour, acts = controller.availableActs()) { style = it }
         if (definition != null) {
             Label("${CurrencyFormatter.short(definition.hiringCost)} to hire, then ${CurrencyFormatter.short(definition.dailyWage)} a day. " +
                 "You can change the look any time from their panel in the park.",
@@ -196,7 +196,7 @@ private fun StaffColourPicker(selected: ParkColour, onSelect: (ParkColour) -> Un
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun StaffStyleEditor(role: StaffRole, style: StaffStyle, uniform: ParkColour, onChange: (StaffStyle) -> Unit) {
+fun StaffStyleEditor(role: StaffRole, style: StaffStyle, uniform: ParkColour, acts: List<EntertainerAct> = EntertainerAct.entries, onChange: (StaffStyle) -> Unit) {
     val look = style.look(role)
 
     @Composable
@@ -254,7 +254,7 @@ fun StaffStyleEditor(role: StaffRole, style: StaffStyle, uniform: ParkColour, on
                 portrait()
                 Label("ACT", size = 10.sp, weight = FontWeight.ExtraBold, color = Theme.textSecondary)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (act in EntertainerAct.entries) {
+                    for (act in acts) {
                         tile(act.displayName, StaffStyle(act = act).look(StaffRole.entertainer), look.act == act) {
                             onChange(style.copy(act = act, primary = null))
                         }

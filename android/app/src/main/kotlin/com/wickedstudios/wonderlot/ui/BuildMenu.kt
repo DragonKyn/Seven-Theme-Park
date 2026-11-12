@@ -241,7 +241,11 @@ private fun ColourChips(controller: GameController) {
 private fun RideGroups(controller: GameController) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         GroupChip(controller, null, "All", "square.grid.2x2.fill")
-        for (group in RideGroup.entries) GroupChip(controller, group, group.displayName, group.symbolName)
+        // The holiday shelf is only there while the event is on.
+        for (group in RideGroup.entries) {
+            if (group.isSeasonal && !controller.isHolidaySeason) continue
+            GroupChip(controller, group, group.displayName, group.symbolName)
+        }
     }
 }
 

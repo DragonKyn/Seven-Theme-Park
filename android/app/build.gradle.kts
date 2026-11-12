@@ -16,6 +16,9 @@ android {
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
         versionName = "1.2.2"
 
+        // A build that shows the holiday event whatever the date, for trying it out. Never set for the store build.
+        buildConfigField("boolean", "HOLIDAY_PREVIEW", ((project.findProperty("HOLIDAY_PREVIEW") as String?) == "true").toString())
+
         // Google's own test identifiers until the real AdMob Android app and rewarded unit exist. Supply the real
         // ones with -PADMOB_APP_ID=... -PADMOB_REWARDED_UNIT_ID=... (or in ~/.gradle/gradle.properties).
         val appId = (project.findProperty("ADMOB_APP_ID") as String?) ?: "ca-app-pub-3940256099942544~3347511713"

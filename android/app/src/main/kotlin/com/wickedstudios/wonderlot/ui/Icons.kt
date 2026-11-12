@@ -110,6 +110,12 @@ fun symbolIcon(name: String): ImageVector = when (name) {
     "iphone.gen3.radiowaves.left.and.right" -> Icons.Filled.PhoneAndroid
     "bubble.left.fill" -> Icons.Filled.ChatBubble
     "dollarsign.circle" -> Icons.Filled.MonetizationOn
+    "snowflake" -> Icons.Filled.AcUnit
+    "party.popper.fill" -> Icons.Filled.Celebration
+    "paintbrush.fill" -> Icons.Filled.Brush
+    "circle.dotted" -> Icons.Filled.Adjust
+    "music.note" -> Icons.Filled.MusicNote
+    "sparkle" -> Icons.Filled.AutoAwesome
     else -> Icons.Filled.Circle
 }
 

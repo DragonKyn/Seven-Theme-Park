@@ -439,7 +439,7 @@ private fun StaffInspector(member: StaffDetail, controller: GameController) {
 
     if (member.role == StaffRole.mascot || member.role == StaffRole.entertainer) {
         SectionCard(if (member.role == StaffRole.mascot) "Costume" else "Act") {
-            StaffStyleEditor(member.role, member.style, controller.state.uniformColour) { controller.setStaffStyle(member.id, it) }
+            StaffStyleEditor(member.role, member.style, controller.state.uniformColour, acts = controller.availableActs()) { controller.setStaffStyle(member.id, it) }
         }
     }
 

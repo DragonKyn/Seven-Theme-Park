@@ -57,6 +57,7 @@ import com.wickedstudios.wonderlot.AppInfo
 import com.wickedstudios.wonderlot.Balance
 import com.wickedstudios.wonderlot.CurrencyFormatter
 import com.wickedstudios.wonderlot.GameMode
+import com.wickedstudios.wonderlot.HolidaySeason
 import com.wickedstudios.wonderlot.MapBlueprint
 import com.wickedstudios.wonderlot.MapCatalogue
 import com.wickedstudios.wonderlot.MapGround
@@ -79,6 +80,9 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
     var showingTrials by remember { mutableStateOf(false) }
     var showingAbout by remember { mutableStateOf(false) }
     var showingGraphics by remember { mutableStateOf(false) }
+    var showingAnnouncement by remember { mutableStateOf(false) }
+    var ladderOnHoliday by remember { mutableStateOf(false) }
+    val holidayOn = HolidaySeason.isActive()
     var slotToDelete by remember { mutableStateOf<Int?>(null) }
     // Built off the main thread: the live park behind the menu takes a while to set up, and the menu should not wait for it.
     var demo by remember { mutableStateOf<GameController?>(null) }
@@ -92,7 +96,17 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
         router.refreshTrials()
         if (router.opensLadderOnMenu) {
             router.opensLadderOnMenu = false
+            ladderOnHoliday = router.opensHolidayTab
+            router.opensHolidayTab = false
             showingTrials = true
+        }
+    }
+
+    // The holiday announcement, a moment after the menu is up, until it has been put away for the year.
+    LaunchedEffect(Unit) {
+        if (services.holiday.shouldAnnounce()) {
+            delay(900)
+            showingAnnouncement = true
         }
     }
 
@@ -107,6 +121,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0.20f, 0.44f, 0.62f), Color(0.36f, 0.66f, 0.45f)))))
         }
 
+        if (holidayOn && demo == null) SnowOverlay(Modifier.fillMaxSize(), flakes = 80)
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
@@ -119,7 +134,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
         )
 
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Masthead(Modifier.padding(top = 22.dp))
+            Masthead(holidayOn, Modifier.padding(top = 22.dp))
             Spacer(Modifier.weight(1f))
 
             Column(
@@ -132,8 +147,10 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
                         router.loadGame(mostRecent)
                     }
                 }
-                MenuButton("Park Trials", "${router.completedTrials.value.size} of ${TrialContent.all.size} medals · parks on a deadline",
-                    "flag.checkered", prominent = false) { showingTrials = true }
+                MenuButton("Park Trials",
+                    if (holidayOn) "${router.completedTrials.value.size} of ${TrialContent.all.size} medals · plus the 12 Days of Holiday Wonder"
+                    else "${router.completedTrials.value.size} of ${TrialContent.all.size} medals · parks on a deadline",
+                    "flag.checkered", prominent = false) { ladderOnHoliday = false; showingTrials = true }
                 MenuButton("New Park", "Pick a map, normal or free build", "plus", prominent = slots.isEmpty()) {
                     showingNewGame = true
                 }
@@ -173,9 +190,12 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
         )
     }
 
-    if (showingTrials) TrialLadderScreen(router, services, onClose = { showingTrials = false })
+    if (showingTrials) TrialLadderScreen(router, services, onClose = { showingTrials = false }, startOnHoliday = ladderOnHoliday)
     if (showingAbout) AboutSheet(onDismiss = { showingAbout = false })
     if (showingGraphics) GraphicsSheet(services, onDismiss = { showingGraphics = false })
+    if (showingAnnouncement) {
+        HolidayAnnouncement(services, onDismiss = { showingAnnouncement = false }, onSeeTrials = { ladderOnHoliday = true; showingTrials = true })
+    }
 }
 
 /** The first slot with nothing in it, or null when every slot holds a park. */
@@ -185,8 +205,10 @@ private fun firstEmptySlot(slots: Map<Int, SaveSlotSummary>): Int? {
 }
 
 @Composable
-private fun Masthead(modifier: Modifier = Modifier) {
+private fun Masthead(holiday: Boolean, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        // Lights across the top of the screen while the event is on.
+        if (holiday) FestiveLights(Modifier.padding(horizontal = 12.dp))
         androidx.compose.material3.Text(
             AppInfo.gameName,
             style = TextStyle(
@@ -195,7 +217,8 @@ private fun Masthead(modifier: Modifier = Modifier) {
                 shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.55f), blurRadius = 20f),
             ),
         )
-        Tagline()
+        Tagline(AppInfo.activeTaglines)
+        if (holiday) HolidayRibbon()
         Box(Modifier.width(190.dp).height(1.dp).background(
             Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent))))
     }

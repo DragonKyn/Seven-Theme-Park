@@ -39,6 +39,8 @@ class WonderLotApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // A build made for trying the event out of season. The store build never sets this.
+        if (com.wickedstudios.wonderlot.BuildConfig.HOLIDAY_PREVIEW) com.wickedstudios.wonderlot.HolidaySeason.override = true
         services = AppServices(this)
         GraphicsBudget.init(this, services.store)
     }
@@ -54,8 +56,9 @@ class AppServices(context: Context) {
     val perkStore = PerkStore(store)
     val trialProgress = TrialProgressStore(store)
     val tutorial = TutorialDirector(TutorialStore(store))
+    val holiday = com.wickedstudios.wonderlot.HolidayStore(store)
 
-    val controllerServices = GameController.Services(saveService, boosts, perkStore, trialProgress, tutorial)
+    val controllerServices = GameController.Services(saveService, boosts, perkStore, trialProgress, tutorial, holiday)
 
     fun demoController(): GameController = GameController.demo(controllerServices)
 }
@@ -83,6 +86,9 @@ class AppRouter(private val services: AppServices) {
     /** Set when a finished trial sends the player back to the ladder, so the menu opens straight onto it. */
     var opensLadderOnMenu by mutableStateOf(false)
 
+    /** Set along with it when the trial that sent the player back was one of the twelve days. */
+    var opensHolidayTab by mutableStateOf(false)
+
     init {
         refreshSlots()
         customMaps.addAll(services.mapStore.load())
@@ -96,7 +102,8 @@ class AppRouter(private val services: AppServices) {
         trialRuns.value = services.saveService.trialSummaries()
     }
 
-    fun isTrialUnlocked(trial: TrialDefinition): Boolean = services.trialProgress.isUnlocked(trial)
+    fun isTrialUnlocked(trial: TrialDefinition): Boolean =
+        if (trial.isHoliday) services.holiday.isOpen(trial) else services.trialProgress.isUnlocked(trial)
 
     /** Starts a trial from day one, replacing any run already on the go. */
     fun startTrial(trial: TrialDefinition) {

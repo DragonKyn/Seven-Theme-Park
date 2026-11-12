@@ -15,6 +15,18 @@ object AppInfo {
         "Turn a little lot into a lot of wonder.",
     )
 
+    /** What the title screen says while the holiday event is on. */
+    val holidayTaglines = listOf(
+        "Deck the lot.",
+        "Snow on the ground, lights on the rides.",
+        "Twelve days of holiday wonder.",
+        "Santa is hiring.",
+        "Turn a little lot into a lot of wonder, with tinsel.",
+    )
+
+    /** The lines to show now: the holiday ones during the event. */
+    val activeTaglines: List<String> get() = if (HolidaySeason.isActive()) holidayTaglines else taglines
+
     val tagline: String get() = taglines[0]
 }
 

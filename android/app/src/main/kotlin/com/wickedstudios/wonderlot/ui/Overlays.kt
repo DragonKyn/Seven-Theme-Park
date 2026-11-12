@@ -117,7 +117,7 @@ fun TrialTracker(trial: TrialSnapshot, expanded: Boolean, onToggle: () -> Unit) 
                 SymbolIcon(statusSymbol, statusColour, 13.dp)
             }
             Column(Modifier.weight(1f)) {
-                Label("TRIAL ${trial.number}  ·  ${trial.title.uppercase()}", size = 9.sp, weight = FontWeight.ExtraBold, tracking = 1f, color = Theme.textSecondary, maxLines = 1)
+                Label("${if (trial.isHoliday) "DAY" else "TRIAL"} ${trial.number}  ·  ${trial.title.uppercase()}", size = 9.sp, weight = FontWeight.ExtraBold, tracking = 1f, color = Theme.textSecondary, maxLines = 1)
                 Label(statusLine, size = 12.sp, weight = FontWeight.Bold, maxLines = 1)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -156,6 +156,8 @@ private sealed class Banner {
     class Incident(val title: String) : Banner()
     class Destination(val text: String) : Banner()
     class Stamp(val title: String, val passed: Boolean) : Banner()
+    /** A holiday party arriving: a red band hung with lights. */
+    class Festive(val text: String) : Banner()
 }
 
 private class EventPresentation(
@@ -222,6 +224,14 @@ private fun presentation(event: ParkEvent): EventPresentation = when (event) {
 
     is ParkEvent.TourBus -> {
         val report = event.report
+        if (report.isHolidayParty) {
+            EventPresentation(
+                Banner.Festive(report.groupName), "party.popper.fill", Festive.red, Color(0.10f, 0.45f, 0.30f),
+                "HOLIDAY PARTY ARRIVING", report.headline, report.detail,
+                listOf(EventFigure("${report.count}", "ON BOARD"), EventFigure("5x", "THE MONEY"),
+                    EventFigure("${report.count - report.childCount}", "ADULTS")),
+            )
+        } else
         EventPresentation(
             Banner.Destination(report.groupName), "bus.doubledecker.fill", Theme.money, Theme.moneyDeep,
             "TOUR BUS ARRIVING", report.headline, report.detail,
@@ -237,12 +247,20 @@ fun EventCard(event: ParkEvent, remaining: Double, onDismiss: () -> Unit) {
     val style = remember(event.id) { presentation(event) }
     val shown = remember(event.id) { Animatable(0f) }
     LaunchedEffect(event.id) { shown.animateTo(1f, spring(dampingRatio = 0.64f, stiffness = Spring.StiffnessMediumLow)) }
+    // A holiday party comes in with a burst of confetti and snow over the park.
+    val festive = style.banner is Banner.Festive
+    val burst = remember(event.id) { Animatable(0f) }
+    LaunchedEffect(event.id) { if (festive) burst.animateTo(1f, tween(2200, easing = FastOutSlowInEasing)) }
 
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f * shown.value))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
         contentAlignment = Alignment.Center,
     ) {
+        if (festive) {
+            SnowOverlay(Modifier.fillMaxSize(), flakes = 70)
+            Confetti(burst.value)
+        }
         val shape = RoundedCornerShape(20.dp)
         Column(
             Modifier.widthIn(max = 310.dp).graphicsLayer { scaleX = 0.75f + 0.25f * shown.value; scaleY = scaleX; alpha = shown.value.coerceIn(0f, 1f) }
@@ -319,6 +337,13 @@ private fun EventBanner(banner: Banner) {
                     fontFamily = FontFamily.Monospace, letterSpacing = 2.sp, maxLines = 1)
             }
             Box(Modifier.fillMaxWidth().height(2.dp).background(Theme.moneyDeep.copy(alpha = 0.8f)))
+        }
+
+        is Banner.Festive -> Column {
+            Box(Modifier.fillMaxWidth().background(Festive.ribbon).padding(top = 9.dp, bottom = 5.dp), contentAlignment = Alignment.Center) {
+                Label(banner.text.uppercase(), size = 11.sp, weight = FontWeight.Black, tracking = 2f, color = Color.White, maxLines = 1)
+            }
+            FestiveLights(Modifier.padding(horizontal = 6.dp))
         }
 
         is Banner.Stamp -> {
@@ -446,7 +471,8 @@ fun TrialResultCard(report: TrialResultReport, onKeepPlaying: () -> Unit, onLeav
                 .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
                 SymbolIcon(if (won) medalSymbol else "hourglass.bottomhalf.filled", if (won) Color.Black.copy(alpha = 0.8f) else Theme.danger, 36.dp)
             }
-            Label(if (won) "TRIAL $number COMPLETE" else "TRIAL $number · OUT OF TIME", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 2.2f, color = accent)
+            val noun = if (trial?.isHoliday == true) "DAY" else "TRIAL"
+            Label(if (won) "$noun $number COMPLETE" else "$noun $number · OUT OF TIME", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 2.2f, color = accent)
             androidx.compose.material3.Text(trial?.title ?: "Trial", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
             androidx.compose.material3.Text(detail, color = Color.White.copy(alpha = 0.82f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
 
@@ -461,6 +487,13 @@ fun TrialResultCard(report: TrialResultReport, onKeepPlaying: () -> Unit, onLeav
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                     SymbolIcon("lock.open.fill", Theme.accent, 14.dp)
                     Label(it, size = 12.sp, weight = FontWeight.Bold, color = Theme.accent)
+                }
+            }
+            // What a holiday trial handed over for the first time.
+            for (reward in report.rewards) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SymbolIcon("gift.fill", Festive.gold, 15.dp)
+                    Label("Unlocked: ${reward.title}", size = 12.sp, weight = FontWeight.ExtraBold, color = Festive.gold)
                 }
             }
 

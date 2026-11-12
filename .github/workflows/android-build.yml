@@ -37,7 +37,7 @@ jobs:
       - name: Debug APK
         run: |
           set -o pipefail
-          gradle :app:assembleDebug --stacktrace 2>&1 | tee ../app-build.log
+          gradle :app:assembleDebug -PHOLIDAY_PREVIEW=true --stacktrace 2>&1 | tee ../app-build.log
 
       - name: Lint (release)
         run: |

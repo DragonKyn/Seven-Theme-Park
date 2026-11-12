@@ -130,6 +130,7 @@ fun GameScreen(controller: GameController, router: AppRouter, services: AppServi
                 onLeave = {
                     controller.dismissTrialResult()
                     router.opensLadderOnMenu = report.result.won
+                    router.opensHolidayTab = report.result.trial?.isHoliday == true
                     router.exitToMenu()
                 })
         }

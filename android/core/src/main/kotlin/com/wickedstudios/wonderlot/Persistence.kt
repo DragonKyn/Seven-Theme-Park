@@ -310,7 +310,7 @@ class SaveGameService(private val root: File) {
     /** The run in progress for each trial that has one, by trial id. */
     fun trialSummaries(): Map<String, SaveSlotSummary> {
         val result = HashMap<String, SaveSlotSummary>()
-        for (trial in TrialContent.all) summary(SaveLocation.Trial(trial.id))?.let { result[trial.id] = it }
+        for (trial in TrialContent.all + TrialContent.holiday) summary(SaveLocation.Trial(trial.id))?.let { result[trial.id] = it }
         return result
     }
 

@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
 import com.wickedstudios.wonderlot.CurrencyFormatter
+import com.wickedstudios.wonderlot.HolidaySeason
 import com.wickedstudios.wonderlot.PerkBranch
 import com.wickedstudios.wonderlot.PerkContent
 import com.wickedstudios.wonderlot.PerkDefinition
@@ -57,8 +58,9 @@ private sealed class TrialPage {
 
 /** The Park Trials ladder: parks to build under a deadline, each one opening when the one before it is beaten. */
 @Composable
-fun TrialLadderScreen(router: AppRouter, services: AppServices, onClose: () -> Unit) {
+fun TrialLadderScreen(router: AppRouter, services: AppServices, onClose: () -> Unit, startOnHoliday: Boolean = false) {
     var page by remember { mutableStateOf<TrialPage>(TrialPage.Ladder) }
+    var holidayTab by remember { mutableStateOf(startOnHoliday && HolidaySeason.isActive()) }
     // Bumped on any change, because the stores read preferences rather than holding observable state.
     var revision by remember { mutableIntStateOf(0) }
     @Suppress("UNUSED_VARIABLE") val observed = revision
@@ -72,8 +74,8 @@ fun TrialLadderScreen(router: AppRouter, services: AppServices, onClose: () -> U
 
     Box(Modifier.fillMaxSize().background(Theme.panelGradient)) {
         when (val current = page) {
-            TrialPage.Ladder -> Ladder(router, services, onClose, onOpen = { page = TrialPage.Briefing(it) }, onPerks = { page = TrialPage.Perks })
-            is TrialPage.Briefing -> Briefing(current.trial, router, onBack = { page = TrialPage.Ladder }, onLeave = onClose)
+            TrialPage.Ladder -> Ladder(router, services, onClose, holidayTab, { holidayTab = it }, onOpen = { page = TrialPage.Briefing(it) }, onPerks = { page = TrialPage.Perks })
+            is TrialPage.Briefing -> Briefing(current.trial, router, services, onBack = { page = TrialPage.Ladder }, onLeave = onClose)
             TrialPage.Perks -> PerkTree(router, services, onBack = { page = TrialPage.Ladder; revision += 1 }) { revision += 1 }
         }
     }
@@ -88,15 +90,27 @@ private fun TopBar(title: String, trailing: String, onTrailing: () -> Unit) {
 }
 
 @Composable
-private fun Ladder(router: AppRouter, services: AppServices, onClose: () -> Unit, onOpen: (TrialDefinition) -> Unit, onPerks: () -> Unit) {
+private fun Ladder(router: AppRouter, services: AppServices, onClose: () -> Unit, holidayTab: Boolean, onTab: (Boolean) -> Unit,
+                   onOpen: (TrialDefinition) -> Unit, onPerks: () -> Unit) {
     val completed = router.completedTrials.value
     val runs = router.trialRuns.value
     val unspent = services.perkStore.available(completed.size)
 
     Column(Modifier.fillMaxSize()) {
         TopBar("Park Trials", "Close", onClose)
+        // The twelve days have a tab of their own while the event is on.
+        if (HolidaySeason.isActive()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Chip("Park Trials", !holidayTab, { onTab(false) }, Modifier.weight(1f), symbol = "flag.checkered")
+                Chip("12 Days of Holiday Wonder", holidayTab, { onTab(true) }, Modifier.weight(1f), symbol = "snowflake")
+            }
+        }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (holidayTab && HolidaySeason.isActive()) {
+                HolidayLadder(router, services, onOpen)
+                return@Column
+            }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Label("${TrialContent.all.size} parks, each on a deadline.", size = 20.sp, weight = FontWeight.ExtraBold)
                 Label("Meet every goal before the last day closes. Each trial you beat earns its medal and opens the next rung.",
@@ -202,13 +216,16 @@ private fun RungCard(trial: TrialDefinition, unlocked: Boolean, bestDay: Int?, r
 }
 
 @Composable
-private fun Briefing(trial: TrialDefinition, router: AppRouter, onBack: () -> Unit, onLeave: () -> Unit) {
+private fun Briefing(trial: TrialDefinition, router: AppRouter, services: AppServices, onBack: () -> Unit, onLeave: () -> Unit) {
     val run = router.trialRuns.value[trial.id]
-    val bestDay = router.completedTrials.value[trial.id]
+    val isHoliday = trial.isHoliday
+    // The twelve days are done per year; the ladder is done for good.
+    val bestDay = if (isHoliday) (if (services.holiday.isCompleted(trial)) 1 else null) else router.completedTrials.value[trial.id]
+    val open = !isHoliday || services.holiday.isOpen(trial)
     var confirmingRestart by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar("Trial ${trial.number}", "Back", onBack)
+        TopBar(if (isHoliday) "Day ${trial.number}" else "Trial ${trial.number}", "Back", onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -219,7 +236,7 @@ private fun Briefing(trial: TrialDefinition, router: AppRouter, onBack: () -> Un
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Label("TRIAL ${trial.number}  ·  ${trial.map.name.uppercase()}", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 1.6f, color = Theme.money)
+                Label("${if (isHoliday) "DAY" else "TRIAL"} ${trial.number}  ·  ${trial.map.name.uppercase()}", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 1.6f, color = if (isHoliday) Festive.gold else Theme.money)
                 Label(trial.title, size = 26.sp, weight = FontWeight.ExtraBold)
                 Label(trial.briefing, size = 14.sp, weight = FontWeight.Medium, color = Color.White.copy(alpha = 0.85f))
             }
@@ -229,6 +246,10 @@ private fun Briefing(trial: TrialDefinition, router: AppRouter, onBack: () -> Un
                     SymbolIcon(goal.symbolName, Color.White, 16.dp)
                     Label(goal.title, size = 14.sp)
                 }
+            }
+
+            if (isHoliday) {
+                InfoSection("REWARDS") { HolidayRewardList(trial.rewardIDs) }
             }
 
             InfoSection("RULES") {
@@ -241,11 +262,17 @@ private fun Briefing(trial: TrialDefinition, router: AppRouter, onBack: () -> Un
             bestDay?.let {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     SymbolIcon(trial.medal.symbolName, Theme.money, 16.dp)
-                    Label("Medal earned. Best finish: day $it.", size = 13.sp, weight = FontWeight.Bold, color = Theme.money)
+                    Label(if (isHoliday) "Done this year. Play again for the fun of it." else "Medal earned. Best finish: day $it.", size = 13.sp, weight = FontWeight.Bold, color = Theme.money)
                 }
             }
 
-            if (run != null) {
+            if (!open) {
+                val needed = trial.needsRewardID?.let { com.wickedstudios.wonderlot.HolidayRewards.definition(it)?.title }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SymbolIcon("lock.fill", Theme.textSecondary, 16.dp)
+                    Label("Earn ${needed ?: "an earlier reward"} from another day to open this one.", size = 13.sp, weight = FontWeight.Bold, color = Theme.textSecondary)
+                }
+            } else if (run != null) {
                 BigButton("Resume, day ${run.day}", "play.fill") { onLeave(); router.resumeTrial(trial) }
                 Box(Modifier.fillMaxWidth().height(42.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.12f))
                     .clickable { confirmingRestart = true }, contentAlignment = Alignment.Center) {
