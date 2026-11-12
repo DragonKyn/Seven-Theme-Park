@@ -33,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -286,3 +288,57 @@ private fun announcementRow(symbol: String, title: String, detail: String) {
 
 @Suppress("unused")
 private val keepPi = PI
+
+/**
+ * Every piece of holiday artwork on one screen, for checking it by eye. Only reachable in a build made for trying the
+ * event out (a long press on the ribbon on the title screen), never in the store build.
+ */
+@Composable
+fun HolidayGallery(onClose: () -> Unit) {
+    androidx.activity.compose.BackHandler(onBack = onClose)
+    val side = 28.0
+    Column(Modifier.fillMaxSize().background(Theme.panelGradient).statusBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Label("Holiday art", size = 18.sp, weight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            PillButton("Close", onClose, background = Theme.control, foreground = Theme.textPrimary)
+        }
+        @Composable
+        fun tile(title: String, bitmap: android.graphics.Bitmap, widthDp: Int) {
+            Column(Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0.45f, 0.62f, 0.45f)).padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                androidx.compose.foundation.Image(bitmap.asImageBitmap(), null, Modifier.size(widthDp.dp * bitmap.width / maxOf(bitmap.width, bitmap.height),
+                    widthDp.dp * bitmap.height / maxOf(bitmap.width, bitmap.height)))
+                Label(title, size = 9.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
+            }
+        }
+        for (ride in com.wickedstudios.wonderlot.HolidayContent.attractions) {
+            val size = com.wickedstudios.wonderlot.gfx.CGSize(ride.footprint.width * side, ride.footprint.height * side)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                tile(ride.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(ride.appearance, size), 170)
+                val part = com.wickedstudios.wonderlot.gfx.BuildingArtwork.motionTexture(ride.appearance, size, 0)
+                if (part != null) tile("moving part", part, 60)
+            }
+        }
+        // A few ordinary rides in their holiday dress.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (id in listOf("ride.carousel", "ride.minicoaster", "ride.teacups")) {
+                val ride = com.wickedstudios.wonderlot.GameContent.attraction(id) ?: continue
+                val size = com.wickedstudios.wonderlot.gfx.CGSize(ride.footprint.width * side, ride.footprint.height * side)
+                tile("${ride.displayName} + makeover", com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(ride.appearance.dressed(true), size), 100)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (item in com.wickedstudios.wonderlot.HolidayContent.scenery) {
+                val size = com.wickedstudios.wonderlot.gfx.CGSize(item.footprint.width * 40.0, item.footprint.height * 40.0)
+                tile(item.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(item.appearance, size), 44)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (act in listOf(com.wickedstudios.wonderlot.EntertainerAct.santa, com.wickedstudios.wonderlot.EntertainerAct.missus)) {
+                val look = com.wickedstudios.wonderlot.StaffStyle(act = act).look(com.wickedstudios.wonderlot.StaffRole.entertainer)
+                tile(act.displayName, com.wickedstudios.wonderlot.gfx.StaffArtwork.previewImage(look, com.wickedstudios.wonderlot.ParkColour.teal,
+                    com.wickedstudios.wonderlot.gfx.CGSize(252.0, 264.0)), 120)
+            }
+        }
+    }
+}

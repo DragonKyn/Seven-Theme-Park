@@ -81,6 +81,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
     var showingAbout by remember { mutableStateOf(false) }
     var showingGraphics by remember { mutableStateOf(false) }
     var showingAnnouncement by remember { mutableStateOf(false) }
+    var showingGallery by remember { mutableStateOf(false) }
     var ladderOnHoliday by remember { mutableStateOf(false) }
     val holidayOn = HolidaySeason.isActive()
     var slotToDelete by remember { mutableStateOf<Int?>(null) }
@@ -134,7 +135,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
         )
 
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Masthead(holidayOn, Modifier.padding(top = 22.dp))
+            Masthead(holidayOn, Modifier.padding(top = 22.dp), onGallery = { showingGallery = true })
             Spacer(Modifier.weight(1f))
 
             Column(
@@ -192,6 +193,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
 
     if (showingTrials) TrialLadderScreen(router, services, onClose = { showingTrials = false }, startOnHoliday = ladderOnHoliday)
     if (showingAbout) AboutSheet(onDismiss = { showingAbout = false })
+    if (showingGallery) HolidayGallery(onClose = { showingGallery = false })
     if (showingGraphics) GraphicsSheet(services, onDismiss = { showingGraphics = false })
     if (showingAnnouncement) {
         HolidayAnnouncement(services, onDismiss = { showingAnnouncement = false }, onSeeTrials = { ladderOnHoliday = true; showingTrials = true })
@@ -204,8 +206,9 @@ private fun firstEmptySlot(slots: Map<Int, SaveSlotSummary>): Int? {
     return null
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun Masthead(holiday: Boolean, modifier: Modifier = Modifier) {
+private fun Masthead(holiday: Boolean, modifier: Modifier = Modifier, onGallery: () -> Unit = {}) {
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         // Lights across the top of the screen while the event is on.
         if (holiday) FestiveLights(Modifier.padding(horizontal = 12.dp))
@@ -218,7 +221,10 @@ private fun Masthead(holiday: Boolean, modifier: Modifier = Modifier) {
             ),
         )
         Tagline(AppInfo.activeTaglines)
-        if (holiday) HolidayRibbon()
+        if (holiday) {
+            // A long press opens the art gallery in a build made for trying the event out.
+            HolidayRibbon(if (com.wickedstudios.wonderlot.BuildConfig.HOLIDAY_PREVIEW) Modifier.combinedClickable(onClick = {}, onLongClick = onGallery) else Modifier)
+        }
         Box(Modifier.width(190.dp).height(1.dp).background(
             Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent))))
     }

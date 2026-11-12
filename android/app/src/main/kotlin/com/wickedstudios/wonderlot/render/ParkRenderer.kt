@@ -451,7 +451,7 @@ class ParkRenderer(
     private fun tileBitmap(tile: Tile, coord: GridCoord, map: ParkMap, rail: ParkColour?): Bitmap {
         val plain = plainTileBitmap(tile, coord, map, rail)
         if (!renderedSeason) return plain
-        return SnowArtwork.dust(plain, tile.terrain, tileVariant(coord), neighbourMask(tile, coord, map), tile.style, tileSide)
+        return SnowArtwork.dust(plain, tile.terrain, coord.x * 73 + coord.y * 179, neighbourMask(tile, coord, map), tile.style, tileSide)
     }
 
     private fun plainTileBitmap(tile: Tile, coord: GridCoord, map: ParkMap, rail: ParkColour?): Bitmap {
