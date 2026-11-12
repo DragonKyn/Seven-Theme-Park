@@ -41,7 +41,7 @@ struct TrialTrackerView: View {
                 .background(Circle().fill(statusColour.opacity(0.18)))
 
             VStack(alignment: .leading, spacing: 1) {
-                Text("TRIAL \(trial.number)  ·  \(trial.title.uppercased())")
+                Text("\(trial.isHoliday ? "DAY" : "TRIAL") \(trial.number)  ·  \(trial.title.uppercased())")
                     .font(.system(size: 9, weight: .heavy, design: .rounded))
                     .tracking(1)
                     .foregroundStyle(Theme.textSecondary)

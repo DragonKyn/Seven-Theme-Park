@@ -83,6 +83,9 @@ final class ParkScene: SKScene {
     private var renderedUniform: ParkColour?
     /// The colours the park's furniture is currently painted in.
     private var renderedScheme: ParkScheme?
+    /// Whether the ground is currently drawn with snow on it, and the flakes falling over the view.
+    private var renderedSeason = false
+    private var snowEmitter: SKEmitterNode?
     private var carPark: SKSpriteNode?
     private var renderedCarParkLevel = -1
     private var entranceSign: SKSpriteNode?
@@ -423,6 +426,7 @@ final class ParkScene: SKScene {
         if isInteractive { updateGestureModes() }
         repaintParkFurniture(state: controller.state)
         syncTiles(state: controller.state)
+        syncSnowfall(state: controller.state)
         syncLitter(state: controller.state)
         syncScenery(state: controller.state)
         syncTrackElements(state: controller.state)
@@ -438,6 +442,36 @@ final class ParkScene: SKScene {
             applyCameraRequest(controller: controller)
             syncMoveMarker(controller: controller)
         }
+    }
+
+    /// Flakes falling over whatever the camera is looking at. The emitter is
+    /// hung from the camera, so the snow is always where the player is looking.
+    private func syncSnowfall(state: GameState) {
+        let falling = state.snowing && HolidaySeason.isActive(for: state)
+        if snowEmitter == nil {
+            guard falling else { return }
+            let emitter = SKEmitterNode()
+            emitter.particleTexture = SpriteFactory.circleTexture(colour: .white, diameter: 8)
+            emitter.particleSize = CGSize(width: 5, height: 5)
+            emitter.particleLifetime = 9
+            emitter.particleLifetimeRange = 3
+            emitter.particleSpeed = 46
+            emitter.particleSpeedRange = 26
+            emitter.emissionAngle = -.pi / 2
+            emitter.emissionAngleRange = .pi / 8
+            emitter.particleAlpha = 0.9
+            emitter.particleAlphaRange = 0.25
+            emitter.particleScale = 0.6
+            emitter.particleScaleRange = 0.5
+            emitter.particlePositionRange = CGVector(dx: max(size.width, 400) * 1.3, dy: 4)
+            emitter.position = CGPoint(x: 0, y: max(size.height, 700) / 2 + 20)
+            emitter.zPosition = 50
+            emitter.advanceSimulationTime(9)
+            cameraNode.addChild(emitter)
+            snowEmitter = emitter
+        }
+        let wanted: CGFloat = falling ? (GraphicsBudget.isReduced ? 28 : 70) : 0
+        if snowEmitter?.particleBirthRate != wanted { snowEmitter?.particleBirthRate = wanted }
     }
 
     /// A pulsing square on the spot somebody is about to be sent to.
@@ -514,6 +548,13 @@ final class ParkScene: SKScene {
     private func syncTiles(state: GameState) {
         if tileNodes.isEmpty {
             buildTileNodes(state: state)
+        }
+        // The season turning is not a change to the map either: the ground gains or loses its snow.
+        let season = HolidaySeason.isActive(for: state)
+        if season != renderedSeason {
+            renderedSeason = season
+            for index in tileAppearance.indices { tileAppearance[index] = -1 }
+            renderedMapGeneration = -1
         }
         // Repainting the track is not a change to the map, so it has to force
         // its own pass. Every tile is re-examined, which is the same work one
@@ -690,6 +731,22 @@ final class ParkScene: SKScene {
                          at coord: GridCoord,
                          map: ParkMap,
                          rail: ParkColour? = nil) -> SKTexture {
+        let plain = plainTexture(for: tile, at: coord, map: map, rail: rail)
+        guard renderedSeason else { return plain }
+        let mask: Int
+        switch tile.terrain {
+        case .water: mask = shoreMask(at: coord, map: map)
+        case .rock, .forest: mask = edgeMask(for: tile.terrain, at: coord, map: map)
+        default: mask = walkwayConnections(at: coord, map: map)
+        }
+        return SnowArtwork.dust(plain, terrain: tile.terrain, seed: coord.x * 73 + coord.y * 179,
+                                mask: mask, style: tile.style, side: Self.tileSide)
+    }
+
+    private func plainTexture(for tile: Tile,
+                              at coord: GridCoord,
+                              map: ParkMap,
+                              rail: ParkColour? = nil) -> SKTexture {
         let variant = tileVariant(at: coord)
 
         switch tile.terrain {

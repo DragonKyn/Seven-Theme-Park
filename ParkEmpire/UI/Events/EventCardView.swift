@@ -24,6 +24,8 @@ struct ParkEventPresentation {
         case destination(String)
         /// A stamped certificate line, for a verdict handed down.
         case stamp(String, passed: Bool)
+        /// A holiday party arriving: a red band hung with lights.
+        case festive(String)
     }
 
     let banner: Banner
@@ -61,6 +63,7 @@ struct EventCardView: View {
     let onDismiss: () -> Void
 
     @State private var shown = false
+    @State private var burst = false
 
     private static let corner: CGFloat = 20
 
@@ -74,6 +77,12 @@ struct EventCardView: View {
                 .ignoresSafeArea()
                 .onTapGesture(perform: finish)
 
+            // A holiday party comes in with a burst of confetti and snow over the park.
+            if case .festive = presentation.banner {
+                SnowOverlayView(flakes: 70).ignoresSafeArea()
+                ConfettiBurst(active: burst).allowsHitTesting(false)
+            }
+
             card
                 .scaleEffect(shown ? 1 : 0.75)
                 .opacity(shown ? 1 : 0)
@@ -81,6 +90,7 @@ struct EventCardView: View {
         }
         .onAppear {
             withAnimation(.spring(response: 0.42, dampingFraction: 0.64)) { shown = true }
+            withAnimation(.easeOut(duration: 2.2)) { burst = true }
         }
     }
 
@@ -236,6 +246,21 @@ private struct BannerView: View {
 
         case .stamp(let title, let passed):
             stamp(title, colour: passed ? Theme.accent : Theme.danger)
+
+        case .festive(let text):
+            VStack(spacing: 0) {
+                Text(text.uppercased())
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .tracking(2)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 9)
+                    .padding(.bottom, 5)
+                    .background(Festive.ribbon)
+                FestiveLights().padding(.horizontal, 6)
+            }
         }
     }
 
@@ -351,6 +376,19 @@ extension ParkEventPresentation {
                     : [Figure(value: "\(Int(report.condition))%", caption: "CONDITION"),
                        Figure(value: CurrencyFormatter.compact(report.fine), caption: "FINE"),
                        Figure(value: "CLOSED", caption: "UNTIL REPAIRED")])
+
+        case .tourBus(let report) where report.isHolidayParty:
+            return ParkEventPresentation(
+                banner: .festive(report.groupName),
+                symbolName: "party.popper.fill",
+                tint: Festive.red,
+                deepTint: Color(red: 0.10, green: 0.45, blue: 0.30),
+                kicker: "HOLIDAY PARTY ARRIVING",
+                headline: report.headline,
+                detail: report.detail,
+                figures: [Figure(value: "\(report.count)", caption: "ON BOARD"),
+                          Figure(value: "5x", caption: "THE MONEY"),
+                          Figure(value: "\(report.count - report.childCount)", caption: "ADULTS")])
 
         case .tourBus(let report):
             return ParkEventPresentation(

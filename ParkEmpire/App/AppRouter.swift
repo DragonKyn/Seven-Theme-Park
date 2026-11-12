@@ -19,6 +19,8 @@ final class AppRouter: ObservableObject {
     /// Set when a finished trial sends the player back to the ladder, so the
     /// menu opens straight onto it.
     @Published var opensLadderOnMenu = false
+    /// Set along with it when the trial that sent the player back was one of the twelve days.
+    @Published var opensHolidayTab = false
     @Published var errorMessage: String?
 
     private let saveService = SaveGameService()
@@ -41,7 +43,7 @@ final class AppRouter: ObservableObject {
     }
 
     func isTrialUnlocked(_ trial: TrialDefinition) -> Bool {
-        TrialProgressStore().isUnlocked(trial)
+        trial.isHoliday ? HolidayStore().isOpen(trial) : TrialProgressStore().isUnlocked(trial)
     }
 
     /// Starts a trial from day one, replacing any run already on the go.

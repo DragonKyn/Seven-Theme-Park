@@ -40,6 +40,8 @@ struct StaffStyleEditor: View {
     let role: StaffRole
     @Binding var style: StaffStyle
     let uniform: ParkColour
+    /// The acts on offer: the everyday ones, plus Santa and Mrs. Claus while the event is on.
+    var acts: [EntertainerAct] = EntertainerAct.allCases
 
     private var look: StaffLook { style.look(for: role) }
 
@@ -141,7 +143,7 @@ struct StaffStyleEditor: View {
                 .foregroundStyle(.secondary)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 8)], spacing: 8) {
-                ForEach(EntertainerAct.allCases) { act in
+                ForEach(acts) { act in
                     actButton(act)
                 }
             }
@@ -243,7 +245,8 @@ struct StaffHireSheet: View {
                 Section {
                     StaffStyleEditor(role: role,
                                      style: $style,
-                                     uniform: controller.state.uniformColour)
+                                     uniform: controller.state.uniformColour,
+                                     acts: controller.availableActs)
                         .padding(.vertical, 4)
                 } footer: {
                     if let definition {

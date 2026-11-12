@@ -7,16 +7,34 @@ struct TrialLadderView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showingPerks = false
+    @State private var holidayTab: Bool
+
+    init(startOnHoliday: Bool = false) {
+        _holidayTab = State(initialValue: startOnHoliday && HolidaySeason.isActive())
+    }
 
     var body: some View {
         NavigationContainer {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    header
-                    perksLink
+                    // The twelve days have a tab of their own while the event is on.
+                    if HolidaySeason.isActive() {
+                        Picker("Ladder", selection: $holidayTab) {
+                            Text("Park Trials").tag(false)
+                            Text("12 Days of Holiday Wonder").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                    }
 
-                    ForEach(TrialContent.all) { trial in
-                        rung(trial)
+                    if holidayTab && HolidaySeason.isActive() {
+                        HolidayLadderSection()
+                    } else {
+                        header
+                        perksLink
+
+                        ForEach(TrialContent.all) { trial in
+                            rung(trial)
+                        }
                     }
                 }
                 .padding(16)
@@ -270,11 +288,18 @@ private struct TrialRungCard: View {
 }
 
 /// Everything about one trial, and where to play it.
-private struct TrialBriefingView: View {
+struct TrialBriefingView: View {
     @EnvironmentObject private var router: AppRouter
     let trial: TrialDefinition
 
     @State private var confirmingRestart = false
+
+    private var isHoliday: Bool { trial.isHoliday }
+    /// The twelve days are done per year; the ladder is done for good.
+    private var bestDay: Int? {
+        isHoliday ? (HolidayStore().isCompleted(trial) ? 1 : nil) : router.completedTrials[trial.id]
+    }
+    private var isOpen: Bool { !isHoliday || HolidayStore().isOpen(trial) }
 
     private var run: SaveSlotSummary? { router.trialRuns[trial.id] }
 
@@ -288,17 +313,17 @@ private struct TrialBriefingView: View {
                     .frame(maxWidth: 220)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay {
-                        if router.completedTrials[trial.id] != nil {
+                        if bestDay != nil {
                             CompleteStamp(scale: 1.6)
                         }
                     }
                     .frame(maxWidth: .infinity)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("TRIAL \(trial.number)  ·  \(trial.map.name.uppercased())")
+                    Text("\(isHoliday ? "DAY" : "TRIAL") \(trial.number)  ·  \(trial.map.name.uppercased())")
                         .font(.system(size: 10, weight: .heavy, design: .rounded))
                         .tracking(1.6)
-                        .foregroundStyle(Theme.money)
+                        .foregroundStyle(isHoliday ? Festive.gold : Theme.money)
                     Text(trial.title)
                         .font(.system(size: 26, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
@@ -316,6 +341,10 @@ private struct TrialBriefingView: View {
                     }
                 }
 
+                if isHoliday {
+                    section("REWARDS") { HolidayRewardList(rewardIDs: trial.rewardIDs) }
+                }
+
                 section("RULES") {
                     rule("calendar", "Finish by the end of day \(trial.dayLimit)")
                     rule("banknote", "Start with \(CurrencyFormatter.short(trial.startingCash))")
@@ -325,13 +354,19 @@ private struct TrialBriefingView: View {
                     rule(trial.medal.symbolName, "Medal: \(trial.medal.name)")
                 }
 
-                if let bestDay = router.completedTrials[trial.id] {
-                    Label("Medal earned. Best finish: day \(bestDay).", systemImage: trial.medal.symbolName)
+                if let bestDay {
+                    Label(isHoliday ? "Done this year. Play again for the fun of it." : "Medal earned. Best finish: day \(bestDay).",
+                          systemImage: trial.medal.symbolName)
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.money)
                 }
 
-                if let run {
+                if !isOpen {
+                    let needed = trial.needsRewardID.flatMap { HolidayRewards.definition($0)?.title } ?? "an earlier reward"
+                    Label("Earn \(needed) from another day to open this one.", systemImage: "lock.fill")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.textSecondary)
+                } else if let run {
                     primaryButton("Resume, day \(run.day)", symbol: "play.fill") {
                         router.resumeTrial(trial)
                     }
@@ -339,7 +374,7 @@ private struct TrialBriefingView: View {
                         confirmingRestart = true
                     }
                 } else {
-                    primaryButton(router.completedTrials[trial.id] == nil ? "Begin trial" : "Play again",
+                    primaryButton(bestDay == nil ? "Begin trial" : "Play again",
                                   symbol: "flag.checkered") {
                         router.startTrial(trial)
                     }

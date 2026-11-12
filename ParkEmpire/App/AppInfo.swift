@@ -19,6 +19,20 @@ enum AppInfo {
         "Turn a little lot into a lot of wonder."
     ]
 
+    /// What the title screen says while the holiday event is on.
+    static let holidayTaglines = [
+        "Deck the lot.",
+        "Snow on the ground, lights on the rides.",
+        "Twelve days of holiday wonder.",
+        "Santa is hiring.",
+        "Turn a little lot into a lot of wonder, with tinsel."
+    ]
+
+    /// The lines to show now: the holiday ones during the event.
+    static var activeTaglines: [String] {
+        HolidaySeason.isActive() ? holidayTaglines : taglines
+    }
+
     /// Used anywhere a single line is wanted and there is no room to rotate.
     static var tagline: String { taglines[0] }
 }

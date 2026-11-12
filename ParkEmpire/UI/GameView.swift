@@ -88,6 +88,7 @@ struct GameView: View {
                                 onLeave: {
                                     controller.dismissTrialResult()
                                     router.opensLadderOnMenu = report.result.won
+                                    router.opensHolidayTab = report.result.trial?.isHoliday == true
                                     router.exitToMenu()
                                 })
                     .transition(.opacity)

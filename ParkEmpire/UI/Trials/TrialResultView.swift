@@ -32,7 +32,7 @@ struct TrialResultView: View {
         VStack(spacing: 12) {
             medal
 
-            Text(presentation.won ? "TRIAL \(presentation.number) COMPLETE" : "TRIAL \(presentation.number) · OUT OF TIME")
+            Text(presentation.won ? "\(presentation.noun) \(presentation.number) COMPLETE" : "\(presentation.noun) \(presentation.number) · OUT OF TIME")
                 .font(.system(size: 10, weight: .heavy, design: .rounded))
                 .tracking(2.2)
                 .foregroundStyle(presentation.won ? Theme.money : Theme.danger)
@@ -61,6 +61,13 @@ struct TrialResultView: View {
                 Label(unlockLine, systemImage: "lock.open.fill")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.accent)
+            }
+
+            // What a holiday trial handed over for the first time.
+            ForEach(report.rewards) { reward in
+                Label("Unlocked: \(reward.title)", systemImage: "gift.fill")
+                    .font(.system(size: 12, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Festive.gold)
             }
 
             VStack(spacing: 8) {
@@ -124,6 +131,7 @@ struct TrialResultView: View {
 /// Everything the result card says, worked out from the report.
 struct TrialResultPresentation {
     let number: Int
+    let noun: String
     let title: String
     let won: Bool
     let detail: String
@@ -134,6 +142,7 @@ struct TrialResultPresentation {
     init(report: TrialResultReport) {
         let trial = report.result.trial
         number = trial?.number ?? 0
+        noun = trial?.isHoliday == true ? "DAY" : "TRIAL"
         title = trial?.title ?? "Trial"
         won = report.result.won
         medalSymbol = trial?.medal.symbolName ?? "rosette"

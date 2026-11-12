@@ -13,6 +13,8 @@ struct MainMenuView: View {
     @State private var showingTrials = false
     @State private var showingAbout = false
     @State private var showingDisplay = false
+    @State private var showingAnnouncement = false
+    @State private var ladderOnHoliday = false
     @State private var demo: DemoParkBackdrop?
     /// The slot the player has asked to delete, held until they confirm.
     @State private var slotToDelete: Int?
@@ -21,6 +23,10 @@ struct MainMenuView: View {
         ZStack {
             backdrop
                 .ignoresSafeArea()
+
+            if HolidaySeason.isActive() && demo == nil {
+                SnowOverlayView(flakes: 80).ignoresSafeArea()
+            }
 
             LinearGradient(stops: [
                 .init(color: .black.opacity(0.70), location: 0.00),
@@ -69,7 +75,7 @@ struct MainMenuView: View {
             }
         }
         .fullScreenCover(isPresented: $showingTrials) {
-            TrialLadderView()
+            TrialLadderView(startOnHoliday: ladderOnHoliday)
         }
         .sheet(isPresented: $showingAbout) {
             AboutView()
@@ -85,7 +91,20 @@ struct MainMenuView: View {
             }
             if router.opensLadderOnMenu {
                 router.opensLadderOnMenu = false
+                ladderOnHoliday = router.opensHolidayTab
+                router.opensHolidayTab = false
                 showingTrials = true
+            }
+            // The holiday announcement, a moment after the menu is up, until it has been put away for the year.
+            if HolidayStore().shouldAnnounce() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { showingAnnouncement = true }
+            }
+        }
+        .overlay {
+            if showingAnnouncement {
+                HolidayAnnouncementView(onSeeTrials: { ladderOnHoliday = true; showingTrials = true },
+                                        onDismiss: { showingAnnouncement = false })
+                    .ignoresSafeArea()
             }
         }
     }
@@ -94,6 +113,11 @@ struct MainMenuView: View {
 
     private var masthead: some View {
         VStack(spacing: 7) {
+            // Lights across the top of the screen while the event is on.
+            if HolidaySeason.isActive() {
+                FestiveLights().padding(.horizontal, 12)
+            }
+
             Text(AppInfo.gameName)
                 .font(.system(size: 46, weight: .heavy, design: .rounded))
                 .foregroundStyle(
@@ -103,7 +127,11 @@ struct MainMenuView: View {
                 )
                 .shadow(color: .black.opacity(0.55), radius: 10, y: 3)
 
-            TaglineView(taglines: AppInfo.taglines)
+            TaglineView(taglines: AppInfo.activeTaglines)
+
+            if HolidaySeason.isActive() {
+                HolidayRibbon()
+            }
 
             // A hairline under the title, brightest in the middle, which is
             // enough to make the masthead read as a unit.
@@ -131,10 +159,13 @@ struct MainMenuView: View {
         }
 
         Button {
+            ladderOnHoliday = false
             showingTrials = true
         } label: {
             MenuButtonLabel(title: "Park Trials",
-                            subtitle: "\(router.completedTrials.count) of \(TrialContent.all.count) medals · parks on a deadline",
+                            subtitle: HolidaySeason.isActive()
+                                ? "\(router.completedTrials.count) of \(TrialContent.all.count) medals · plus the 12 Days of Holiday Wonder"
+                                : "\(router.completedTrials.count) of \(TrialContent.all.count) medals · parks on a deadline",
                             symbol: "flag.checkered",
                             prominent: false)
         }

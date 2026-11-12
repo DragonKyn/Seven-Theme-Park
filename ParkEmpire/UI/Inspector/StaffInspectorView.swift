@@ -36,7 +36,8 @@ struct StaffInspectorView: View {
                                      style: Binding(
                                         get: { member.style },
                                         set: { controller.setStaffStyle(id: member.id, style: $0) }),
-                                     uniform: controller.state.uniformColour)
+                                     uniform: controller.state.uniformColour,
+                                     acts: controller.availableActs)
                 }
             }
 

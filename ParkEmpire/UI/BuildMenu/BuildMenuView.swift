@@ -306,7 +306,8 @@ struct BuildMenuView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 groupChip(nil, title: "All", symbol: "square.grid.2x2.fill")
-                ForEach(RideGroup.allCases) { group in
+                // The holiday shelf is only there while the event is on.
+                ForEach(RideGroup.allCases.filter { !$0.isSeasonal || controller.isHolidaySeason }) { group in
                     groupChip(group, title: group.displayName, symbol: group.symbolName)
                 }
             }

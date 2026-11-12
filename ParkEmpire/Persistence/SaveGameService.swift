@@ -120,7 +120,7 @@ final class SaveGameService {
     /// The run in progress for each trial that has one, by trial id.
     func trialSummaries() -> [String: SaveSlotSummary] {
         var result: [String: SaveSlotSummary] = [:]
-        for trial in TrialContent.all {
+        for trial in TrialContent.all + TrialContent.holiday {
             if let summary = summary(for: .trial(trial.id)) {
                 result[trial.id] = summary
             }
