@@ -5,9 +5,18 @@ import java.util.Calendar
 /** A calendar day. Kept apart from java.time, which older Android versions do not have. */
 data class CalendarDate(val year: Int, val month: Int, val day: Int) {
     companion object {
+        private var cached: CalendarDate? = null
+        private var cachedAt = 0L
+
+        /** Today's date. Asked for on every frame by the renderer, so the calendar is only read every few seconds. */
         fun today(): CalendarDate {
+            val stamp = System.nanoTime()
+            cached?.let { if (stamp - cachedAt < 5_000_000_000L) return it }
             val now = Calendar.getInstance()
-            return CalendarDate(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1, now.get(Calendar.DAY_OF_MONTH))
+            val date = CalendarDate(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1, now.get(Calendar.DAY_OF_MONTH))
+            cached = date
+            cachedAt = stamp
+            return date
         }
     }
 }

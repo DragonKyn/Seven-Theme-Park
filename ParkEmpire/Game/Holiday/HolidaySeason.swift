@@ -6,9 +6,19 @@ struct CalendarDate: Equatable {
     let month: Int
     let day: Int
 
+    private static var cached: CalendarDate?
+    private static var cachedAt: TimeInterval = 0
+
+    /// Today's date. Asked for on every frame by the scene, so the calendar
+    /// is only read every few seconds.
     static var today: CalendarDate {
+        let stamp = ProcessInfo.processInfo.systemUptime
+        if let cached, stamp - cachedAt < 5 { return cached }
         let parts = Calendar.current.dateComponents([.year, .month, .day], from: Date())
-        return CalendarDate(year: parts.year ?? 2000, month: parts.month ?? 1, day: parts.day ?? 1)
+        let date = CalendarDate(year: parts.year ?? 2000, month: parts.month ?? 1, day: parts.day ?? 1)
+        cached = date
+        cachedAt = stamp
+        return date
     }
 }
 

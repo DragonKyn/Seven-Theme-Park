@@ -739,7 +739,7 @@ final class ParkScene: SKScene {
         case .rock, .forest: mask = edgeMask(for: tile.terrain, at: coord, map: map)
         default: mask = walkwayConnections(at: coord, map: map)
         }
-        return SnowArtwork.dust(plain, terrain: tile.terrain, seed: coord.x * 73 + coord.y * 179,
+        return SnowArtwork.dust(plain, terrain: tile.terrain, seed: (coord.x * 73 + coord.y * 179) % 8,
                                 mask: mask, style: Int(tile.style), side: Self.tileSide)
     }
 
