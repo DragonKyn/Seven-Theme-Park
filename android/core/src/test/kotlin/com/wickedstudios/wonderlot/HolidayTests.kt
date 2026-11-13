@@ -115,7 +115,7 @@ class HolidayTests {
     fun theEventHasTheContentItPromised() {
         assertEquals(12, HolidayContent.attractions.size)
         assertEquals(8, HolidayContent.attractions.count { it.id.startsWith("ride.xmas.") })
-        assertEquals(2, HolidayContent.facilities.size)
+        assertEquals(3, HolidayContent.facilities.size)
         assertEquals(4, HolidayContent.attractions.count { it.id.startsWith("ride.newyear.") })
         assertEquals(12, TrialContent.holiday.size)
         assertEquals(300, Balance.maxGuests)
@@ -406,6 +406,81 @@ class HolidayTests {
         assertTrue(rink.seasonal)
         assertNull(HolidayMakeovers.rewardFor(rink.id))
         assertTrue(GameContent.allBuildables.any { it.id == "shop.xmas.candy" })
+    }
+
+    @Test
+    fun theDailyGiftIsOnlyOnTheTwentiethToTheTwentySixth() {
+        fun at(m: Int, d: Int) = CalendarDate(2026, m, d)
+        HolidaySeason.override = null
+        assertFalse(HolidayGifts.inWindow(at(12, 19)))
+        assertTrue(HolidayGifts.inWindow(at(12, 20)))
+        assertTrue(HolidayGifts.inWindow(at(12, 26)))
+        assertFalse(HolidayGifts.inWindow(at(12, 27)))
+        assertFalse(HolidayGifts.inWindow(at(11, 30)))
+    }
+
+    @Test
+    fun aGiftCanBeTakenOncePerDayAndPaysOut() {
+        HolidaySeason.override = null
+        HolidaySeason.clock = { CalendarDate(2026, 12, 22) }
+        val store = HolidayStore(MemoryStore())
+        val boosts = BoostCenter(MemoryStore())
+        assertTrue(HolidayGifts.isAvailable(store))
+        val gift = HolidayGifts.claim(store, boosts, kotlin.random.Random(3))
+        assertNotNull(gift)
+        assertFalse(HolidayGifts.isAvailable(store), "one a day")
+        assertNull(HolidayGifts.claim(store, boosts, kotlin.random.Random(3)), "nothing more today")
+        assertEquals(1, store.giftsTaken)
+        when (gift) {
+            is HolidayGift.Boost -> assertTrue(boosts.remaining(gift.kind) > 9.9 * 3600, "ten hours of it")
+            is HolidayGift.Ride -> assertTrue(store.isUnlocked(gift.reward.id))
+            null -> {}
+        }
+        // The next day there is another.
+        HolidaySeason.clock = { CalendarDate(2026, 12, 23) }
+        assertTrue(HolidayGifts.isAvailable(store))
+    }
+
+    @Test
+    fun giftsNeverGiveARideThePlayerAlreadyHasAndNeverRunOut() {
+        HolidaySeason.override = null
+        val store = HolidayStore(MemoryStore())
+        val boosts = BoostCenter(MemoryStore())
+        var rides = 0
+        for (day in 20..26) {
+            val gift = HolidayGifts.claim(store, boosts, kotlin.random.Random(day * 7), CalendarDate(2026, 12, day))
+            assertNotNull(gift, "a gift on the $day")
+            if (gift is HolidayGift.Ride) rides += 1
+        }
+        assertTrue(rides <= 3, "only three rides to give: $rides")
+        assertEquals(7, store.giftsTaken)
+        // With every ride held, the gift is a boost.
+        for (id in HolidayGifts.rideRewardIDs) store.unlock(id)
+        store.markGiftClaimed(CalendarDate(2025, 1, 1))
+        val last = HolidayGifts.claim(HolidayStore(MemoryStore()).also { s -> HolidayGifts.rideRewardIDs.forEach { s.unlock(it) } }, boosts, kotlin.random.Random(1), CalendarDate(2026, 12, 24))
+        assertTrue(last is HolidayGift.Boost)
+    }
+
+    @Test
+    fun aLongBoostReadsAsHoursAndStacksPastTheAdvertCeiling() {
+        val boosts = BoostCenter(MemoryStore())
+        boosts.grantFor(BoostKind.turboSpeed, 600.0)
+        assertEquals("9h 59m", boosts.remainingLabel(BoostKind.turboSpeed).let { if (it == "10h 00m") "9h 59m" else it })
+        assertTrue(boosts.remaining(BoostKind.turboSpeed) > Balance.adBoostMaximumMinutes * 60)
+    }
+
+    @Test
+    fun theNewDecorationsAndTheSnowConeCartAreInTheCatalogue() {
+        for (id in listOf("scenery.xmas.canefence", "scenery.xmas.lightstrand", "scenery.xmas.snowfamily")) {
+            assertNotNull(GameContent.scenery(id), id)
+        }
+        val cart = GameContent.facility("shop.xmas.snowcone")!!
+        assertTrue(cart.acceptsUpgrades)
+        // The cart and the family are earned; the cane fence and the lights are free.
+        assertNotNull(HolidayRewards.requiredFor("shop.xmas.snowcone"))
+        assertNotNull(HolidayRewards.requiredFor("scenery.xmas.snowfamily"))
+        assertNull(HolidayRewards.requiredFor("scenery.xmas.canefence"))
+        assertNull(HolidayRewards.requiredFor("scenery.xmas.lightstrand"))
     }
 
     // endregion

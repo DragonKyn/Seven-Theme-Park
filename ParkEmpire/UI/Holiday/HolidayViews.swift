@@ -303,6 +303,7 @@ struct HolidayAnnouncementView: View {
                         row("cart.fill", "Hot chocolate and candy", "Two seasonal food stands that take the usual upgrades.")
                         row("gift.fill", "12 Days of Holiday Wonder", "Twelve festive trials with a tab of their own in Park Trials.")
                         row("paintbrush.fill", "Exclusive rewards", "Earn decorations, ride makeovers and new rides, and keep them for every future holiday.")
+                        row("gift.fill", "A gift every day, 20 to 26 December", "Open it for ten free hours of a boost, or a ride from the 12 Days.")
                         row("party.popper.fill", "Company holiday parties", "Big office outings arrive by the busload with five times the spending money.")
 
                         Text("Snow is falling, the ground is white, and it all ends on January 5. Come and play.")

@@ -239,6 +239,14 @@ enum BuildingMotif: String, Codable {
     case hotCocoaStand
     /// A candy stall with jars of sweets and a striped awning.
     case candyStand
+    /// Crossed candy canes with a striped rail.
+    case candyCaneFence
+    /// A strand of bulbs between two stakes.
+    case holidayLights
+    /// Three snowmen in matching scarves.
+    case snowFamily
+    /// A cart under a striped umbrella, selling shaved ice.
+    case snowConeCart
 
     /// Colours the player can pick for this shape when placing it or
     /// afterwards. Empty for everything that is meant to look the way it was
@@ -324,7 +332,8 @@ enum BuildingMotif: String, Codable {
         case .hedge, .picnicTable, .flagPole, .gardenArch, .clockTower:
             return .none
         case .xmasTree, .snowman, .wreathArch, .giftStack, .lightPole, .candyCanePost,
-             .fireworkStand, .countdownClock, .hotCocoaStand, .candyStand:
+             .fireworkStand, .countdownClock, .hotCocoaStand, .candyStand,
+             .candyCaneFence, .holidayLights, .snowFamily, .snowConeCart:
             return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,

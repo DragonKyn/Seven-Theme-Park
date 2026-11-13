@@ -82,6 +82,7 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
     var showingGraphics by remember { mutableStateOf(false) }
     var showingAnnouncement by remember { mutableStateOf(false) }
     var showingGallery by remember { mutableStateOf(false) }
+    var showingGift by remember { mutableStateOf(false) }
     var ladderOnHoliday by remember { mutableStateOf(false) }
     val holidayOn = HolidaySeason.isActive()
     var slotToDelete by remember { mutableStateOf<Int?>(null) }
@@ -108,6 +109,9 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
         if (services.holiday.shouldAnnounce()) {
             delay(900)
             showingAnnouncement = true
+        } else if (com.wickedstudios.wonderlot.HolidayGifts.isAvailable(services.holiday)) {
+            delay(900)
+            showingGift = true
         }
     }
 
@@ -193,10 +197,15 @@ fun MainMenuScreen(router: AppRouter, services: AppServices) {
 
     if (showingTrials) TrialLadderScreen(router, services, onClose = { showingTrials = false }, startOnHoliday = ladderOnHoliday)
     if (showingAbout) AboutSheet(onDismiss = { showingAbout = false })
+    if (showingGift) HolidayGiftCard(services, onDismiss = { showingGift = false })
     if (showingGallery) HolidayGallery(onClose = { showingGallery = false })
     if (showingGraphics) GraphicsSheet(services, onDismiss = { showingGraphics = false })
     if (showingAnnouncement) {
-        HolidayAnnouncement(services, onDismiss = { showingAnnouncement = false }, onSeeTrials = { ladderOnHoliday = true; showingTrials = true })
+        HolidayAnnouncement(services, onDismiss = {
+            showingAnnouncement = false
+            // Today's gift is next, once the announcement is out of the way.
+            if (com.wickedstudios.wonderlot.HolidayGifts.isAvailable(services.holiday)) showingGift = true
+        }, onSeeTrials = { ladderOnHoliday = true; showingTrials = true })
     }
 }
 

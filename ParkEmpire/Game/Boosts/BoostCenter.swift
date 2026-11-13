@@ -98,6 +98,8 @@ final class BoostCenter: ObservableObject {
     func remainingLabel(_ kind: BoostKind) -> String? {
         let seconds = remaining(kind)
         guard seconds > 0 else { return nil }
+        // A gift can run for hours, which reads better as hours and minutes.
+        if seconds >= 3600 { return String(format: "%dh %02dm", Int(seconds) / 3600, (Int(seconds) % 3600) / 60) }
         return String(format: "%d:%02d", Int(seconds) / 60, Int(seconds) % 60)
     }
 
@@ -115,6 +117,15 @@ final class BoostCenter: ObservableObject {
         let ceiling = now.addingTimeInterval(Balance.adBoostMaximumMinutes * 60)
         let until = min(from.addingTimeInterval(Balance.adBoostMinutes * 60), ceiling)
         defaults.set(until.timeIntervalSince1970, forKey: Self.key(kind))
+        generation += 1
+    }
+
+    /// Adds `minutes` of a boost outright, for a gift: it stacks on what is
+    /// running and ignores the advert ceiling.
+    func grantFor(_ kind: BoostKind, minutes: Double) {
+        let now = Date()
+        let from = max(now, expiry(kind) ?? now)
+        defaults.set(from.addingTimeInterval(minutes * 60).timeIntervalSince1970, forKey: Self.key(kind))
         generation += 1
     }
 

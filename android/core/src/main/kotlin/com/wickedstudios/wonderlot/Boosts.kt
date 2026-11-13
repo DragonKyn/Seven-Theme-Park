@@ -53,7 +53,9 @@ class BoostCenter(
     fun remainingLabel(kind: BoostKind): String? {
         val seconds = remaining(kind)
         if (seconds <= 0) return null
-        return String.format("%d:%02d", seconds.toInt() / 60, seconds.toInt() % 60)
+        // A gift can run for hours, which reads better as hours and minutes.
+        if (seconds >= 3600) return String.format(java.util.Locale.US, "%dh %02dm", seconds.toInt() / 3600, (seconds.toInt() % 3600) / 60)
+        return String.format(java.util.Locale.US, "%d:%02d", seconds.toInt() / 60, seconds.toInt() % 60)
     }
 
     /**
@@ -66,6 +68,14 @@ class BoostCenter(
         val ceiling = current + (Balance.adBoostMaximumMinutes * 60_000).toLong()
         val until = minOf(from + (Balance.adBoostMinutes * 60_000).toLong(), ceiling)
         store.putString(key(kind), until.toString())
+        generation += 1
+    }
+
+    /** Adds [minutes] of a boost outright, for a gift: it stacks on what is running and ignores the advert ceiling. */
+    fun grantFor(kind: BoostKind, minutes: Double) {
+        val current = now()
+        val from = maxOf(current, expiry(kind) ?: current)
+        store.putString(key(kind), (from + (minutes * 60_000).toLong()).toString())
         generation += 1
     }
 

@@ -356,7 +356,7 @@ object TrialContent {
             "map.pinewood", 20_000.0, 8,
             listOf(TrialGoal.HolidayRides(3), TrialGoal.GuestsInPark(40), TrialGoal.Happiness(65.0)),
             medal = TrialMedal("Hen Keeper", "snowflake"), series = TrialSeries.holiday,
-            rewardIDs = listOf("reward.lightpole")),
+            rewardIDs = listOf("reward.lightpole", "reward.snowcone")),
 
         TrialDefinition("holiday.04", 4, "Four Calling Birds",
             "The office parties are coming. Fill the park with rides, host a company holiday party and let them spend.",
@@ -391,7 +391,7 @@ object TrialContent {
             MapCatalogue.openMeadowID, 20_000.0, 10,
             listOf(TrialGoal.GuestsInPark(60), TrialGoal.Happiness(70.0), TrialGoal.Shops(6)),
             medal = TrialMedal("Milkmaid", "face.smiling"), series = TrialSeries.holiday,
-            rewardIDs = listOf("reward.ride.startopper")),
+            rewardIDs = listOf("reward.ride.startopper", "reward.snowfamily")),
 
         TrialDefinition("holiday.09", 9, "Nine Ladies Dancing",
             "The whole company on the payroll. Three holiday performers, two of them trained, among six staff.",

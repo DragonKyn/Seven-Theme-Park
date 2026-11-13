@@ -111,6 +111,11 @@ object HolidayRewards {
         HolidayReward("reward.ride.starburst", HolidayRewardKind.ride, "Starburst Coaster",
             "The New Year finale: a coaster that ends in fireworks.", "sparkle", listOf("ride.newyear.starburst")),
 
+        HolidayReward("reward.snowcone", HolidayRewardKind.decoration, "Snow Cone Cart",
+            "A cart that sells cones of shaved ice with a choice of syrups. Takes the usual shop upgrades.", "snowflake", listOf("shop.xmas.snowcone")),
+        HolidayReward("reward.snowfamily", HolidayRewardKind.decoration, "Snow Family",
+            "A whole family of snowmen in matching scarves.", "person.3.fill", listOf("scenery.xmas.snowfamily")),
+
         HolidayReward("reward.performer.missus", HolidayRewardKind.performer, "Mrs. Claus",
             "A new entertainer: bakes cookies for anybody who looks hungry.", "person.fill", listOf("act.missus")),
     )
@@ -199,6 +204,33 @@ class HolidayStore(private val store: KeyValueStore) {
 
     /** Whether a holiday trial can be started: any reward it needs is held. */
     fun isOpen(trial: TrialDefinition): Boolean = trial.needsRewardID?.let { isUnlocked(it) } ?: true
+
+    // region Daily gifts
+
+    private val giftDayKey = "holiday.giftDay"
+    private val giftCountKey = "holiday.giftCount"
+
+    private fun dayStamp(date: CalendarDate) = "${date.year}-${date.month}-${date.day}"
+
+    /** Whether today's gift has been taken. */
+    fun giftClaimed(date: CalendarDate = HolidaySeason.clock()): Boolean = store.getString(giftDayKey) == dayStamp(date)
+
+    /** How many daily gifts the player has taken, over the years. */
+    val giftsTaken: Int get() = store.getString(giftCountKey)?.toIntOrNull() ?: 0
+
+    internal fun markGiftClaimed(date: CalendarDate) {
+        store.putString(giftDayKey, dayStamp(date))
+        store.putString(giftCountKey, (giftsTaken + 1).toString())
+    }
+
+    /** Hands over a reward outright, outside any trial. Returns false if it was already held. */
+    fun unlock(rewardID: String): Boolean {
+        if (isUnlocked(rewardID)) return false
+        store.putString(unlockKey, (unlocked + rewardID).joinToString("\n"))
+        return true
+    }
+
+    // endregion
 
     /** The year the announcement was last put away for, or null. */
     private val hiddenYear: Int? get() = store.getString(hiddenKey)?.toIntOrNull()

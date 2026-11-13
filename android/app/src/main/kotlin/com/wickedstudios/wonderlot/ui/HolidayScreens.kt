@@ -249,6 +249,7 @@ fun HolidayAnnouncement(services: AppServices, onDismiss: () -> Unit, onSeeTrial
                     announcementRow("cart.fill", "Hot chocolate and candy", "Two seasonal food stands that take the usual upgrades.")
                     announcementRow("gift.fill", "12 Days of Holiday Wonder", "Twelve festive trials with a tab of their own in Park Trials.")
                     announcementRow("paintbrush.fill", "Exclusive rewards", "Earn decorations, ride makeovers and new rides, and keep them for every future holiday.")
+                    announcementRow("gift.fill", "A gift every day, 20 to 26 December", "Open it for ten free hours of a boost, or a ride from the 12 Days.")
                     announcementRow("party.popper.fill", "Company holiday parties", "Big office outings arrive by the busload with five times the spending money.")
                     Label("Snow is falling, the ground is white, and it all ends on January 5. Come and play.", size = 12.sp, weight = FontWeight.Medium,
                         color = Theme.textSecondary, modifier = Modifier.fillMaxWidth())
@@ -291,6 +292,62 @@ private fun announcementRow(symbol: String, title: String, detail: String) {
 private val keepPi = PI
 
 /**
+ * Today's gift, from 20 to 26 December. A present to open: tapping it takes the gift, which is either ten hours of a
+ * boost or one of the rides the twelve days hand out.
+ */
+@Composable
+fun HolidayGiftCard(services: AppServices, onDismiss: () -> Unit) {
+    var gift by remember { mutableStateOf<com.wickedstudios.wonderlot.HolidayGift?>(null) }
+    androidx.activity.compose.BackHandler { if (gift != null) onDismiss() }
+    val open = gift != null
+
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
+        val shape = RoundedCornerShape(22.dp)
+        Column(
+            Modifier.padding(horizontal = 28.dp).widthIn(max = 340.dp).clip(shape).background(Theme.panelGradient)
+                .border(1.5.dp, Festive.gold.copy(alpha = 0.7f), shape).padding(22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Label("A GIFT FOR YOU", size = 10.sp, weight = FontWeight.ExtraBold, tracking = 3f, color = Festive.gold)
+            Box(Modifier.size(96.dp).clip(CircleShape).background(Festive.ribbon).border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                contentAlignment = Alignment.Center) { SymbolIcon("gift.fill", Color.White, 48.dp) }
+
+            val result = gift
+            if (result == null) {
+                androidx.compose.material3.Text("Something is waiting under the tree", color = Color.White, fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                Label("Every day from 20 to 26 December there is a present for you: ten hours of a free boost, or one of the rides from the 12 Days.",
+                    size = 13.sp, weight = FontWeight.Medium, color = Theme.textSecondary)
+                Box(Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(14.dp)).background(Festive.ribbon).clickable {
+                    gift = com.wickedstudios.wonderlot.HolidayGifts.claim(services.holiday, services.boosts)
+                    if (gift == null) onDismiss()
+                }, contentAlignment = Alignment.Center) { Label("Open it", size = 16.sp, weight = FontWeight.ExtraBold, color = Color.White) }
+                Box(Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.12f)).clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center) { Label("Later", size = 14.sp, weight = FontWeight.Bold) }
+            } else {
+                when (result) {
+                    is com.wickedstudios.wonderlot.HolidayGift.Boost -> {
+                        androidx.compose.material3.Text("${result.hours} hours of ${result.kind.title}", color = Color.White, fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                        Label(result.kind.summary, size = 13.sp, weight = FontWeight.Medium, color = Theme.textSecondary)
+                        Label("It is running now, with no advert to watch. Find it on the Boosts screen.", size = 12.sp, weight = FontWeight.SemiBold, color = Festive.gold)
+                    }
+                    is com.wickedstudios.wonderlot.HolidayGift.Ride -> {
+                        androidx.compose.material3.Text(result.reward.title, color = Color.White, fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                        Label(result.reward.detail, size = 13.sp, weight = FontWeight.Medium, color = Theme.textSecondary)
+                        Label("Unlocked for good. Build it from the Holiday shelf while the event is on.", size = 12.sp, weight = FontWeight.SemiBold, color = Festive.gold)
+                    }
+                }
+                Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(14.dp)).background(Festive.ribbon).clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center) { Label("Lovely, thank you", size = 15.sp, weight = FontWeight.ExtraBold, color = Color.White) }
+            }
+        }
+        if (open) SnowOverlay(Modifier.fillMaxSize(), flakes = 50)
+    }
+}
+
+/**
  * Every piece of holiday artwork on one screen, for checking it by eye. Only reachable in a build made for trying the
  * event out (a long press on the ribbon on the title screen), never in the store build.
  */
@@ -331,7 +388,7 @@ fun HolidayGallery(onClose: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (item in com.wickedstudios.wonderlot.HolidayContent.facilities) {
                 val size = com.wickedstudios.wonderlot.gfx.CGSize(item.footprint.width * 40.0, item.footprint.height * 40.0)
-                tile(item.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(item.appearance, size), 90)
+                tile(item.displayName, com.wickedstudios.wonderlot.gfx.BuildingArtwork.bodyTexture(item.appearance, size), if (item.footprint.width == 1) 60 else 90)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

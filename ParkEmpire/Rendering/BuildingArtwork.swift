@@ -138,6 +138,10 @@ enum BuildingArtwork {
         case .skatingRink: drawSkatingRinkBase(context, size, primary, secondary, accent)
         case .hotCocoaStand: drawHotCocoaStand(context, size, primary, secondary, accent)
         case .candyStand: drawCandyStand(context, size, primary, secondary, accent)
+        case .candyCaneFence: drawCandyCaneFence(context, size, primary, secondary, accent)
+        case .holidayLights: drawHolidayLights(context, size, primary, secondary, accent)
+        case .snowFamily: drawSnowFamily(context, size, primary, secondary, accent)
+        case .snowConeCart: drawSnowConeCart(context, size, primary, secondary, accent)
         }
 
         // A ride that has had its holiday makeover is dressed on top.

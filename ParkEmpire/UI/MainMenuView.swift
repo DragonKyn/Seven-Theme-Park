@@ -14,6 +14,7 @@ struct MainMenuView: View {
     @State private var showingAbout = false
     @State private var showingDisplay = false
     @State private var showingAnnouncement = false
+    @State private var showingGift = false
     @State private var ladderOnHoliday = false
     @State private var demo: DemoParkBackdrop?
     /// The slot the player has asked to delete, held until they confirm.
@@ -98,12 +99,22 @@ struct MainMenuView: View {
             // The holiday announcement, a moment after the menu is up, until it has been put away for the year.
             if HolidayStore().shouldAnnounce() {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { showingAnnouncement = true }
+            } else if HolidayGifts.isAvailable() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { showingGift = true }
             }
         }
         .overlay {
             if showingAnnouncement {
                 HolidayAnnouncementView(onSeeTrials: { ladderOnHoliday = true; showingTrials = true },
-                                        onDismiss: { showingAnnouncement = false })
+                                        onDismiss: {
+                                            showingAnnouncement = false
+                                            // Today's gift is next, once the announcement is out of the way.
+                                            if HolidayGifts.isAvailable() { showingGift = true }
+                                        })
+                    .ignoresSafeArea()
+            }
+            if showingGift {
+                HolidayGiftView(onDismiss: { showingGift = false })
                     .ignoresSafeArea()
             }
         }

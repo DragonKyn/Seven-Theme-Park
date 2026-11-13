@@ -832,6 +832,119 @@ object BuildingArtHoliday {
 
     // endregion
 
+    // region Candy canes, lights, the snow family and the snow cone cart
+
+    fun drawCandyCaneFence(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        fill(oval(size.width * 0.02, size.height * 0.84, size.width * 0.96, size.height * 0.12), snowShade)
+        // A striped rail between the canes.
+        val rail = CGRect(size.width * 0.04, size.height * 0.52, size.width * 0.92, size.height * 0.10)
+        withShadow(context) { fill(rounded(rail, rail.height * 0.5), snowWhite) }
+        for (index in 0 until 12) {
+            if (index % 2 == 0) fill(box(rail.minX + rail.width * index / 12, rail.minY, rail.width / 12 + 0.5, rail.height), primary)
+        }
+        // Three canes, each with a green bow where the hook meets the stem.
+        for (x in listOf(0.18, 0.50, 0.82)) {
+            candyCane(CGPoint(size.width * x, size.height * 0.92), size.height * 0.80, primary)
+            val bow = CGPoint(size.width * x, size.height * 0.40)
+            for (side in listOf(-1.0, 1.0)) fill(oval(bow.x + side * size.width * 0.045 - size.width * 0.045, bow.y - size.height * 0.03, size.width * 0.09, size.height * 0.06), accent)
+        }
+        snowMound(CGRect(size.width * 0.00, size.height * 0.86, size.width * 0.28, size.height * 0.12))
+        snowMound(CGRect(size.width * 0.72, size.height * 0.86, size.width * 0.28, size.height * 0.12))
+    }
+
+    fun drawHolidayLights(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        fill(oval(size.width * 0.04, size.height * 0.84, size.width * 0.92, size.height * 0.12), snowShade)
+        // Two stakes.
+        val wood = ParkPalette.colour(com.wickedstudios.wonderlot.ParkColour.brown)
+        for (x in listOf(0.10, 0.88)) {
+            fill(rounded(CGRect(size.width * x, size.height * 0.30, size.width * 0.04, size.height * 0.60), 1.5), wood)
+            fill(oval(size.width * (x - 0.01), size.height * 0.26, size.width * 0.06, size.width * 0.06), festiveGold)
+        }
+        // Three loops of bulbs, each with a soft glow behind it.
+        val rows = listOf(0.34, 0.52, 0.70)
+        for ((row, y) in rows.withIndex()) {
+            val start = CGPoint(size.width * 0.12, size.height * y)
+            val end = CGPoint(size.width * 0.90, size.height * y)
+            for (b in 0 until 8) {
+                val t = (b + 0.5) / 8
+                val bx = start.x + (end.x - start.x) * t
+                val by = start.y + (end.y - start.y) * t + size.height * 0.14 * t * (1 - t)
+                fill(oval(bx - size.width * 0.045, by - size.width * 0.045, size.width * 0.09, size.width * 0.09), bulbColours[(b + row) % 4].withAlphaComponent(0.28))
+            }
+            lightString(start, end, size.height * 0.07, 8, max(2.5, size.width * 0.045))
+        }
+    }
+
+    private fun snowmanAt(centreX: Double, baseY: Double, height: Double, scarf: UIColor, nose: UIColor, hat: Boolean) {
+        val w = height * 0.62
+        fill(oval(centreX - w * 0.60, baseY - height * 0.08, w * 1.2, height * 0.10), snowShade)
+        fill(oval(centreX - w * 0.50, baseY - height * 0.50, w, height * 0.50), snowWhite)
+        fill(oval(centreX - w * 0.36, baseY - height * 0.80, w * 0.72, height * 0.40), snowWhite)
+        val head = w * 0.54
+        val headTop = baseY - height * 1.00
+        fill(oval(centreX - head / 2, headTop, head, head), snowWhite)
+        val charcoal = ParkPalette.colour(com.wickedstudios.wonderlot.ParkColour.charcoal)
+        if (hat) {
+            fill(box(centreX - head * 0.30, headTop - head * 0.34, head * 0.60, head * 0.40), charcoal)
+            fill(box(centreX - head * 0.48, headTop + head * 0.02, head * 0.96, head * 0.08), charcoal)
+        }
+        for (dx in listOf(-0.16, 0.16)) fill(oval(centreX + head * dx - 1, headTop + head * 0.34, 2.2, 2.2), charcoal)
+        val carrot = UIBezierPath()
+        carrot.move(CGPoint(centreX, headTop + head * 0.46)); carrot.addLine(CGPoint(centreX + head * 0.42, headTop + head * 0.54)); carrot.addLine(CGPoint(centreX, headTop + head * 0.60)); carrot.close()
+        fill(carrot, nose)
+        fill(rounded(CGRect(centreX - head * 0.42, headTop + head * 0.82, head * 0.84, head * 0.16), head * 0.08), scarf)
+        fill(box(centreX + head * 0.18, headTop + head * 0.90, head * 0.18, head * 0.52), scarf)
+        for (dy in listOf(0.40, 0.62)) fill(oval(centreX - 1.2, baseY - height * dy, 2.4, 2.4), charcoal)
+    }
+
+    fun drawSnowFamily(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        withShadow(context) {
+            snowmanAt(size.width * 0.28, size.height * 0.94, size.height * 0.84, secondary, accent, true)
+        }
+        snowmanAt(size.width * 0.58, size.height * 0.94, size.height * 0.62, secondary, accent, false)
+        snowmanAt(size.width * 0.82, size.height * 0.94, size.height * 0.42, bulbColours[2], accent, false)
+        // A tiny stick arm on the tall one, holding the small one's hand.
+        val arm = UIBezierPath(); arm.move(CGPoint(size.width * 0.40, size.height * 0.56)); arm.addLine(CGPoint(size.width * 0.50, size.height * 0.62))
+        stroke(arm, ParkPalette.colour(com.wickedstudios.wonderlot.ParkColour.brown), max(1.0, size.width * 0.016))
+    }
+
+    fun drawSnowConeCart(context: CGContext, size: CGSize, primary: UIColor, secondary: UIColor, accent: UIColor) {
+        snowMound(CGRect(size.width * 0.02, size.height * 0.86, size.width * 0.96, size.height * 0.13))
+        // Wheels and the body of the cart.
+        val charcoal = ParkPalette.colour(com.wickedstudios.wonderlot.ParkColour.charcoal)
+        for (x in listOf(0.22, 0.60)) fill(oval(size.width * x, size.height * 0.78, size.width * 0.18, size.width * 0.18), charcoal)
+        val body = CGRect(size.width * 0.12, size.height * 0.48, size.width * 0.76, size.height * 0.36)
+        withShadow(context) { fill(rounded(body, size.width * 0.05), primary) }
+        fill(box(body.minX, body.minY + body.height * 0.40, body.width, body.height * 0.12), secondary)
+        // Syrup bottles lined up on top.
+        val syrups = listOf(accent, bulbColours[1], bulbColours[2], bulbColours[0])
+        for ((index, colour) in syrups.withIndex()) {
+            val x = body.minX + body.width * (0.10 + 0.20 * index)
+            fill(rounded(CGRect(x, body.minY - size.height * 0.12, size.width * 0.08, size.height * 0.14), 2.0), colour)
+            fill(box(x + size.width * 0.02, body.minY - size.height * 0.17, size.width * 0.04, size.height * 0.06), secondary)
+        }
+        // A heap of shaved ice in a cone on the front.
+        val cone = UIBezierPath()
+        cone.move(CGPoint(size.width * 0.44, size.height * 0.60)); cone.addLine(CGPoint(size.width * 0.56, size.height * 0.60)); cone.addLine(CGPoint(size.width * 0.50, size.height * 0.80)); cone.close()
+        fill(cone, UIColor(0.95, 0.88, 0.70, 1.0))
+        fill(oval(size.width * 0.41, size.height * 0.50, size.width * 0.18, size.height * 0.14), snowWhite)
+        fill(oval(size.width * 0.44, size.height * 0.46, size.width * 0.12, size.height * 0.10), accent.withAlphaComponent(0.8))
+        // A striped umbrella over everything, with snow on top.
+        val pole = UIBezierPath(); pole.move(CGPoint(size.width * 0.50, size.height * 0.48)); pole.addLine(CGPoint(size.width * 0.50, size.height * 0.10))
+        stroke(pole, ParkPalette.colour(com.wickedstudios.wonderlot.ParkColour.brown), max(1.2, size.width * 0.02))
+        val segments = 6
+        for (index in 0 until segments) {
+            val x0 = size.width * (0.06 + 0.88 * index / segments)
+            val x1 = size.width * (0.06 + 0.88 * (index + 1) / segments)
+            val panel = UIBezierPath()
+            panel.move(CGPoint(size.width * 0.50, size.height * 0.04)); panel.addLine(CGPoint(x1, size.height * 0.24)); panel.addLine(CGPoint(x0, size.height * 0.24)); panel.close()
+            fill(panel, if (index % 2 == 0) primary else snowWhite)
+        }
+        snowMound(CGRect(size.width * 0.38, size.height * 0.00, size.width * 0.24, size.height * 0.08))
+    }
+
+    // endregion
+
     // region Sizes
 
     /** How big the moving part is for the holiday rides, or null for a motif that has none of its own. */

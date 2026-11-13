@@ -1027,6 +1027,144 @@ extension BuildingArtwork {
                     first: primary, second: snowWhite, segments: 14, width: max(1, size.width * 0.02))
     }
 
+    // MARK: - Candy canes, lights, the snow family and the snow cone cart
+
+    static func drawCandyCaneFence(_ context: CGContext, _ size: CGSize,
+                                   _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.02, y: size.height * 0.84, width: size.width * 0.96, height: size.height * 0.12)),
+             UIColor(red: 0.74, green: 0.82, blue: 0.93, alpha: 1))
+        let rail = CGRect(x: size.width * 0.04, y: size.height * 0.52, width: size.width * 0.92, height: size.height * 0.10)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: rail, cornerRadius: rail.height * 0.5), snowWhite)
+        }
+        for index in 0..<12 where index % 2 == 0 {
+            fill(UIBezierPath(rect: CGRect(x: rail.minX + rail.width * CGFloat(index) / 12, y: rail.minY,
+                                           width: rail.width / 12 + 0.5, height: rail.height)), primary)
+        }
+        for x in [CGFloat(0.18), 0.50, 0.82] {
+            candyCane(at: CGPoint(x: size.width * x, y: size.height * 0.92), height: size.height * 0.80, red: primary)
+            let bow = CGPoint(x: size.width * x, y: size.height * 0.40)
+            for side in [CGFloat(-1), CGFloat(1)] {
+                fill(UIBezierPath(ovalIn: CGRect(x: bow.x + side * size.width * 0.045 - size.width * 0.045, y: bow.y - size.height * 0.03,
+                                                 width: size.width * 0.09, height: size.height * 0.06)), accent)
+            }
+        }
+        snowMound(CGRect(x: 0, y: size.height * 0.86, width: size.width * 0.28, height: size.height * 0.12))
+        snowMound(CGRect(x: size.width * 0.72, y: size.height * 0.86, width: size.width * 0.28, height: size.height * 0.12))
+    }
+
+    static func drawHolidayLights(_ context: CGContext, _ size: CGSize,
+                                  _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.04, y: size.height * 0.84, width: size.width * 0.92, height: size.height * 0.12)),
+             UIColor(red: 0.74, green: 0.82, blue: 0.93, alpha: 1))
+        let wood = ParkPalette.colour(.brown)
+        for x in [CGFloat(0.10), 0.88] {
+            fill(UIBezierPath(roundedRect: CGRect(x: size.width * x, y: size.height * 0.30, width: size.width * 0.04, height: size.height * 0.60), cornerRadius: 1.5), wood)
+            fill(UIBezierPath(ovalIn: CGRect(x: size.width * (x - 0.01), y: size.height * 0.26, width: size.width * 0.06, height: size.width * 0.06)), festiveGold)
+        }
+        let rows: [CGFloat] = [0.34, 0.52, 0.70]
+        for (row, y) in rows.enumerated() {
+            let start = CGPoint(x: size.width * 0.12, y: size.height * y)
+            let end = CGPoint(x: size.width * 0.90, y: size.height * y)
+            for b in 0..<8 {
+                let t = (CGFloat(b) + 0.5) / 8
+                let bx = start.x + (end.x - start.x) * t
+                let by = start.y + (end.y - start.y) * t + size.height * 0.14 * t * (1 - t)
+                fill(UIBezierPath(ovalIn: CGRect(x: bx - size.width * 0.045, y: by - size.width * 0.045, width: size.width * 0.09, height: size.width * 0.09)),
+                     bulbColours[(b + row) % 4].withAlphaComponent(0.28))
+            }
+            lightString(from: start, to: end, sag: size.height * 0.07, bulbs: 8, size: max(2.5, size.width * 0.045))
+        }
+    }
+
+    private static func snowmanAt(_ centreX: CGFloat, _ baseY: CGFloat, _ height: CGFloat,
+                                  scarf: UIColor, nose: UIColor, hat: Bool) {
+        let w = height * 0.62
+        fill(UIBezierPath(ovalIn: CGRect(x: centreX - w * 0.60, y: baseY - height * 0.08, width: w * 1.2, height: height * 0.10)),
+             UIColor(red: 0.74, green: 0.82, blue: 0.93, alpha: 1))
+        fill(UIBezierPath(ovalIn: CGRect(x: centreX - w * 0.50, y: baseY - height * 0.50, width: w, height: height * 0.50)), snowWhite)
+        fill(UIBezierPath(ovalIn: CGRect(x: centreX - w * 0.36, y: baseY - height * 0.80, width: w * 0.72, height: height * 0.40)), snowWhite)
+        let head = w * 0.54
+        let headTop = baseY - height
+        fill(UIBezierPath(ovalIn: CGRect(x: centreX - head / 2, y: headTop, width: head, height: head)), snowWhite)
+        let charcoal = ParkPalette.colour(.charcoal)
+        if hat {
+            fill(UIBezierPath(rect: CGRect(x: centreX - head * 0.30, y: headTop - head * 0.34, width: head * 0.60, height: head * 0.40)), charcoal)
+            fill(UIBezierPath(rect: CGRect(x: centreX - head * 0.48, y: headTop + head * 0.02, width: head * 0.96, height: head * 0.08)), charcoal)
+        }
+        for dx in [CGFloat(-0.16), 0.16] {
+            fill(UIBezierPath(ovalIn: CGRect(x: centreX + head * dx - 1, y: headTop + head * 0.34, width: 2.2, height: 2.2)), charcoal)
+        }
+        let carrot = UIBezierPath()
+        carrot.move(to: CGPoint(x: centreX, y: headTop + head * 0.46))
+        carrot.addLine(to: CGPoint(x: centreX + head * 0.42, y: headTop + head * 0.54))
+        carrot.addLine(to: CGPoint(x: centreX, y: headTop + head * 0.60))
+        carrot.close()
+        fill(carrot, nose)
+        fill(UIBezierPath(roundedRect: CGRect(x: centreX - head * 0.42, y: headTop + head * 0.82, width: head * 0.84, height: head * 0.16), cornerRadius: head * 0.08), scarf)
+        fill(UIBezierPath(rect: CGRect(x: centreX + head * 0.18, y: headTop + head * 0.90, width: head * 0.18, height: head * 0.52)), scarf)
+        for dy in [CGFloat(0.40), 0.62] {
+            fill(UIBezierPath(ovalIn: CGRect(x: centreX - 1.2, y: baseY - height * dy, width: 2.4, height: 2.4)), charcoal)
+        }
+    }
+
+    static func drawSnowFamily(_ context: CGContext, _ size: CGSize,
+                               _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        withShadow(context) {
+            snowmanAt(size.width * 0.28, size.height * 0.94, size.height * 0.84, scarf: secondary, nose: accent, hat: true)
+        }
+        snowmanAt(size.width * 0.58, size.height * 0.94, size.height * 0.62, scarf: secondary, nose: accent, hat: false)
+        snowmanAt(size.width * 0.82, size.height * 0.94, size.height * 0.42, scarf: bulbColours[2], nose: accent, hat: false)
+        let arm = UIBezierPath()
+        arm.move(to: CGPoint(x: size.width * 0.40, y: size.height * 0.56))
+        arm.addLine(to: CGPoint(x: size.width * 0.50, y: size.height * 0.62))
+        stroke(arm, ParkPalette.colour(.brown), width: max(1, size.width * 0.016))
+    }
+
+    static func drawSnowConeCart(_ context: CGContext, _ size: CGSize,
+                                 _ primary: UIColor, _ secondary: UIColor, _ accent: UIColor) {
+        snowMound(CGRect(x: size.width * 0.02, y: size.height * 0.86, width: size.width * 0.96, height: size.height * 0.13))
+        let charcoal = ParkPalette.colour(.charcoal)
+        for x in [CGFloat(0.22), 0.60] {
+            fill(UIBezierPath(ovalIn: CGRect(x: size.width * x, y: size.height * 0.78, width: size.width * 0.18, height: size.width * 0.18)), charcoal)
+        }
+        let body = CGRect(x: size.width * 0.12, y: size.height * 0.48, width: size.width * 0.76, height: size.height * 0.36)
+        withShadow(context) {
+            fill(UIBezierPath(roundedRect: body, cornerRadius: size.width * 0.05), primary)
+        }
+        fill(UIBezierPath(rect: CGRect(x: body.minX, y: body.minY + body.height * 0.40, width: body.width, height: body.height * 0.12)), secondary)
+        let syrups = [accent, bulbColours[1], bulbColours[2], bulbColours[0]]
+        for (index, colour) in syrups.enumerated() {
+            let x = body.minX + body.width * (0.10 + 0.20 * CGFloat(index))
+            fill(UIBezierPath(roundedRect: CGRect(x: x, y: body.minY - size.height * 0.12, width: size.width * 0.08, height: size.height * 0.14), cornerRadius: 2), colour)
+            fill(UIBezierPath(rect: CGRect(x: x + size.width * 0.02, y: body.minY - size.height * 0.17, width: size.width * 0.04, height: size.height * 0.06)), secondary)
+        }
+        let cone = UIBezierPath()
+        cone.move(to: CGPoint(x: size.width * 0.44, y: size.height * 0.60))
+        cone.addLine(to: CGPoint(x: size.width * 0.56, y: size.height * 0.60))
+        cone.addLine(to: CGPoint(x: size.width * 0.50, y: size.height * 0.80))
+        cone.close()
+        fill(cone, UIColor(red: 0.95, green: 0.88, blue: 0.70, alpha: 1))
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.41, y: size.height * 0.50, width: size.width * 0.18, height: size.height * 0.14)), snowWhite)
+        fill(UIBezierPath(ovalIn: CGRect(x: size.width * 0.44, y: size.height * 0.46, width: size.width * 0.12, height: size.height * 0.10)), accent.withAlphaComponent(0.8))
+        let pole = UIBezierPath()
+        pole.move(to: CGPoint(x: size.width * 0.50, y: size.height * 0.48))
+        pole.addLine(to: CGPoint(x: size.width * 0.50, y: size.height * 0.10))
+        stroke(pole, ParkPalette.colour(.brown), width: max(1.2, size.width * 0.02))
+        let segments = 6
+        for index in 0..<segments {
+            let x0 = size.width * (0.06 + 0.88 * CGFloat(index) / CGFloat(segments))
+            let x1 = size.width * (0.06 + 0.88 * CGFloat(index + 1) / CGFloat(segments))
+            let panel = UIBezierPath()
+            panel.move(to: CGPoint(x: size.width * 0.50, y: size.height * 0.04))
+            panel.addLine(to: CGPoint(x: x1, y: size.height * 0.24))
+            panel.addLine(to: CGPoint(x: x0, y: size.height * 0.24))
+            panel.close()
+            fill(panel, index % 2 == 0 ? primary : snowWhite)
+        }
+        snowMound(CGRect(x: size.width * 0.38, y: 0, width: size.width * 0.24, height: size.height * 0.08))
+    }
+
     // MARK: - Sizes
 
     /// How big the moving part is for the holiday rides, or nil for a motif

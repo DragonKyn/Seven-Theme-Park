@@ -234,6 +234,24 @@ enum HolidayContent {
     /// The two seasonal food venues. Both take the usual shop upgrades.
     static let facilities: [FacilityDefinition] = [
         FacilityDefinition(
+            id: "shop.xmas.snowcone",
+            displayName: "Snow Cone Cart",
+            summary: "Shaved ice in a paper cone with a choice of syrups. Earned in the Twelve Days. Cold, cheap and very popular with children.",
+            kind: .drink,
+            purchasePrice: 700,
+            defaultPrice: 3.5,
+            unitCost: 0.7,
+            referencePrice: 4,
+            serviceDuration: 4,
+            simultaneousCapacity: 1,
+            queueCapacity: 8,
+            relief: NeedRelief(hunger: 4, thirst: 42, bathroom: -10, happiness: 10),
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.snowConeCart, .cyan, .white, .pink),
+            seasonal: true
+        ),
+        FacilityDefinition(
             id: "shop.xmas.hotcocoa",
             displayName: "Hot Chocolate Stand",
             summary: "A steaming cup with marshmallows on top. Cheap, quick, and guests come back for a second.",
@@ -272,6 +290,42 @@ enum HolidayContent {
     ]
 
     static let scenery: [SceneryDefinition] = [
+        SceneryDefinition(
+            id: "scenery.xmas.canefence",
+            displayName: "Candy Cane Fence",
+            summary: "Crossed candy canes with a striped rail between them. A cheap way to edge a walkway or fence off a lawn.",
+            purchasePrice: 60,
+            beauty: 14,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.candyCaneFence, .red, .white, .green),
+            seasonal: true
+        ),
+        SceneryDefinition(
+            id: "scenery.xmas.lightstrand",
+            displayName: "Holiday Lights",
+            summary: "A twinkling strand of coloured bulbs between two stakes. Put them wherever the park needs cheering up.",
+            purchasePrice: 70,
+            beauty: 18,
+            beautyRadius: 2,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.holidayLights, .green, .amber, .red),
+            seasonal: true
+        ),
+        SceneryDefinition(
+            id: "scenery.xmas.snowfamily",
+            displayName: "Snow Family",
+            summary: "A tall snowman, a short one and a very small one, in matching scarves. Earned in the Twelve Days.",
+            purchasePrice: 240,
+            beauty: 30,
+            beautyRadius: 3,
+            footprint: GridSize(2, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.snowFamily, .white, .red, .orange),
+            seasonal: true
+        ),
         SceneryDefinition(
             id: "scenery.xmas.tree",
             displayName: "Christmas Tree",
@@ -431,7 +485,7 @@ extension TrialContent {
             goals: [.holidayRides(3), .guestsInPark(40), .happiness(65)],
             medal: TrialMedal(name: "Hen Keeper", symbolName: "snowflake"),
             series: .holiday,
-            rewardIDs: ["reward.lightpole"]),
+            rewardIDs: ["reward.lightpole", "reward.snowcone"]),
 
         TrialDefinition(
             id: "holiday.04",
@@ -497,7 +551,7 @@ extension TrialContent {
             goals: [.guestsInPark(60), .happiness(70), .shops(6)],
             medal: TrialMedal(name: "Milkmaid", symbolName: "face.smiling"),
             series: .holiday,
-            rewardIDs: ["reward.ride.startopper"]),
+            rewardIDs: ["reward.ride.startopper", "reward.snowfamily"]),
 
         TrialDefinition(
             id: "holiday.09",

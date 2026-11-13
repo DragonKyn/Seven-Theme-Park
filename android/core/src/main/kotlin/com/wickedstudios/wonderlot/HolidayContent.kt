@@ -136,8 +136,26 @@ object HolidayContent {
         group = RideGroup.holiday, seasonal = true,
     )
 
-    /** The two seasonal food venues. Both take the usual shop upgrades. */
+    /** The seasonal food venues. All take the usual shop upgrades. */
     val facilities: List<FacilityDefinition> = listOf(
+        FacilityDefinition(
+            id = "shop.xmas.snowcone",
+            displayName = "Snow Cone Cart",
+            summary = "Shaved ice in a paper cone with a choice of syrups. Earned in the Twelve Days. Cold, cheap and very popular with children.",
+            kind = FacilityKind.drink,
+            purchasePrice = 700.0,
+            defaultPrice = 3.5,
+            unitCost = 0.7,
+            referencePrice = 4.0,
+            serviceDuration = 4.0,
+            simultaneousCapacity = 1,
+            queueCapacity = 8,
+            relief = NeedRelief(hunger = 4.0, thirst = 42.0, bathroom = -10.0, happiness = 10.0),
+            footprint = GridSize(1, 1),
+            unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.snowConeCart, ParkColour.cyan, ParkColour.white, ParkColour.pink),
+            seasonal = true,
+        ),
         FacilityDefinition(
             id = "shop.xmas.hotcocoa",
             displayName = "Hot Chocolate Stand",
@@ -177,6 +195,27 @@ object HolidayContent {
     )
 
     val scenery: List<SceneryDefinition> = listOf(
+        SceneryDefinition(
+            id = "scenery.xmas.canefence", displayName = "Candy Cane Fence",
+            summary = "Crossed candy canes with a striped rail between them. A cheap way to edge a walkway or fence off a lawn.",
+            purchasePrice = 60.0, beauty = 14.0, beautyRadius = 1, footprint = GridSize(1, 1), unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.candyCaneFence, ParkColour.red, ParkColour.white, ParkColour.green),
+            seasonal = true,
+        ),
+        SceneryDefinition(
+            id = "scenery.xmas.lightstrand", displayName = "Holiday Lights",
+            summary = "A twinkling strand of coloured bulbs between two stakes. Put them wherever the park needs cheering up.",
+            purchasePrice = 70.0, beauty = 18.0, beautyRadius = 2, footprint = GridSize(1, 1), unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.holidayLights, ParkColour.green, ParkColour.amber, ParkColour.red),
+            seasonal = true,
+        ),
+        SceneryDefinition(
+            id = "scenery.xmas.snowfamily", displayName = "Snow Family",
+            summary = "A tall snowman, a short one and a very small one, in matching scarves. Earned in the Twelve Days.",
+            purchasePrice = 240.0, beauty = 30.0, beautyRadius = 3, footprint = GridSize(2, 1), unlockLevel = 1,
+            appearance = BuildingAppearance(BuildingMotif.snowFamily, ParkColour.white, ParkColour.red, ParkColour.orange),
+            seasonal = true,
+        ),
         SceneryDefinition(
             id = "scenery.xmas.tree", displayName = "Christmas Tree",
             summary = "A fir hung with baubles and topped with a star. Nothing says December like it.",

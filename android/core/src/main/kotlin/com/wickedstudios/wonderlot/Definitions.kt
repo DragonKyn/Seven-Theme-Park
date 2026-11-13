@@ -140,7 +140,7 @@ enum class BuildingMotif {
     reindeerCarousel, sleighRide, candyCoaster, snowGlobe, polarExpress, gingerbreadManor, starTopper,
     countdownWheel, confettiSwing, ballDrop, starburstCoaster,
     xmasTree, snowman, wreathArch, giftStack, lightPole, candyCanePost, fireworkStand, countdownClock,
-    skatingRink, hotCocoaStand, candyStand;
+    skatingRink, hotCocoaStand, candyStand, candyCaneFence, holidayLights, snowFamily, snowConeCart;
 
     /** Colours the player can pick for this shape. Empty for everything fixed by design. */
     val colourChoices: List<ParkColour>

@@ -147,6 +147,13 @@ enum HolidayRewards {
                       detail: "The New Year finale: a coaster that ends in fireworks.",
                       symbolName: "sparkle", opens: ["ride.newyear.starburst"]),
 
+        HolidayReward(id: "reward.snowcone", kind: .decoration, title: "Snow Cone Cart",
+                      detail: "A cart that sells cones of shaved ice with a choice of syrups. Takes the usual shop upgrades.",
+                      symbolName: "snowflake", opens: ["shop.xmas.snowcone"]),
+        HolidayReward(id: "reward.snowfamily", kind: .decoration, title: "Snow Family",
+                      detail: "A whole family of snowmen in matching scarves.",
+                      symbolName: "person.3.fill", opens: ["scenery.xmas.snowfamily"]),
+
         HolidayReward(id: "reward.performer.missus", kind: .performer, title: "Mrs. Claus",
                       detail: "A new entertainer: bakes cookies for anybody who looks hungry.",
                       symbolName: "person.fill", opens: ["act.missus"])
@@ -253,6 +260,34 @@ struct HolidayStore {
     func isOpen(_ trial: TrialDefinition) -> Bool {
         guard let needed = trial.needsRewardID else { return true }
         return isUnlocked(needed)
+    }
+
+    // MARK: - Daily gifts
+
+    private static let giftDayKey = "holiday.giftDay"
+    private static let giftCountKey = "holiday.giftCount"
+
+    private func dayStamp(_ date: CalendarDate) -> String { "\(date.year)-\(date.month)-\(date.day)" }
+
+    /// Whether today's gift has been taken.
+    func giftClaimed(on date: CalendarDate = HolidaySeason.clock()) -> Bool {
+        defaults.string(forKey: Self.giftDayKey) == dayStamp(date)
+    }
+
+    /// How many daily gifts the player has taken, over the years.
+    var giftsTaken: Int { defaults.integer(forKey: Self.giftCountKey) }
+
+    func markGiftClaimed(on date: CalendarDate) {
+        defaults.set(dayStamp(date), forKey: Self.giftDayKey)
+        defaults.set(giftsTaken + 1, forKey: Self.giftCountKey)
+    }
+
+    /// Hands over a reward outright, outside any trial. Returns false if it was already held.
+    @discardableResult
+    func unlock(_ rewardID: String) -> Bool {
+        guard !isUnlocked(rewardID) else { return false }
+        defaults.set(Array(unlocked.union([rewardID])).sorted(), forKey: Self.unlockKey)
+        return true
     }
 
     /// The year the announcement was last put away for, or nil.

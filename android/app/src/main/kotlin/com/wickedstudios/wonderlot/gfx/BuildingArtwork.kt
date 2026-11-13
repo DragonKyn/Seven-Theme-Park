@@ -259,6 +259,10 @@ object BuildingArtwork {
         BuildingMotif.skatingRink -> BuildingArtHoliday.drawSkatingRinkBase(context, size, primary, secondary, accent)
         BuildingMotif.hotCocoaStand -> BuildingArtHoliday.drawHotCocoaStand(context, size, primary, secondary, accent)
         BuildingMotif.candyStand -> BuildingArtHoliday.drawCandyStand(context, size, primary, secondary, accent)
+        BuildingMotif.candyCaneFence -> BuildingArtHoliday.drawCandyCaneFence(context, size, primary, secondary, accent)
+        BuildingMotif.holidayLights -> BuildingArtHoliday.drawHolidayLights(context, size, primary, secondary, accent)
+        BuildingMotif.snowFamily -> BuildingArtHoliday.drawSnowFamily(context, size, primary, secondary, accent)
+        BuildingMotif.snowConeCart -> BuildingArtHoliday.drawSnowConeCart(context, size, primary, secondary, accent)
         }
 
         // A ride that has had its holiday makeover is dressed on top.
