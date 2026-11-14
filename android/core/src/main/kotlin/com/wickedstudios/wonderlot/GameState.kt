@@ -530,6 +530,7 @@ class GameState(
                 )
                 scenery.add(item)
                 map.setBuilding(item.id, item.rect.coords, !definition.leavesWalkwayOpen)
+                if (definition.isFence) clearGround(item.rect)
                 refreshBeauty()
             }
 

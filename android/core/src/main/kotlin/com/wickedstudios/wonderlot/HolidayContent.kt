@@ -200,7 +200,7 @@ object HolidayContent {
             summary = "Crossed candy canes with a striped rail between them. A cheap way to edge a walkway or fence off a lawn.",
             purchasePrice = 60.0, beauty = 14.0, beautyRadius = 1, footprint = GridSize(1, 1), unlockLevel = 1,
             appearance = BuildingAppearance(BuildingMotif.candyCaneFence, ParkColour.red, ParkColour.white, ParkColour.green),
-            seasonal = true,
+            seasonal = true, isFence = true,
         ),
         SceneryDefinition(
             id = "scenery.xmas.lightstrand", displayName = "Holiday Lights",

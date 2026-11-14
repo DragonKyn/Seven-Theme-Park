@@ -152,6 +152,17 @@ object FacilityAppeal {
                 240 * appetite * willingness(guest, facility, definition, spendBoost)
             }
 
+            FacilityKind.atm -> {
+                // One withdrawal a visit, and only worth the walk once a good part of the money has gone.
+                if (guest.usedCashMachine || guest.startingCash <= 0) return 0.0
+                val spentShare = 1 - guest.cash / guest.startingCash
+                if (spentShare < 0.4) return 0.0
+                var score = 260 * (0.35 + (spentShare - 0.4) / 0.6)
+                // Somebody who cannot afford a thing in the park is looking for one of these.
+                if (guest.cash < 15) score *= 1.5
+                score
+            }
+
             FacilityKind.bench -> {
                 val tiredness = SimMath.normalise(45 - guest.energy, 0.0, 45.0)
                 var score = 220 * tiredness.pow(2) + guest.nausea * 0.9

@@ -22,15 +22,21 @@ class RideUpgradeDefinition(
 /** The three levers that matter to a counter: capacity, quality, signage. */
 @Serializable
 enum class ShopUpgradeKind {
-    service, quality, signage;
+    service, quality, signage,
+
+    /** Cash machines only: how much of their entry money a guest may take out. */
+    withdrawal;
 
     fun displayName(kind: FacilityKind): String = when (this) {
+        withdrawal -> "Higher Limit"
         service -> if (kind == FacilityKind.game) "Second Booth" else "Extra Till"
         quality -> if (kind == FacilityKind.game) "Better Prizes" else "Better Stock"
         signage -> "Lit Signage"
     }
 
     fun summary(kind: FacilityKind): String = when (this) {
+        withdrawal -> "Raises what a guest may take out, as a share of the money they came in with. " +
+            "25% to start, then 30%, then 50%."
         service -> if (kind == FacilityKind.game) "Another set of stalls, so twice as many can play at once."
         else "Another till, so the queue moves at twice the rate."
         quality -> if (kind == FacilityKind.game) "Bigger prizes and better odds. Winners leave far happier."
@@ -43,6 +49,7 @@ enum class ShopUpgradeKind {
             service -> "person.2.badge.plus"
             quality -> "star.circle.fill"
             signage -> "lightbulb.fill"
+            withdrawal -> "banknote.fill"
         }
 
     val maxLevel: Int
@@ -50,6 +57,7 @@ enum class ShopUpgradeKind {
             service -> 2
             quality -> 3
             signage -> 2
+            withdrawal -> 2
         }
 
     val costShare: Double
@@ -57,9 +65,21 @@ enum class ShopUpgradeKind {
             service -> 0.55
             quality -> 0.40
             signage -> 0.32
+            withdrawal -> 0.45
         }
 
+    /** The kinds of upgrade a given facility is offered. */
+    fun offeredFor(kind: FacilityKind): Boolean = if (kind == FacilityKind.atm) this == withdrawal else this != withdrawal
+
     fun cost(level: Int, shopPrice: Double): Double = (shopPrice * costShare * level * 1.15).rounded()
+}
+
+/** What a cash machine hands out. */
+object CashMachine {
+    /** The share of a guest's entry money one withdrawal may be, by upgrade level. */
+    val limits: List<Double> = listOf(0.25, 0.30, 0.50)
+
+    fun limit(level: Int): Double = limits[level.coerceIn(0, limits.size - 1)]
 }
 
 /** Training makes an employee faster on their feet and quicker at the job. */

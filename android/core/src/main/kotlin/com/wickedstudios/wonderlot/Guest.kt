@@ -264,6 +264,10 @@ class Guest(
 
     // Money
     var cash: Double = 0.0,
+    /** What they walked in with, which is what a cash machine's limit is a share of. */
+    var startingCash: Double = 0.0,
+    /** One withdrawal a visit. */
+    var usedCashMachine: Boolean = false,
     var moneySpent: Double = 0.0,
 
     // Needs. 100 means "most urgent" for hunger, thirst, bathroom and nausea;

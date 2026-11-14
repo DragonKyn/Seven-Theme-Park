@@ -33,6 +33,7 @@ import com.wickedstudios.wonderlot.Vec2
 import com.wickedstudios.wonderlot.gfx.BuildingArtwork
 import com.wickedstudios.wonderlot.gfx.CGPoint
 import com.wickedstudios.wonderlot.gfx.CGSize
+import com.wickedstudios.wonderlot.gfx.CoasterElementArtwork
 import com.wickedstudios.wonderlot.gfx.GuestArtwork
 import com.wickedstudios.wonderlot.gfx.GuestMood
 import com.wickedstudios.wonderlot.gfx.ParkPalette
@@ -41,6 +42,8 @@ import com.wickedstudios.wonderlot.gfx.SpriteFactory
 import com.wickedstudios.wonderlot.gfx.StaffArtwork
 import com.wickedstudios.wonderlot.gfx.TerrainArtwork
 import java.util.UUID
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.max
@@ -265,6 +268,7 @@ class ParkRenderer(
         drawLitter(canvas, state)
         motionLive.clear()
         drawScenery(canvas, state)
+        drawTrackElements(canvas, state)
         drawTrains(canvas, state)
         drawBuildings(canvas, state)
         motionSets.keys.retainAll(motionLive)
@@ -580,21 +584,43 @@ class ParkRenderer(
         return bitmap
     }
 
+    /** Which pieces of scenery are fences, so each can be drawn joined to the fences beside it. Rebuilt when the map changes. */
+    private val fenceIDs = HashSet<UUID>()
+    private var fenceGeneration = -1
+
+    /** The sides of a fence tile that have another fence against them: 1 up, 2 right, 4 down, 8 left. */
+    private fun fenceSides(item: com.wickedstudios.wonderlot.SceneryItem, state: GameState): Int {
+        var sides = 0
+        for ((bit, neighbour) in neighbours(GridCoord(item.origin.x, item.origin.y))) {
+            val id = state.map.tile(neighbour)?.buildingID ?: continue
+            if (id in fenceIDs) sides = sides or bit
+        }
+        return sides
+    }
+
     private fun drawScenery(canvas: Canvas, state: GameState) {
         val live = HashSet<UUID>()
+        if (fenceGeneration != state.map.generation) {
+            fenceGeneration = state.map.generation
+            fenceIDs.clear()
+            for (item in state.scenery) if (item.definition?.isFence == true) fenceIDs.add(item.id)
+        }
         for (item in state.scenery) {
             live.add(item.id)
             if (!isVisible(item.rect.centre.x, item.rect.centre.y, max(item.size.width, item.size.height).toDouble())) continue
 
+            val isFence = item.id in fenceIDs
             val appearance = (item.definition?.appearance ?: BuildingAppearance.unknown)
-                .withVariant(item.variant)
+                .withVariant(if (isFence) fenceSides(item, state) else item.variant)
                 .tinted(item.colour)
                 .applying(state.scheme)
             val drawn = item.size.rotated(item.rotation)
             val bitmap = cachedBitmap(sceneryBitmaps, item.id, appearance, drawn.width, drawn.height)
             val centre = item.rect.centre
-            drawSprite(canvas, bitmap, centre.x, centre.y, drawn.width.toDouble(), drawn.height.toDouble(), quarterTurns = item.rotation)
-            drawMotion(canvas, item.id, appearance, drawn.width, drawn.height, centre.x, centre.y, item.rotation, running = true, alpha = 1f)
+            // A fence is drawn the way up it stands; turning it would only point its arms the wrong way.
+            val turns = if (isFence) 0 else item.rotation
+            drawSprite(canvas, bitmap, centre.x, centre.y, drawn.width.toDouble(), drawn.height.toDouble(), quarterTurns = turns)
+            drawMotion(canvas, item.id, appearance, drawn.width, drawn.height, centre.x, centre.y, turns, running = true, alpha = 1f)
         }
         sceneryBitmaps.keys.retainAll(live)
         motionLive.addAll(live)
@@ -697,11 +723,88 @@ class ParkRenderer(
         renderedTrackGeneration = state.map.generation
         trainCars.clear()
 
-        runTrains(state.trackNetwork, state.attractions.filter { it.baseDefinition?.kind == AttractionKind.transport }, false)
-        runTrains(state.coasterNetwork, state.attractions.filter { it.baseDefinition?.kind == AttractionKind.custom }, true)
+        runTrains(state.trackNetwork, state.attractions.filter { it.baseDefinition?.kind == AttractionKind.transport }, false, emptyList())
+        runTrains(state.coasterNetwork, state.attractions.filter { it.baseDefinition?.kind == AttractionKind.custom }, true, state.trackElements)
     }
 
-    private fun runTrains(network: TrackNetwork, stations: List<Attraction>, coaster: Boolean) {
+    /**
+     * Loops, corkscrews, hills and jumps sitting on the track. They are drawn the way round they were designed and
+     * then turned, and taller than the ground they cover so a loop has room to be a loop. Under the trains, so a
+     * loop never hides the cars it was bought to show off.
+     */
+    private fun drawTrackElements(canvas: Canvas, state: GameState) {
+        for (element in state.trackElements) {
+            val definition = element.definition ?: continue
+            val drawn = element.size.rotated(element.rotation)
+            val centre = elementSpriteCentre(element, definition)
+            if (!isVisible(centre.x, centre.y, max(drawn.width, definition.visualHeight).toDouble())) continue
+            val bitmap = CoasterElementArtwork.texture(definition.motif,
+                CGSize(drawn.width * tileSide, definition.visualHeight * tileSide), definition.trackLine, state.coasterTrackColour)
+            drawSprite(canvas, bitmap, centre.x, centre.y, drawn.width.toDouble(), definition.visualHeight.toDouble(),
+                quarterTurns = element.rotation)
+        }
+    }
+
+    /** Where an element's sprite sits, in tiles. It is taller than its footprint, so it is pushed up out of it. */
+    private fun elementSpriteCentre(element: com.wickedstudios.wonderlot.TrackElement,
+                                    definition: com.wickedstudios.wonderlot.CoasterElementDefinition): CGPoint {
+        val footX = element.origin.x + element.size.width / 2.0
+        val footY = element.origin.y + element.size.height / 2.0
+        val drawn = element.size.rotated(element.rotation)
+        val overhang = (definition.visualHeight - drawn.height) / 2.0
+        if (overhang == 0.0) return CGPoint(footX, footY)
+        val angle = -(((element.rotation % 4) + 4) % 4) * PI / 2
+        return CGPoint(footX - sin(angle) * overhang, footY + cos(angle) * overhang)
+    }
+
+    /** An element's drawn centreline in map tiles, put through the same transform as its sprite so the train stays on the rails. */
+    private fun worldPath(element: com.wickedstudios.wonderlot.TrackElement,
+                          definition: com.wickedstudios.wonderlot.CoasterElementDefinition): List<CGPoint> {
+        val drawn = element.size.rotated(element.rotation)
+        val design = CGSize(drawn.width * tileSide, definition.visualHeight * tileSide)
+        val raw = CoasterElementArtwork.centreline(definition.motif, design, definition.trackLine)
+        val centre = elementSpriteCentre(element, definition)
+        val angle = -(((element.rotation % 4) + 4) % 4) * PI / 2
+        val cosine = cos(angle)
+        val sine = sin(angle)
+        return raw.map { point ->
+            // Texture space runs y downward from the top-left; the map runs y upward from the sprite's middle.
+            val localX = (point.x - design.width / 2) / tileSide
+            val localY = (design.height / 2 - point.y) / tileSide
+            CGPoint(centre.x + localX * cosine - localY * sine, centre.y + localX * sine + localY * cosine)
+        }
+    }
+
+    /** The line a train runs: tile centres, with each element's own geometry spliced in where the route crosses one. */
+    private fun ridePoints(route: TrackNetwork.Route, elements: List<com.wickedstudios.wonderlot.TrackElement>): List<CGPoint> {
+        if (elements.isEmpty()) return route.tiles.map { tileCentre(it) }
+        val points = ArrayList<CGPoint>()
+        var index = 0
+        while (index < route.tiles.size) {
+            val tile = route.tiles[index]
+            val element = elements.firstOrNull { it.rect.contains(tile) }
+            val definition = element?.definition
+            if (element == null || definition == null) {
+                points.add(tileCentre(tile))
+                index += 1
+                continue
+            }
+            var span = 1
+            while (index + span < route.tiles.size && element.rect.contains(route.tiles[index + span])) span += 1
+
+            val path = worldPath(element, definition)
+            // The route may cross the element either way round.
+            val entry = tileCentre(tile)
+            val fromStart = hypot(path.first().x - entry.x, path.first().y - entry.y)
+            val fromEnd = hypot(path.last().x - entry.x, path.last().y - entry.y)
+            points.addAll(if (fromStart <= fromEnd) path else path.reversed())
+            index += span
+        }
+        return points
+    }
+
+    private fun runTrains(network: TrackNetwork, stations: List<Attraction>, coaster: Boolean,
+                          elements: List<com.wickedstudios.wonderlot.TrackElement>) {
         val carSize = if (coaster) CGSize(tileSide * 0.62, tileSide * 0.40) else CGSize(tileSide * 0.86, tileSide * 0.46)
         // A railway needs a station at each end to be worth running; a coaster is one ride, so one station is the whole thing.
         val stationsNeeded = if (coaster) 1 else 2
@@ -711,7 +814,8 @@ class ParkRenderer(
             val served = stations.filter { network.routeIndex(it.rect) == index }
             if (served.size < stationsNeeded) continue
 
-            val points = PathMotion.smoothed(route.tiles.map { tileCentre(it) }, route.isLoop, 2)
+            // Elements have already put their own curves in, so those are smoothed less.
+            val points = PathMotion.smoothed(ridePoints(route, elements), route.isLoop, if (elements.isEmpty()) 2 else 1)
             val pace = if (coaster) 0.34 else 0.85
             val span = PathMotion.ringLength(points)
             val duration = span * (if (route.isLoop) pace else pace * 2)

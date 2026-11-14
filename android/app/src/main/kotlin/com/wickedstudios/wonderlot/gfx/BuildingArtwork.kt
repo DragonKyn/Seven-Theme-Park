@@ -263,6 +263,10 @@ object BuildingArtwork {
         BuildingMotif.holidayLights -> BuildingArtHoliday.drawHolidayLights(context, size, primary, secondary, accent)
         BuildingMotif.snowFamily -> BuildingArtHoliday.drawSnowFamily(context, size, primary, secondary, accent)
         BuildingMotif.snowConeCart -> BuildingArtHoliday.drawSnowConeCart(context, size, primary, secondary, accent)
+        BuildingMotif.atm -> BuildingArtFences.drawAtm(context, size, primary, secondary, accent)
+        BuildingMotif.picketFence, BuildingMotif.rusticFence, BuildingMotif.ironFence, BuildingMotif.stoneWall ->
+            // A fence's variant is the set of sides that have another fence against them.
+            BuildingArtFences.drawFence(context, size, appearance.motif, primary, secondary, accent, variant)
         }
 
         // A ride that has had its holiday makeover is dressed on top.

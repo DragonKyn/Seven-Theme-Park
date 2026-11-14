@@ -70,8 +70,22 @@ class FacilitySystem {
 
             FacilityKind.bin -> CleanlinessSystem.disposeOfTrash(guest, facility, state)
 
+            FacilityKind.atm -> withdrawCash(facility, guest, now)
+
             FacilityKind.souvenir, FacilityKind.bench -> {}
         }
+    }
+
+    /** One withdrawal a guest, up to a share of what they came in with. The park neither pays nor charges. */
+    private fun withdrawCash(facility: Facility, guest: Guest, now: Double) {
+        if (guest.usedCashMachine) return
+        guest.usedCashMachine = true
+        val amount = (guest.startingCash * CashMachine.limit(facility.upgradeLevel(ShopUpgradeKind.withdrawal))).rounded()
+        if (amount <= 0) return
+        guest.cash += amount
+        facility.totalDispensed += amount
+        val thought = ThoughtCatalog.withdrewCash(amount)
+        guest.think(thought.text, thought.mood, now, ThoughtIcon.money)
     }
 
     /** Settles a go on a carnival booth. Winning means the prize is carried for the rest of the visit. */

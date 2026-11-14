@@ -134,7 +134,10 @@ enum class BuildingMotif {
     strengthTester, ringTossGame, burgerStall, pizzaStall, drinkKiosk, iceCreamStall,
     souvenirShop, shopFront, restroom, bench, bin, tree, conifer, flowerBed, fountain, lamp,
     topiary, statue, lilyPads, reeds, waterRock, luxuryRestroom, popcornCart, floatingLanterns,
-    pondFountain,
+    pondFountain, atm,
+
+    // Fences: guests cannot walk through these.
+    picketFence, rusticFence, ironFence, stoneWall,
 
     // The holiday event. Rides first, then the decorations.
     reindeerCarousel, sleighRide, candyCoaster, snowGlobe, polarExpress, gingerbreadManor, starTopper,
@@ -374,7 +377,10 @@ enum class FacilityKind {
 
     /** A carnival booth: pay, play, and maybe walk away with a prize. */
     game,
-    bathroom, bench, bin;
+    bathroom, bench, bin,
+
+    /** A cash machine: each guest may withdraw once, which gives them more to spend. */
+    atm;
 
     /** Kinds that take the guest's money and therefore expose a price control. */
     val sellsGoods: Boolean get() = this == food || this == drink || this == souvenir || this == game
@@ -383,12 +389,13 @@ enum class FacilityKind {
     val isFurniture: Boolean get() = this == bench || this == bin
 
     /** Kinds whose visits are counted as they begin. */
-    val countsVisits: Boolean get() = this == bathroom || this == bench
+    val countsVisits: Boolean get() = this == bathroom || this == bench || this == atm
 
     val visitorNoun: String
         get() = when (this) {
             bathroom -> "Visits"
             bench -> "Guests seated"
+            atm -> "Withdrawals"
             else -> "Customers"
         }
 
@@ -444,13 +451,13 @@ data class FacilityDefinition(
     override val seasonal: Boolean = false,
 ) : BuildableDefinition {
 
-    val acceptsUpgrades: Boolean get() = kind.sellsGoods
+    val acceptsUpgrades: Boolean get() = kind.sellsGoods || kind == FacilityKind.atm
 
     override val category: BuildCategory
         get() = when (kind) {
             FacilityKind.game -> BuildCategory.games
             FacilityKind.food, FacilityKind.drink, FacilityKind.souvenir -> BuildCategory.shop
-            FacilityKind.bathroom, FacilityKind.bench, FacilityKind.bin -> BuildCategory.facility
+            FacilityKind.bathroom, FacilityKind.bench, FacilityKind.bin, FacilityKind.atm -> BuildCategory.facility
         }
 
     override val bedTerrain: TerrainType? get() = if (kind.isFurniture) TerrainType.path else null
@@ -506,13 +513,20 @@ data class SceneryDefinition(
     /** Whether this belongs on the water rather than the ground. */
     val onWater: Boolean = false,
     override val seasonal: Boolean = false,
+    /** A fence stops guests and staff walking through its tile, and can go on any ground that is not already blocked. */
+    val isFence: Boolean = false,
 ) : BuildableDefinition {
     override val category: BuildCategory get() = BuildCategory.scenery
     override val bedTerrain: TerrainType? get() = if (onWater) TerrainType.water else null
-    override val leavesWalkwayOpen: Boolean get() = true
+    override val leavesWalkwayOpen: Boolean get() = !isFence
     override val previewAppearance: BuildingAppearance? get() = appearance
     override val requiresPathAccess: Boolean get() = false
     override val mayStandOnWalkway: Boolean get() = spansWalkway
+
+    companion object {
+        /** The ground a fence may stand on. */
+        val fenceGround = setOf(TerrainType.grass, TerrainType.path, TerrainType.bridge, TerrainType.water)
+    }
 
     fun beautyAt(distance: Int): Double {
         if (distance > beautyRadius) return 0.0

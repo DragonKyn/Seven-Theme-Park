@@ -950,7 +950,7 @@ class GameController(
     fun shopUpgradeCost(kind: ShopUpgradeKind, facilityID: UUID): Double? {
         val facility = state.facility(facilityID) ?: return null
         val base = facility.baseDefinition ?: return null
-        if (!base.acceptsUpgrades) return null
+        if (!base.acceptsUpgrades || !kind.offeredFor(base.kind)) return null
         val next = facility.upgradeLevel(kind) + 1
         if (next > kind.maxLevel) return null
         return kind.cost(next, base.purchasePrice)
@@ -1114,6 +1114,7 @@ class GameController(
                 FacilityKind.bench -> signals.benchCount += 1
                 FacilityKind.bathroom -> signals.hasRestroom = true
                 FacilityKind.bin -> signals.hasBin = true
+                FacilityKind.atm -> {}
                 FacilityKind.souvenir -> {}
             }
         }

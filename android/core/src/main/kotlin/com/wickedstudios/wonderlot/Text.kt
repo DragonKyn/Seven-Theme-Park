@@ -153,6 +153,8 @@ object ThoughtCatalog {
 
     fun outOfMoney() = Thought("I'm out of money.", ThoughtMood.negative)
 
+    fun withdrewCash(amount: Double) = Thought("Took out ${'$'}${amount.toInt()}. Now, what shall I spend it on?", ThoughtMood.positive)
+
     fun leaving(reason: DepartureReason): Thought = when (reason) {
         DepartureReason.satisfied -> Thought("What a great day. Time to head home.", ThoughtMood.positive)
         DepartureReason.unhappy -> Thought("I'm not enjoying this. I'm going home.", ThoughtMood.negative)

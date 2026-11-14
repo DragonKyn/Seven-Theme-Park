@@ -77,6 +77,13 @@ object PlacementValidator {
                     else -> PlacementCheck.invalid("Lay coaster track here first")
                 }
             }
+        } else if (definition is SceneryDefinition && definition.isFence) {
+            // Anywhere that is not blocked: grass, walkway, bridge or water. Never the entrance, track, rock or forest.
+            for (coord in rect.coords) {
+                val tile = map.tile(coord) ?: return PlacementCheck.invalid("Outside the park")
+                if (tile.terrain !in SceneryDefinition.fenceGround) return PlacementCheck.invalid("Fences cannot go here")
+                if (tile.isOccupied) return PlacementCheck.invalid("Something is already here")
+            }
         } else if (definition.mayStandOnWalkway && map.isWalkwayArea(rect)) {
             for (coord in rect.coords) {
                 if (map.tile(coord)?.isOccupied != false) return PlacementCheck.invalid("Something is already here")

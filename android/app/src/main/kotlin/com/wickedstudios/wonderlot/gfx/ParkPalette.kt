@@ -103,6 +103,7 @@ object ParkPalette {
         FacilityKind.souvenir -> shop
         FacilityKind.game -> game
         FacilityKind.bin -> bin
+        FacilityKind.atm -> shop
     }
 
     /** The flat colour of one terrain tile. Checkerboarded terrains take a second shade. */

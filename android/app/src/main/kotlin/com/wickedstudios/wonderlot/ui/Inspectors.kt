@@ -390,6 +390,10 @@ private fun FacilityInspector(facility: FacilityDetail, controller: GameControll
                 tint = if (it > Balance.dirtyFacilityThreshold) Theme.danger else Theme.accent)
         }
         if (facility.isGame) StatRow("Prizes given", "${facility.prizesGiven}")
+        if (facility.isCashMachine) {
+            StatRow("Withdrawal limit", "${(facility.withdrawalLimit * 100).toInt()}% of entry money")
+            StatRow("Cash handed out", CurrencyFormatter.short(facility.totalDispensed))
+        }
         if (facility.sellsGoods) {
             StatRow("Revenue today", CurrencyFormatter.short(facility.revenueToday))
             StatRow("Revenue all time", CurrencyFormatter.short(facility.totalRevenue))

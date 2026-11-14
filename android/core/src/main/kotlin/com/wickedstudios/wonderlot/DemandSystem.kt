@@ -156,6 +156,7 @@ class DemandSystem {
             ageCategory = age,
             personality = personality,
             cash = startingCash,
+            startingCash = startingCash,
             happiness = happiness,
             hunger = hunger,
             thirst = thirst,

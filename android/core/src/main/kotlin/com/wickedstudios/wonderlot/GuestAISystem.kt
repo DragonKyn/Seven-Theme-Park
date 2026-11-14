@@ -265,7 +265,9 @@ class GuestAISystem(private val pathfinder: PathfindingSystem) {
         val cheapestPurchase = state.facilities
             .filter { it.definition?.kind?.sellsGoods == true }
             .minOfOrNull { it.price }
-        if (cheapestPurchase != null && guest.cash < cheapestPurchase && guest.timeInPark > 180 && score < 150) {
+        // Somebody who has not tried the cash machine yet is not out of money, only out of cash in hand.
+        val canStillWithdraw = !guest.usedCashMachine && state.facilities.any { it.definition?.kind == FacilityKind.atm && it.isOpen }
+        if (cheapestPurchase != null && guest.cash < cheapestPurchase && guest.timeInPark > 180 && score < 150 && !canStillWithdraw) {
             score = 150.0
             reason = DepartureReason.brokeAndBored
         }

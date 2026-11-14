@@ -257,6 +257,11 @@ class FacilityDetail(facility: Facility) {
     val prizesGiven: Int = facility.prizesGiven
     val revenueToday: Double = facility.revenueToday
     val totalRevenue: Double = facility.totalRevenue
+
+    /** Cash machines: what guests have taken out so far, and the share of their entry money each may take. */
+    val isCashMachine: Boolean = facility.definition?.kind == FacilityKind.atm
+    val totalDispensed: Double = facility.totalDispensed
+    val withdrawalLimit: Double = CashMachine.limit(facility.upgradeLevel(ShopUpgradeKind.withdrawal))
     val totalCost: Double = facility.totalCost
     val sentiment: Double? = facility.priceSentiment
 
@@ -280,7 +285,7 @@ class FacilityDetail(facility: Facility) {
         val shopPrice = facility.baseDefinition?.purchasePrice ?: 0.0
         val definition = facility.definition
         upgrades = if (definition != null && definition.acceptsUpgrades) {
-            ShopUpgradeKind.entries.map { upgrade ->
+            ShopUpgradeKind.entries.filter { it.offeredFor(definition.kind) }.map { upgrade ->
                 val level = facility.upgradeLevel(upgrade)
                 val next = level + 1
                 ShopUpgradeLine(upgrade.name, upgrade, upgrade.displayName(definition.kind),

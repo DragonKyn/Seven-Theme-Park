@@ -139,6 +139,8 @@ class Facility(
     var totalCustomers: Int = 0,
     var revenueToday: Double = 0.0,
     var totalRevenue: Double = 0.0,
+    /** Cash machines: everything guests have taken out. */
+    var totalDispensed: Double = 0.0,
     var totalCost: Double = 0.0,
     /** Rolling average of how fairly guests judged the price (0-1). */
     var sentimentSum: Double = 0.0,
