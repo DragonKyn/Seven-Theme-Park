@@ -45,8 +45,16 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
     case service
     case quality
     case signage
+    /// Cash machines only: how much of their entry money a guest may take out.
+    case withdrawal
 
     var id: String { rawValue }
+
+    /// The kinds of upgrade a given facility is offered. A cash machine has
+    /// nothing to sell, so it is offered the withdrawal limit and nothing else.
+    func isOffered(for kind: FacilityKind) -> Bool {
+        kind == .atm ? self == .withdrawal : self != .withdrawal
+    }
 
     /// A booth and a burger stall want the same upgrade described in
     /// different words, so the catalogue holds one entry and the wording
@@ -56,6 +64,7 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
         case .service: return kind == .game ? "Second Booth" : "Extra Till"
         case .quality: return kind == .game ? "Better Prizes" : "Better Stock"
         case .signage: return "Lit Signage"
+        case .withdrawal: return "Higher Limit"
         }
     }
 
@@ -71,6 +80,9 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
                 : "Better ingredients. Guests judge the price against what they get."
         case .signage:
             return "Lights and a painted board. Guests notice it from further down the path."
+        case .withdrawal:
+            return "Raises what a guest may take out, as a share of the money they came in with. "
+                + "25% to start, then 30%, then 50%."
         }
     }
 
@@ -79,6 +91,7 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
         case .service: return "person.2.badge.plus"
         case .quality: return "star.circle.fill"
         case .signage: return "lightbulb.fill"
+        case .withdrawal: return "banknote.fill"
         }
     }
 
@@ -87,6 +100,7 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
         case .service: return 2
         case .quality: return 3
         case .signage: return 2
+        case .withdrawal: return 2
         }
     }
 
@@ -96,6 +110,7 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
         case .service: return 0.55
         case .quality: return 0.40
         case .signage: return 0.32
+        case .withdrawal: return 0.45
         }
     }
 
@@ -103,6 +118,16 @@ enum ShopUpgradeKind: String, Codable, CaseIterable, Identifiable {
         // The same shape rides use: later levels cost proportionally more, so
         // a row of improved stalls beats one perfect one.
         (shopPrice * costShare * Double(level) * 1.15).rounded()
+    }
+}
+
+/// What a cash machine hands out.
+enum CashMachine {
+    /// The share of a guest's entry money one withdrawal may be, by upgrade level.
+    static let limits: [Double] = [0.25, 0.30, 0.50]
+
+    static func limit(forLevel level: Int) -> Double {
+        limits[min(max(level, 0), limits.count - 1)]
     }
 }
 

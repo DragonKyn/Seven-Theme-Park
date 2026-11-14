@@ -116,6 +116,11 @@ struct Guest: Codable, Identifiable {
 
     // Money
     var cash: Double
+    /// What they walked in with, which is what a cash machine's limit is a
+    /// share of.
+    var startingCash: Double = 0
+    /// One withdrawal a visit.
+    var usedCashMachine: Bool = false
     var moneySpent: Double = 0
 
     // Needs. 100 always means "most urgent" for hunger, thirst, bathroom and
@@ -217,6 +222,8 @@ extension Guest {
                                                            spending: 50,
                                                            cleanlinessSensitivity: 50))
         cash = container.value(.cash, or: 0)
+        startingCash = container.value(.startingCash, or: 0)
+        usedCashMachine = container.value(.usedCashMachine, or: false)
         moneySpent = container.value(.moneySpent, or: 0)
         happiness = container.value(.happiness, or: 70)
         hunger = container.value(.hunger, or: 0)

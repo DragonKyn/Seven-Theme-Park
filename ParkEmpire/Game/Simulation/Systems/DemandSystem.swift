@@ -196,6 +196,7 @@ final class DemandSystem {
             walkSpeed: (Balance.guestWalkSpeed + speedJitter) * speedScale,
             plannedVisitLength: Balance.visitLengthBase + visitJitter
         )
+        guest.startingCash = startingCash
         guest.appearance = GuestAppearance.random(for: age, using: &state.rng)
         guest.groupID = groupID
 

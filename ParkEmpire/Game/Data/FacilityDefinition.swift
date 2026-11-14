@@ -9,6 +9,9 @@ enum FacilityKind: String, Codable {
     case bathroom
     case bench
     case bin
+    /// A cash machine: each guest may withdraw once, which gives them more to
+    /// spend.
+    case atm
 
     /// Kinds that take the guest's money and therefore expose a price control.
     var sellsGoods: Bool {
@@ -26,7 +29,7 @@ enum FacilityKind: String, Codable {
     /// to count them by. A bin is left out: a guest dropping a wrapper in one
     /// is not a visit anybody is trying to measure.
     var countsVisits: Bool {
-        self == .bathroom || self == .bench
+        self == .bathroom || self == .bench || self == .atm
     }
 
     /// What a guest using this is called on the inspector.
@@ -34,6 +37,7 @@ enum FacilityKind: String, Codable {
         switch self {
         case .bathroom: return "Visits"
         case .bench: return "Guests seated"
+        case .atm: return "Withdrawals"
         default: return "Customers"
         }
     }
@@ -109,13 +113,13 @@ struct FacilityDefinition: BuildableDefinition, Codable, Identifiable {
     /// Whether this is something the player can pour money into after it is
     /// built. Restrooms, benches and bins are not: there is nothing to sell
     /// and nothing to improve about a bin.
-    var acceptsUpgrades: Bool { kind.sellsGoods }
+    var acceptsUpgrades: Bool { kind.sellsGoods || kind == .atm }
 
     var category: BuildCategory {
         switch kind {
         case .game: return .games
         case .food, .drink, .souvenir: return .shop
-        case .bathroom, .bench, .bin: return .facility
+        case .bathroom, .bench, .bin, .atm: return .facility
         }
     }
 

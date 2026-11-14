@@ -310,10 +310,15 @@ final class GuestAISystem {
             .filter { $0.definition?.kind.sellsGoods == true }
             .map(\.price)
             .min()
+        // Somebody who has not tried the cash machine yet is not out of money,
+        // only out of cash in hand.
+        let canStillWithdraw = !guest.usedCashMachine
+            && state.facilities.contains { $0.definition?.kind == .atm && $0.isOpen }
         if let cheapest = cheapestPurchase,
            guest.cash < cheapest,
            guest.timeInPark > 180,
-           score < 150 {
+           score < 150,
+           !canStillWithdraw {
             score = 150
             reason = .brokeAndBored
         }

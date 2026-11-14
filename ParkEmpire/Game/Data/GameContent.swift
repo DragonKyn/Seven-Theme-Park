@@ -970,6 +970,24 @@ enum GameContent {
             footprint: GridSize(1, 1),
             unlockLevel: 1,
             appearance: BuildingAppearance(.bin, .slate, .charcoal, .amber)
+        ),
+        FacilityDefinition(
+            id: "facility.atm",
+            displayName: "Cash Machine",
+            summary: "Every guest can take out cash once, up to a quarter of what they came in with. "
+                + "Upgrade it to raise the limit and they have more to spend on your rides and stalls.",
+            kind: .atm,
+            purchasePrice: 2_400,
+            defaultPrice: 0,
+            unitCost: 0,
+            referencePrice: 0,
+            serviceDuration: 4,
+            simultaneousCapacity: 1,
+            queueCapacity: 6,
+            relief: NeedRelief(),
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.atm, .slate, .teal, .amber)
         )
     ]
 
@@ -1112,6 +1130,54 @@ enum GameContent {
             footprint: GridSize(1, 1),
             unlockLevel: 1,
             appearance: BuildingAppearance(.hedge, .green, .lime, .brown)
+        ),
+        SceneryDefinition(
+            id: "scenery.fence.picket",
+            displayName: "Picket Fence",
+            summary: "A white picket fence. Guests cannot walk through it, so it keeps them on the paths and out of the flowerbeds.",
+            purchasePrice: 40,
+            beauty: 6,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.picketFence, .white, .cream, .brown),
+            isFence: true
+        ),
+        SceneryDefinition(
+            id: "scenery.fence.rustic",
+            displayName: "Rustic Rail Fence",
+            summary: "Split-log posts and two rough rails. Guests cannot walk through it. Goes anywhere that is not blocked, water included.",
+            purchasePrice: 55,
+            beauty: 7,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 1,
+            appearance: BuildingAppearance(.rusticFence, .brown, .sand, .slate),
+            isFence: true
+        ),
+        SceneryDefinition(
+            id: "scenery.fence.iron",
+            displayName: "Wrought Iron Fence",
+            summary: "Black iron bars with spear tips. Handsome, and nobody gets through it.",
+            purchasePrice: 120,
+            beauty: 12,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 2,
+            appearance: BuildingAppearance(.ironFence, .charcoal, .slate, .amber),
+            isFence: true
+        ),
+        SceneryDefinition(
+            id: "scenery.fence.stone",
+            displayName: "Stone Wall",
+            summary: "A low dry-stone wall. The sturdiest way to close off a gap, a pond edge or a whole corner of the lot.",
+            purchasePrice: 160,
+            beauty: 9,
+            beautyRadius: 1,
+            footprint: GridSize(1, 1),
+            unlockLevel: 3,
+            appearance: BuildingAppearance(.stoneWall, .slate, .cream, .charcoal),
+            isFence: true
         ),
         SceneryDefinition(
             id: "scenery.flagpole",

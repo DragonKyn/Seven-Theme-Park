@@ -300,7 +300,8 @@ enum HolidayContent {
             footprint: GridSize(1, 1),
             unlockLevel: 1,
             appearance: BuildingAppearance(.candyCaneFence, .red, .white, .green),
-            seasonal: true
+            seasonal: true,
+            isFence: true
         ),
         SceneryDefinition(
             id: "scenery.xmas.lightstrand",

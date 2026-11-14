@@ -277,6 +277,11 @@ struct FacilityDetail: Identifiable {
     let totalRevenue: Double
     let totalCost: Double
     let sentiment: Double?
+    /// Cash machines: what guests have taken out so far, and the share of
+    /// their entry money each may take.
+    let isCashMachine: Bool
+    let totalDispensed: Double
+    let withdrawalLimit: Double
     /// Empty for anything that cannot be improved.
     let upgrades: [ShopUpgradeLine]
 
@@ -304,10 +309,13 @@ struct FacilityDetail: Identifiable {
         totalRevenue = facility.totalRevenue
         totalCost = facility.totalCost
         sentiment = facility.priceSentiment
+        isCashMachine = facility.definition?.kind == .atm
+        totalDispensed = facility.totalDispensed
+        withdrawalLimit = CashMachine.limit(forLevel: facility.upgradeLevel(.withdrawal))
 
         let shopPrice = facility.baseDefinition?.purchasePrice ?? 0
         if let definition = facility.definition, definition.acceptsUpgrades {
-            upgrades = ShopUpgradeKind.allCases.map { upgrade in
+            upgrades = ShopUpgradeKind.allCases.filter { $0.isOffered(for: definition.kind) }.map { upgrade in
                 let level = facility.upgradeLevel(upgrade)
                 let next = level + 1
                 return ShopUpgradeLine(

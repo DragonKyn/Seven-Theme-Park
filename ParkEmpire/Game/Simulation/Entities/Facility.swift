@@ -45,6 +45,8 @@ struct Facility: Codable, Identifiable {
     var totalCustomers: Int = 0
     var revenueToday: Double = 0
     var totalRevenue: Double = 0
+    /// Cash machines: everything guests have taken out.
+    var totalDispensed: Double = 0
     var totalCost: Double = 0
     /// Rolling average of how fairly guests judged the price (0-1).
     var sentimentSum: Double = 0
@@ -141,6 +143,7 @@ extension Facility {
         totalCustomers = container.value(.totalCustomers, or: 0)
         revenueToday = container.value(.revenueToday, or: 0)
         totalRevenue = container.value(.totalRevenue, or: 0)
+        totalDispensed = container.value(.totalDispensed, or: 0)
         totalCost = container.value(.totalCost, or: 0)
         sentimentSum = container.value(.sentimentSum, or: 0)
         sentimentCount = container.value(.sentimentCount, or: 0)

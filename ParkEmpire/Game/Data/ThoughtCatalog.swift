@@ -81,6 +81,10 @@ enum ThoughtCatalog {
         ("I'm out of money.", .negative)
     }
 
+    static func withdrewCash(amount: Double) -> (String, ThoughtMood) {
+        ("Took out $\(Int(amount)). Now, what shall I spend it on?", .positive)
+    }
+
     static func leaving(reason: DepartureReason) -> (String, ThoughtMood) {
         switch reason {
         case .satisfied: return ("What a great day. Time to head home.", .positive)

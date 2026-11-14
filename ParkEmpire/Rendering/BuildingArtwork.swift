@@ -142,6 +142,11 @@ enum BuildingArtwork {
         case .holidayLights: drawHolidayLights(context, size, primary, secondary, accent)
         case .snowFamily: drawSnowFamily(context, size, primary, secondary, accent)
         case .snowConeCart: drawSnowConeCart(context, size, primary, secondary, accent)
+        case .atm: drawCashMachine(context, size, primary, secondary, accent)
+        case .picketFence, .rusticFence, .ironFence, .stoneWall:
+            // A fence's variant is the set of sides that have another fence
+            // against them.
+            drawFence(context, size, appearance.motif, primary, secondary, accent, variant)
         }
 
         // A ride that has had its holiday makeover is dressed on top.

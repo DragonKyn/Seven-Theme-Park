@@ -26,6 +26,12 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     var onWater: Bool = false
     /// Part of the holiday event.
     var seasonal = false
+    /// A fence stops guests and staff walking through its tile, and can go on
+    /// any ground that is not already blocked.
+    var isFence = false
+
+    /// The ground a fence may stand on.
+    static let fenceGround: Set<TerrainType> = [.grass, .path, .bridge, .water]
 
     var category: BuildCategory { .scenery }
 
@@ -34,7 +40,7 @@ struct SceneryDefinition: BuildableDefinition, Codable, Identifiable {
     /// Decoration never closes a path it is put on. Guests walk past a flower
     /// bed on the pavement, and a row of lamps down the middle of a walkway
     /// should not turn it into a wall.
-    var leavesWalkwayOpen: Bool { true }
+    var leavesWalkwayOpen: Bool { !isFence }
 
     var previewAppearance: BuildingAppearance? { appearance }
 

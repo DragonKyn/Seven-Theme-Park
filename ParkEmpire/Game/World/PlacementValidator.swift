@@ -92,6 +92,16 @@ enum PlacementValidator {
                 default: return .invalid("Lay coaster track here first")
                 }
             }
+        } else if let fence = definition as? SceneryDefinition, fence.isFence {
+            // Anywhere that is not blocked: grass, walkway, bridge or water.
+            // Never the entrance, track, rock or forest.
+            for coord in rect.coords {
+                guard let tile = map.tile(at: coord) else { return .invalid("Outside the park") }
+                guard SceneryDefinition.fenceGround.contains(tile.terrain) else {
+                    return .invalid("Fences cannot go here")
+                }
+                guard !tile.isOccupied else { return .invalid("Something is already here") }
+            }
         } else if definition.mayStandOnWalkway && map.isWalkwayArea(rect) {
             // Straddles the path rather than standing beside it. Placed
             // without blocking, so the route underneath stays open.

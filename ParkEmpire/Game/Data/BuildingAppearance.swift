@@ -248,6 +248,15 @@ enum BuildingMotif: String, Codable {
     /// A cart under a striped umbrella, selling shaved ice.
     case snowConeCart
 
+    /// A free-standing cash machine.
+    case atm
+    /// Fences. Guests cannot walk through any of them, and each is drawn
+    /// joined to the fences beside it.
+    case picketFence
+    case rusticFence
+    case ironFence
+    case stoneWall
+
     /// Colours the player can pick for this shape when placing it or
     /// afterwards. Empty for everything that is meant to look the way it was
     /// designed.
@@ -333,7 +342,8 @@ enum BuildingMotif: String, Codable {
             return .none
         case .xmasTree, .snowman, .wreathArch, .giftStack, .lightPole, .candyCanePost,
              .fireworkStand, .countdownClock, .hotCocoaStand, .candyStand,
-             .candyCaneFence, .holidayLights, .snowFamily, .snowConeCart:
+             .candyCaneFence, .holidayLights, .snowFamily, .snowConeCart,
+             .atm, .picketFence, .rusticFence, .ironFence, .stoneWall:
             return .none
         case .stall, .kiosk, .shopFront, .restroom, .bench, .bin,
              .burgerStall, .pizzaStall, .drinkKiosk, .iceCreamStall, .souvenirShop,

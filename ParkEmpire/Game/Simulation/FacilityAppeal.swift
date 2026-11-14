@@ -123,6 +123,18 @@ enum FacilityAppeal {
             if guest.prize != nil { appetite *= 0.45 }
             return 240 * appetite * willingness(guest, facility, definition, boost: spendBoost)
 
+        case .atm:
+            // One withdrawal a visit, and only worth the walk once a good part
+            // of the money has gone.
+            guard !guest.usedCashMachine, guest.startingCash > 0 else { return 0 }
+            let spentShare = 1 - guest.cash / guest.startingCash
+            guard spentShare >= 0.4 else { return 0 }
+            var score = 260 * (0.35 + (spentShare - 0.4) / 0.6)
+            // Somebody who cannot afford a thing in the park is looking for
+            // one of these.
+            if guest.cash < 15 { score *= 1.5 }
+            return score
+
         case .bench:
             let tiredness = SimMath.normalise(45 - guest.energy, from: 0, to: 45)
             var score = 220 * pow(tiredness, 2) + guest.nausea * 0.9

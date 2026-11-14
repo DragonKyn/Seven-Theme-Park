@@ -86,9 +86,26 @@ final class FacilitySystem {
                                              facilityIndex: facilityIndex,
                                              state: state)
 
+        case .atm:
+            withdrawCash(facilityIndex: facilityIndex, guestIndex: guestIndex, state: state, now: now)
+
         case .souvenir, .bench:
             break
         }
+    }
+
+    /// One withdrawal a guest, up to a share of what they came in with. The
+    /// park neither pays for it nor charges for it.
+    private func withdrawCash(facilityIndex: Int, guestIndex: Int, state: GameState, now: Double) {
+        guard !state.guests[guestIndex].usedCashMachine else { return }
+        state.guests[guestIndex].usedCashMachine = true
+        let level = state.facilities[facilityIndex].upgradeLevel(.withdrawal)
+        let amount = (state.guests[guestIndex].startingCash * CashMachine.limit(forLevel: level)).rounded()
+        guard amount > 0 else { return }
+        state.guests[guestIndex].cash += amount
+        state.facilities[facilityIndex].totalDispensed += amount
+        let (text, mood) = ThoughtCatalog.withdrewCash(amount: amount)
+        state.guests[guestIndex].think(text, mood: mood, at: now, icon: .money)
     }
 
     /// Settles a go on a carnival booth.
@@ -241,7 +258,7 @@ final class FacilitySystem {
         case .drink: state.statistics.drinksSoldTotal += 1
         case .souvenir: state.statistics.souvenirsSoldTotal += 1
         case .game: state.statistics.gamesPlayedTotal += 1
-        case .bathroom, .bench, .bin: break
+        case .bathroom, .bench, .bin, .atm: break
         }
 
         return true

@@ -111,6 +111,8 @@ extension GameState {
             map.setBuilding(item.id,
                             on: item.rect.coords,
                             blocking: !sceneryDefinition.leavesWalkwayOpen)
+            // A fence moves anybody standing on its tile out of the way.
+            if sceneryDefinition.isFence { clearGround(of: item.rect) }
             refreshBeauty()
 
         default:

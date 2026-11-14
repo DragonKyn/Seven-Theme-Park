@@ -39,6 +39,10 @@ final class ParkScene: SKScene {
     /// repainted is rebuilt and one that has not is left alone.
     private var renderedAppearance: [UUID: BuildingAppearance] = [:]
     private var sceneryNodes: [UUID: BuildingNode] = [:]
+    /// Which pieces of scenery are fences, so each can be drawn joined to the
+    /// fences beside it. Rebuilt when the map changes.
+    private var fenceIDs = Set<UUID>()
+    private var fenceGeneration = -1
     /// What each decoration looked like when its node was made, so one that
     /// has since been turned or repainted is drawn again.
     private var renderedSceneryLook: [UUID: SceneryLook] = [:]
@@ -1152,17 +1156,47 @@ final class ParkScene: SKScene {
         }
     }
 
+    /// The sides of a fence tile that have another fence against them:
+    /// 1 up, 2 right, 4 down, 8 left.
+    private func fenceSides(of item: SceneryItem, state: GameState) -> Int {
+        let x = item.origin.x
+        let y = item.origin.y
+        let around: [(Int, GridCoord)] = [
+            (1, GridCoord(x, y + 1)),
+            (2, GridCoord(x + 1, y)),
+            (4, GridCoord(x, y - 1)),
+            (8, GridCoord(x - 1, y))
+        ]
+        var sides = 0
+        for (bit, coord) in around {
+            if let id = state.map.tile(at: coord)?.buildingID, fenceIDs.contains(id) { sides |= bit }
+        }
+        return sides
+    }
+
     /// Scenery never changes once placed, so this only ever adds nodes for new
     /// items and removes nodes for demolished ones.
     private func syncScenery(state: GameState) {
         var seen = Set<UUID>()
 
+        if fenceGeneration != state.map.generation {
+            fenceGeneration = state.map.generation
+            fenceIDs = Set(state.scenery.filter { $0.definition?.isFence == true }.map(\.id))
+        }
+
         for item in state.scenery {
             seen.insert(item.id)
 
-            let look = SceneryLook(variant: item.variant,
+            // A fence's look is the set of sides with another fence against
+            // them, and it is drawn the way up it stands: turning it would only
+            // point its arms the wrong way.
+            let isFence = fenceIDs.contains(item.id)
+            let variant = isFence ? fenceSides(of: item, state: state) : item.variant
+            let turns = isFence ? 0 : item.rotation
+
+            let look = SceneryLook(variant: variant,
                                    colour: item.colour,
-                                   rotation: item.rotation,
+                                   rotation: turns,
                                    width: item.size.width,
                                    height: item.size.height)
             if let existing = sceneryNodes[item.id] {
@@ -1173,7 +1207,7 @@ final class ParkScene: SKScene {
             renderedSceneryLook[item.id] = look
 
             let appearance = (item.definition?.appearance ?? .unknown)
-                .withVariant(item.variant)
+                .withVariant(variant)
                 .tinted(item.colour)
                 .applying(state.scheme)
             let drawnSize = item.size.rotated(by: item.rotation)
@@ -1183,7 +1217,7 @@ final class ParkScene: SKScene {
                 texture: BuildingArtwork.bodyTexture(for: appearance, size: pixelSize),
                 size: pixelSize,
                 title: nil)
-            node.setRotation(quarterTurns: item.rotation)
+            node.setRotation(quarterTurns: turns)
             node.position = CGPoint(
                 x: (CGFloat(item.origin.x) + CGFloat(item.size.width) / 2) * Self.tileSide,
                 y: (CGFloat(item.origin.y) + CGFloat(item.size.height) / 2) * Self.tileSide)

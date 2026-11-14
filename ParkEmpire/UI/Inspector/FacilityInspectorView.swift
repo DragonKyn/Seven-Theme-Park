@@ -59,6 +59,11 @@ struct FacilityInspectorView: View {
                     if facility.isGame {
                         StatRow(label: "Prizes given", value: "\(facility.prizesGiven)")
                     }
+                    if facility.isCashMachine {
+                        StatRow(label: "Withdrawal limit",
+                                value: "\(Int((facility.withdrawalLimit * 100).rounded()))% of entry money")
+                        StatRow(label: "Cash handed out", value: CurrencyFormatter.short(facility.totalDispensed))
+                    }
                     if facility.sellsGoods {
                         StatRow(label: "Revenue today", value: CurrencyFormatter.short(facility.revenueToday))
                         StatRow(label: "Revenue all time", value: CurrencyFormatter.short(facility.totalRevenue))

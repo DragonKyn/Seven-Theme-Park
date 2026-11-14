@@ -1021,7 +1021,8 @@ final class GameController: ObservableObject {
     func shopUpgradeCost(_ kind: ShopUpgradeKind, facilityID: UUID) -> Double? {
         guard let facility = state.facility(id: facilityID),
               let base = facility.baseDefinition,
-              base.acceptsUpgrades else { return nil }
+              base.acceptsUpgrades,
+              kind.isOffered(for: base.kind) else { return nil }
         let next = facility.upgradeLevel(kind) + 1
         guard next <= kind.maxLevel else { return nil }
         return kind.cost(forLevel: next, shopPrice: base.purchasePrice)
@@ -1197,6 +1198,7 @@ final class GameController: ObservableObject {
             case .bench: signals.benchCount += 1
             case .bathroom: signals.hasRestroom = true
             case .bin: signals.hasBin = true
+            case .atm: break
             case .souvenir: break
             }
         }

@@ -114,6 +114,7 @@ enum ParkPalette {
         case .souvenir: return shop
         case .game: return game
         case .bin: return bin
+        case .atm: return shop
         }
     }
 
